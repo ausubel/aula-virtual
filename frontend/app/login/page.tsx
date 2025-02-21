@@ -1,26 +1,35 @@
+'use client'
+
 import Link from "next/link"
-import { redirect } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { GoogleIcon } from "@/components/ui/google-icon"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
 
 export default function LoginPage() {
-  async function login(formData: FormData) {
-    "use server"
+  const router = useRouter()
 
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
     const email = formData.get("email")
     const password = formData.get("password")
 
     // Esta es una autenticación simulada - en una app real verificarías contra una base de datos
     if (email === "admin@test.com" && password === "admin") {
-      redirect("/admin")
+      router.push("/admin")
     } else if (email === "student@test.com" && password === "student") {
-      redirect("/dashboard")
+      router.push("/dashboard")
+    } else {
+      alert("Credenciales inválidas")
     }
+  }
 
-    // Aquí manejarías el caso de credenciales inválidas
-    return { error: "Credenciales inválidas" }
+  const handleGoogleLogin = () => {
+    window.location.href = 'http://localhost:3000/auth/google/login'
   }
 
   return (
@@ -30,10 +39,10 @@ export default function LoginPage() {
           <CardTitle className="text-2xl font-bold">Iniciar Sesión</CardTitle>
           <CardDescription>Ingresa tus credenciales para acceder a tu cuenta</CardDescription>
         </CardHeader>
-        <CardContent>
-          <form action={login} className="space-y-4">
+        <CardContent className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Correo Electrónico</Label>
+              <Label htmlFor="email">Correo electrónico</Label>
               <Input id="email" name="email" type="email" placeholder="tu@ejemplo.com" required />
             </div>
             <div className="space-y-2">
@@ -44,6 +53,25 @@ export default function LoginPage() {
               Iniciar Sesión
             </Button>
           </form>
+          
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-gray-50 px-2 text-muted-foreground">O continúa con</span>
+            </div>
+          </div>
+
+          <Button 
+            type="button" 
+            variant="outline"
+            className="w-full gap-2"
+            onClick={handleGoogleLogin}
+          >
+            <GoogleIcon className="h-5 w-5" />
+            Iniciar con Google
+          </Button>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <div className="text-sm text-center text-muted-foreground">
@@ -62,4 +90,3 @@ export default function LoginPage() {
     </div>
   )
 }
-
