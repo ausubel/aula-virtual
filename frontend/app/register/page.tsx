@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -24,14 +23,70 @@ export default function RegisterPage() {
     setIsLoading(true)
     setFeedback(null)
 
-    // Simulamos el envío del formulario
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    const formData = new FormData(event.currentTarget)
+    
+    try {
+      // Convert CV file to base64
+      const cvFile = formData.get('cv') as File
+      if (!cvFile || !(cvFile instanceof File)) {
+        throw new Error('Por favor, seleccione un archivo PDF válido')
+      }
 
-    setIsLoading(false)
-    setFeedback({
-      status: "success",
-      message: "Registro exitoso. Redirigiendo...",
-    })
+      if (!cvFile.type.includes('pdf')) {
+        throw new Error('El archivo debe ser un PDF')
+      }
+
+      const cvBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = (error) => reject(new Error('Error al procesar el archivo: ' + error))
+        reader.readAsDataURL(cvFile)
+      })
+
+      // Get only the base64 data without the data URL prefix
+      const base64Data = cvBase64.split(',')[1]
+
+      const payload = {
+        name: formData.get('firstName'),
+        lastName: formData.get('lastName'),
+        email: formData.get('email'),
+        phoneNumber: formData.get('phone'),
+        profession: formData.get('career'),
+        cv_file: base64Data
+      }
+
+      const response = await fetch('/api/register/student', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al registrar')
+      }
+
+      setFeedback({
+        status: "success",
+        message: "Registro exitoso. Redirigiendo...",
+      })
+
+      // Redirect or show success message
+      setTimeout(() => {
+        window.location.href = '/login'
+      }, 2000)
+
+    } catch (error) {
+      setFeedback({
+        status: "error",
+        message: error instanceof Error ? error.message : "Error al procesar el registro",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -71,7 +126,7 @@ export default function RegisterPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="career">Carrera</Label>
-                <Select name="career" disabled={isLoading}>
+                <Select name="career" required disabled={isLoading}>
                   <SelectTrigger aria-label="Selecciona tu carrera">
                     <SelectValue placeholder="Selecciona tu carrera" />
                   </SelectTrigger>
@@ -123,4 +178,3 @@ export default function RegisterPage() {
     </div>
   )
 }
-

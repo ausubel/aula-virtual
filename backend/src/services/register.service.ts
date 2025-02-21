@@ -7,12 +7,7 @@ export default class RegisterService{
     this.registerModel = new RegisterModel();
   }
   async registerUserGuest(user: UserDTO): Promise<any>{
-    const record = await this.registerModel.registerUserGuest(user);
-    const message = record["message"] as string;
-    return message;
-  }
-  async registerUserAgent(user: UserDTO): Promise<any>{
-    const record = await this.registerModel.registerUserAgent(user);
+    const record = await this.registerModel.registerStudent(user);
     const message = record["message"] as string;
     return message;
   }

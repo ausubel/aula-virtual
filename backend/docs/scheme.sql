@@ -58,6 +58,7 @@ CREATE TABLE certificate (
     id INT AUTO_INCREMENT PRIMARY KEY,
     student_id INT,
     course_id INT,
+    file LONGTEXT,
     date_emission DATE,
     FOREIGN KEY (student_id) REFERENCES student(id),
     FOREIGN KEY (course_id) REFERENCES course(id)

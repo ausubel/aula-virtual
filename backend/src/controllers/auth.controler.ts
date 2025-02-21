@@ -1,11 +1,7 @@
-import { Router, json } from "express";
+import { Router } from "express";
 import ControllerBase from "./ControllerBase";
-import ApiResponse from "../utils/http";
 import AuthService from  "../services/auth.service";
 import Encrypter from "../utils/encripter";
-import UserDTO from "./dtos/UserDTO"
-import { checkAuthToken } from "../utils/checkAuthToken";
-import { USER_ROLE_IDS } from "../config/constants";
 import Tokenizer from "../utils/tokenizer";
 import { sendResponses } from "../utils/sendResponses";
 
