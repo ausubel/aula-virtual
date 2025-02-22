@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -11,26 +10,64 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { FormFeedback } from "@/components/form-feedback"
 import { LoadingSpinner } from "@/components/loading-spinner"
+import { cn } from "@/lib/utils"
+import { Check } from "lucide-react"
+
+interface RegisterData {
+  email: string
+  password: string
+  firstName: string
+  lastName: string
+  phone: string
+  career: string
+  cv: File | null
+}
 
 export default function RegisterPage() {
+  const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [feedback, setFeedback] = useState<{
     status: "success" | "error" | "warning"
     message: string
   } | null>(null)
+  const [formData, setFormData] = useState<RegisterData>({
+    email: "",
+    password: "",
+    firstName: "",
+    lastName: "",
+    phone: "",
+    career: "",
+    cv: null,
+  })
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleAccountSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsLoading(true)
     setFeedback(null)
 
-    // Simulamos el envío del formulario
+    // Simulamos la validación del email
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+
+    setIsLoading(false)
+    setCurrentStep(2)
+    setFeedback({
+      status: "success",
+      message: "Cuenta creada exitosamente. Por favor, complete sus datos personales.",
+    })
+  }
+
+  async function handleProfileSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setIsLoading(true)
+    setFeedback(null)
+
+    // Simulamos el envío del formulario completo
     await new Promise((resolve) => setTimeout(resolve, 2000))
 
     setIsLoading(false)
     setFeedback({
       status: "success",
-      message: "Registro exitoso. Redirigiendo...",
+      message: "Registro completado exitosamente. Redirigiendo...",
     })
   }
 
@@ -42,85 +79,184 @@ export default function RegisterPage() {
           <CardDescription>Complete el formulario para inscribirse en el programa de entrenamiento</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">Nombre</Label>
-                <Input id="firstName" name="firstName" required aria-required="true" disabled={isLoading} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Apellidos</Label>
-                <Input id="lastName" name="lastName" required aria-required="true" disabled={isLoading} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Correo Electrónico</Label>
-                <Input id="email" name="email" type="email" required aria-required="true" disabled={isLoading} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Teléfono</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  required
-                  aria-required="true"
-                  disabled={isLoading}
-                  pattern="[0-9]{9}"
-                  title="Ingrese un número de teléfono válido de 9 dígitos"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="career">Carrera</Label>
-                <Select name="career" disabled={isLoading}>
-                  <SelectTrigger aria-label="Selecciona tu carrera">
-                    <SelectValue placeholder="Selecciona tu carrera" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="engineering">Ingeniería</SelectItem>
-                    <SelectItem value="business">Administración</SelectItem>
-                    <SelectItem value="it">Tecnologías de la Información</SelectItem>
-                    <SelectItem value="other">Otra</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cv">Curriculum Vitae (PDF)</Label>
-                <Input
-                  id="cv"
-                  name="cv"
-                  type="file"
-                  accept=".pdf"
-                  required
-                  aria-required="true"
-                  disabled={isLoading}
-                  aria-label="Subir Curriculum Vitae en formato PDF"
-                />
+          {/* Stepper */}
+          <div className="mb-8">
+            <div className="flex items-center justify-center">
+              <div className="flex items-center">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground">
+                  <Check className="w-5 h-5" />
+                </div>
+                <div className={cn("h-1 w-24", currentStep === 2 ? "bg-primary" : "bg-muted")} />
+                <div
+                  className={cn(
+                    "flex items-center justify-center w-8 h-8 rounded-full",
+                    currentStep === 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  2
+                </div>
               </div>
             </div>
-
-            {feedback && <FormFeedback status={feedback.status} message={feedback.message} />}
-
-            <div className="flex justify-end space-x-4">
-              <Button variant="outline" type="button" disabled={isLoading} asChild>
-                <Link href="/templates/cv-template.pdf" download>
-                  Descargar Plantilla CV
-                </Link>
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <LoadingSpinner className="mr-2" />
-                    Registrando...
-                  </>
-                ) : (
-                  "Registrarse"
-                )}
-              </Button>
+            <div className="flex justify-center mt-2">
+              <div className="flex gap-16">
+                <span className="text-sm font-medium">Cuenta</span>
+                <span className={cn("text-sm", currentStep === 2 ? "font-medium" : "text-muted-foreground")}>
+                  Datos Personales
+                </span>
+              </div>
             </div>
-          </form>
+          </div>
+
+          {currentStep === 1 ? (
+            <form onSubmit={handleAccountSubmit} className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Correo Electrónico</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Contraseña</Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    required
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
+                  <Input id="confirmPassword" name="confirmPassword" type="password" required disabled={isLoading} />
+                </div>
+              </div>
+
+              {feedback && <FormFeedback status={feedback.status} message={feedback.message} />}
+
+              <div className="flex justify-end space-x-4">
+                <Button variant="outline" type="button" disabled={isLoading} asChild>
+                  <Link href="/">Cancelar</Link>
+                </Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <LoadingSpinner className="mr-2" />
+                      Creando cuenta...
+                    </>
+                  ) : (
+                    "Continuar"
+                  )}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleProfileSubmit} className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">Nombre</Label>
+                  <Input
+                    id="firstName"
+                    name="firstName"
+                    required
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Apellidos</Label>
+                  <Input
+                    id="lastName"
+                    name="lastName"
+                    required
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Teléfono</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    required
+                    pattern="[0-9]{9}"
+                    title="Ingrese un número de teléfono válido de 9 dígitos"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="career">Carrera</Label>
+                  <Select
+                    name="career"
+                    value={formData.career}
+                    onValueChange={(value) => setFormData({ ...formData, career: value })}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger aria-label="Selecciona tu carrera">
+                      <SelectValue placeholder="Selecciona tu carrera" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="engineering">Ingeniería</SelectItem>
+                      <SelectItem value="business">Administración</SelectItem>
+                      <SelectItem value="it">Tecnologías de la Información</SelectItem>
+                      <SelectItem value="other">Otra</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="cv">Curriculum Vitae (PDF)</Label>
+                  <Input
+                    id="cv"
+                    name="cv"
+                    type="file"
+                    accept=".pdf"
+                    required
+                    onChange={(e) => setFormData({ ...formData, cv: e.target.files?.[0] || null })}
+                    disabled={isLoading}
+                    aria-label="Subir Curriculum Vitae en formato PDF"
+                  />
+                </div>
+              </div>
+
+              {feedback && <FormFeedback status={feedback.status} message={feedback.message} />}
+
+              <div className="flex justify-end space-x-4">
+                <Button variant="outline" type="button" onClick={() => setCurrentStep(1)} disabled={isLoading}>
+                  Atrás
+                </Button>
+                <Button variant="outline" type="button" disabled={isLoading} asChild>
+                  <Link href="/templates/cv-template.pdf" download>
+                    Descargar Plantilla CV
+                  </Link>
+                </Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <LoadingSpinner className="mr-2" />
+                      Completando registro...
+                    </>
+                  ) : (
+                    "Completar Registro"
+                  )}
+                </Button>
+              </div>
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>
   )
 }
-
