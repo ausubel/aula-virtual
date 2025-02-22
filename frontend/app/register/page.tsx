@@ -12,6 +12,7 @@ import { FormFeedback } from "@/components/form-feedback"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { cn } from "@/lib/utils"
 import { Check } from "lucide-react"
+import { GoogleIcon } from "@/components/ui/google-icon"
 
 interface RegisterData {
   email: string
@@ -97,7 +98,7 @@ export default function RegisterPage() {
                 </div>
               </div>
             </div>
-            <div className="flex justify-center mt-2">
+            <div className="flex justify-center mt-1">
               <div className="flex gap-16">
                 <span className="text-sm font-medium">Cuenta</span>
                 <span className={cn("text-sm", currentStep === 2 ? "font-medium" : "text-muted-foreground")}>
@@ -108,56 +109,78 @@ export default function RegisterPage() {
           </div>
 
           {currentStep === 1 ? (
-            <form onSubmit={handleAccountSubmit} className="space-y-6">
+            <>
+              <form onSubmit={handleAccountSubmit} className="space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Correo Electrónico</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Contraseña</Label>
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      required
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
+                    <Input id="confirmPassword" name="confirmPassword" type="password" required disabled={isLoading} />
+                  </div>
+                </div>
+
+                {feedback && <FormFeedback status={feedback.status} message={feedback.message} />}
+
+              </form>
+              <div className="relative mt-4 mb-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-gray-50 px-2 text-muted-foreground">O registrarse con</span>
+                </div>
+              </div>
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Correo Electrónico</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    disabled={isLoading}
-                  />
+                <div className="flex justify-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-2/3 gap-2"
+                  >
+                    <GoogleIcon className="h-5 w-5" />
+                    Registrarse con Google
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Contraseña</Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    required
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    disabled={isLoading}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
-                  <Input id="confirmPassword" name="confirmPassword" type="password" required disabled={isLoading} />
+                <div className="flex justify-end space-x-4">
+                  <Button variant="outline" type="button" disabled={isLoading} asChild>
+                    <Link href="/">Cancelar</Link>
+                  </Button>
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <LoadingSpinner className="mr-2" />
+                        Creando cuenta...
+                      </>
+                    ) : (
+                      "Continuar"
+                    )}
+                  </Button>
                 </div>
               </div>
-
-              {feedback && <FormFeedback status={feedback.status} message={feedback.message} />}
-
-              <div className="flex justify-end space-x-4">
-                <Button variant="outline" type="button" disabled={isLoading} asChild>
-                  <Link href="/">Cancelar</Link>
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <LoadingSpinner className="mr-2" />
-                      Creando cuenta...
-                    </>
-                  ) : (
-                    "Continuar"
-                  )}
-                </Button>
-              </div>
-            </form>
+            </>
           ) : (
             <form onSubmit={handleProfileSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
