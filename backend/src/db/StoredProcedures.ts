@@ -13,7 +13,7 @@ export enum StoredProcedures {
   GetUserDataById = "CALL get_user_data(?)",
   RegisterUserGuest = "CALL register_user_guest(?, ?, ?, ?)",
   RegisterUserAgent = "CALL register_user_agent(?, ?, ?, ?)",
+  GetOrCreateGoogleUser = "CALL get_or_create_google_user(?, ?, ?)",
 }
 
 export default StoredProcedures;
-	

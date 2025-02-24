@@ -8,6 +8,8 @@ import { checkAuthToken } from "../utils/checkAuthToken";
 import { USER_ROLE_IDS } from "../config/constants";
 import Tokenizer from "../utils/tokenizer";
 import { sendResponses } from "../utils/sendResponses";
+import passport from 'passport';
+import { setupGoogleStrategy } from '../auth/strategies/google.strategy';
 
 
 export default class AuthController implements ControllerBase {
@@ -26,9 +28,14 @@ export default class AuthController implements ControllerBase {
 	get router() {
 		return this._router;
 	}
-	private onEndpoints() {
-        this.onSignIn()
-	}
+private onEndpoints() {
+        this.onSignIn();
+        this.setupGoogleAuth();
+}
+
+private setupGoogleAuth() {
+        setupGoogleStrategy(this._router, passport);
+}
     private onSignIn(){
         this.router.get("/sing-in", async (req, res) => {
             const username: string = req.body.username as string;
@@ -56,4 +63,3 @@ export default class AuthController implements ControllerBase {
         })
     }
 }
-

@@ -18,4 +18,12 @@ export default class AuthModel extends ModelBase {
     return resultset.map(userMapper);
   }
 
+  async getOrCreateGoogleUser(username: string, name: string, lastname: string): Promise<any> {
+    const [[resultset]] = (await this.database.query(
+      StoredProcedures.GetOrCreateGoogleUser,
+      [username, name, lastname]
+    )) as [[any[]]];
+    return resultset.map(userMapper)[0]; // Solo esperamos un usuario
+  }
+
 }

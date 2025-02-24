@@ -12,8 +12,16 @@ export default class AuthService{
 	async getPasswordByUserName(username: string): Promise<any>{   
 		return await this.authModel.getPasswordByUserName(username);
 	}
-	async getUserDataById(id: number): Promise<User>{
-		return await this.authModel.getUserDataById(id);
-	}
+async getUserDataById(id: number): Promise<User>{
+  return await this.authModel.getUserDataById(id);
+}
+
+async getOrCreateGoogleUser(profile: any): Promise<User> {
+  const email = profile.emails[0].value;
+  const name = profile.name.givenName;
+  const lastname = profile.name.familyName;
+  
+  return await this.authModel.getOrCreateGoogleUser(email, name, lastname);
+}
 
 }
