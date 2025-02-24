@@ -22,3 +22,8 @@
 ### 5. *Gestión de Archivos*
 - POST /api/files/upload: Permite que los usuarios suban documentos como el CV.
 - GET /api/files/{fileId}: Accede a un archivo específico.
+
+### 6. *Notificaciones por Email*
+- POST api/email/notification: Envía emails de notificación.
+  - Body: { email: string, subject: string, message: string }
+  - Respuesta: { success: boolean, message: string }
