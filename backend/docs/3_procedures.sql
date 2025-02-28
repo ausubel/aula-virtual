@@ -26,8 +26,8 @@ BEGIN
             email,
             password,
             active,
-            inactive_datetime,
             creation_datetime,
+            inactive_datetime,
             id_role
         )
         VALUES (
@@ -55,8 +55,7 @@ BEGIN
         u.name,
         u.surname,
         u.id_role as roleId,
-        IF EXISTS (SELECT 1 FROM student WHERE id = u.id AND cv_file IS NOT NULL) as hasCV,
-        s.cv_file
+        (SELECT 1 FROM student WHERE id = u.id AND cv_file IS NOT NULL) as hasCV
     FROM user u
     WHERE u.id = v_user_id;
 END //
@@ -99,16 +98,17 @@ BEGIN
         u.surname,
         u.id_role as roleId,
         u.active,
-        IF EXISTS (SELECT 1 FROM student WHERE id = u.id AND cv_file IS NOT NULL) as hasCV
+        (SELECT 1 FROM student WHERE id = u.id AND cv_file IS NOT NULL) as hasCV
     FROM user u
     WHERE u.id = p_id;
 END //
+
+DROP PROCEDURE IF EXISTS get_all_certificates_by_student_id// 
 
 -- Certificate procedures
 CREATE PROCEDURE get_all_certificates_by_student_id(
     IN p_student_id INT
 )
-BEGIN
 BEGIN
     IF p_student_id IS NULL THEN
         SELECT 'student_id is null' AS message;
@@ -120,7 +120,9 @@ BEGIN
     END IF;
 END //
 
-CREATE PROCEDURE GetCertificateByCourseId(IN courseId INT)
+DROP PROCEDURE IF EXISTS get_certificate_by_course_id// 
+
+CREATE PROCEDURE get_certificate_by_course_id(IN courseId INT)
 BEGIN
   SELECT c.id, cr.name, cr.hours, c.date_emission, c.file
   FROM certificate c
