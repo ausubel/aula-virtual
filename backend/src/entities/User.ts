@@ -1,10 +1,11 @@
 type User = {
   id?: number;
   name: string;
-  lastName: string;
-  userName: string;
+  surname: string;
+  active: string;
   password?: string;
   roleId?: number;
+  hasCV?: boolean;
 };
 
 export default User;

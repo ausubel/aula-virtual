@@ -1,11 +1,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Users, BookOpen, Award, BarChart } from "lucide-react"
+import { Users, BookOpen, Award, BarChart, LogOut } from "lucide-react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 export default function AdminDashboard() {
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Panel de Administración</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Panel de Administración</h1>
+        <Button variant="destructive" asChild>
+          <Link href="/cookie-logout" className="flex items-center gap-2">
+            <LogOut className="h-4 w-4" />
+            Cerrar Sesión
+          </Link>
+        </Button>
+      </div>
 
       {/* Statistics Overview */}
       <div className="grid gap-6 md:grid-cols-4 mb-6">
@@ -110,4 +120,3 @@ export default function AdminDashboard() {
     </div>
   )
 }
-

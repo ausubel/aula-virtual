@@ -55,7 +55,7 @@ export default class Backend {
 
     private setupCors() {
         this.app.use(cors({
-            origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+            origin: [process.env.FRONTEND_URL || 'http://localhost:3001', 'https://accounts.google.com'],
             credentials: true,
             methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'],
             allowedHeaders: ['Authorization', 'X-API-KEY', 'Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Access-Control-Allow-Request-Method']

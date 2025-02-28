@@ -1,13 +1,14 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { NotificationDropdown } from "@/components/ui/notifications"
 import { BookOpenIcon, HomeIcon, LogOutIcon } from "lucide-react"
 
 export function NavBar() {
   const pathname = usePathname()
+  const router = useRouter()
   const isAdmin = pathname.startsWith("/admin")
 
   return (
@@ -26,12 +27,16 @@ export function NavBar() {
               <HomeIcon className="size-5" />
             </Link>
           </Button>
-          <Button variant="ghost" size="icon" aria-label="Cerrar sesión">
-            <LogOutIcon className="size-5" />
+          
+          {/* Único botón de cierre de sesión */}
+          <Button variant="destructive" asChild>
+            <Link href="/cookie-logout">
+              <LogOutIcon className="h-4 w-4 mr-2" />
+              Cerrar Sesión
+            </Link>
           </Button>
         </div>
       </div>
     </nav>
   )
 }
-

@@ -4,7 +4,7 @@
 	"description": "API para la plataforma de aula virtual",
 	"main": "src/server.js",
 	"scripts": {
-		"start": "ts-node-dev src/server.ts"
+		"dev": "ts-node-dev src/server.ts"
 	},
 	"keywords": [],
 	"author": "",

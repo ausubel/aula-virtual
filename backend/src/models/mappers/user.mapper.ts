@@ -5,9 +5,10 @@ export default function userMapper(record: any): User {
     return {
         id: record["id"],
         name: record["name"],
-        lastName: record["last_name"],
-        userName: record["username"],
+        surname: record["surname"],
+        active: record["active"],
         password: record["password"],
-        roleId: record["role_id"],
+        roleId: record["roleId"],
+        hasCV: record["hasCV"] === 1 || record["hasCV"] === true
     }
 }

@@ -1,0 +1,43 @@
+"use client";
+
+export function LogoutButton() {
+  // Función simple para cerrar sesión
+  const handleLogout = () => {
+    // En lugar de intentar hacer todo aquí, simplemente redirigimos a la página especializada
+    window.location.href = "/force-logout";
+  };
+
+  return (
+    <button 
+      onClick={handleLogout}
+      style={{
+        backgroundColor: '#e11d48', // Rojo
+        color: 'white',
+        padding: '8px 16px',
+        borderRadius: '4px',
+        border: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        cursor: 'pointer',
+        fontWeight: 'bold'
+      }}
+    >
+      <svg 
+        width="16" 
+        height="16" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+      >
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+        <polyline points="16 17 21 12 16 7"></polyline>
+        <line x1="21" y1="12" x2="9" y2="12"></line>
+      </svg>
+      <span>Cerrar Sesión</span>
+    </button>
+  );
+}

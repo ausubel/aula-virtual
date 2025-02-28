@@ -56,12 +56,40 @@ export const setupGoogleStrategy = (app: Router, passport: PassportStatic) => {
         async (req: any, res) => {
             try {
                 const user = req.user;
+                console.log("User authenticated:", user);  // Log del usuario autenticado
+                
                 const token = await Tokenizer.create({
-                    userRoleId: user.roleId
+                    userRoleId: user.roleId,
+                    userId: user.id
+                });
+                console.log("Token created:", token);  // Log del token creado
+                
+                // Establecer el token como cookie
+                res.cookie('auth_token', token, {
+                    httpOnly: false, // Cambiar a false para que sea accesible desde JavaScript
+                    secure: process.env.NODE_ENV === 'production',
+                    maxAge: 24 * 60 * 60 * 1000, // 24 horas
+                    path: '/',
+                    sameSite: 'lax'
                 });
                 
-                // Redireccionar al frontend con el token
-                res.redirect(`${process.env.FRONTEND_URL}/dashboard?token=${token}`);
+                // Establecer cookie para indicar si el usuario ha subido su CV
+                res.cookie('has_uploaded_cv', user.hasCV ? 'true' : 'false', {
+                    httpOnly: false,
+                    secure: process.env.NODE_ENV === 'production',
+                    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 días
+                    path: '/',
+                    sameSite: 'lax'
+                });
+                
+                // Redirigir según si el usuario tiene CV o no
+                if (user.hasCV) {
+                    // Si el usuario ya tiene CV, redirigir a la página principal
+                    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3001'}/student`);
+                } else {
+                    // Si el usuario no tiene CV, redirigir a la página de subida de CV
+                    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3001'}/profile/upload-cv`);
+                }
             } catch (error) {
                 console.error("Error in callback route:", error);  // Para debugging
                 sendResponses(res, 500, "Error during authentication");

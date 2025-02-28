@@ -10,7 +10,10 @@ export default class Tokenizer {
   static create(payload) {
     return new Promise((res, rej) => {
       jwt.sign(
-        { userRoleId: payload.userRoleId },
+        { 
+          userRoleId: payload.userRoleId,
+          userId: payload.userId || payload.id
+        },
         this.JWT_SECRET_WORD,
         { expiresIn: this.JWT_EXPIRES_IN },
         (err, token) => {

@@ -3,17 +3,10 @@ import StoredProcedures from "../db/StoredProcedures";
 import ModelBase from "./ModelBase";
 
 export default class RegisterModel extends ModelBase {
-  async registerUserGuest(user: UserDTO): Promise<any> {
+  async registerStudent(user: UserDTO): Promise<any> {
     const [[[resultset]]] = await this.database.query(
-      StoredProcedures.RegisterUserGuest,
-      [user.name, user.lastName, user.userName, user.password]
-    );
-    return resultset;
-  }
-  async registerUserAgent(user: UserDTO): Promise<any> {
-    const [[[resultset]]] = await this.database.query(
-      StoredProcedures.RegisterUserAgent,
-      [user.name, user.lastName, user.userName, user.password]
+      StoredProcedures.RegisterStudent,
+      [user.name, user.lastName, user.phoneNumber, user.email, user.profession, user.cv_file]
     );
     return resultset;
   }

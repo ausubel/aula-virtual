@@ -3,9 +3,9 @@ import ModelBase from "./ModelBase";
 import userMapper from "./mappers/user.mapper";
 
 export default class AuthModel extends ModelBase {
-  async getPasswordByUserName(username: string): Promise<string> {
+  async getPasswordByEmail(username: string): Promise<string> {
     const [[resultset]] = (await this.database.query(
-      StoredProcedures.GetPasswordByUserName,
+      StoredProcedures.GetPasswordByEmail,
       [username]
     )) as [[any[]]];
     return resultset[0];

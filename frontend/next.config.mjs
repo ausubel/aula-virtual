@@ -17,6 +17,18 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: '/auth/:path*',
+        destination: 'http://localhost:3000/auth/:path*',
+      },
+      {
+        source: '/api/document/:path*',
+        destination: 'http://localhost:3000/document/:path*',
+      },
+    ];
+  },
   experimental: {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
