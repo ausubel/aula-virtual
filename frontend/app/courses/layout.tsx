@@ -11,7 +11,7 @@ export default function CoursesLayout({
     <ProtectedRoute> {/* Todos los usuarios autenticados pueden ver cursos */}
       <div className="min-h-screen flex flex-col">
         <NavBar />
-        <main className="flex-1">
+        <main className="flex-1 container mx-auto px-4 py-6">
           {children}
         </main>
       </div>
