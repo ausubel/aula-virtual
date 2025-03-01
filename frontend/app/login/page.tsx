@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { GoogleIcon } from "@/components/ui/google-icon"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { login } from "./actions"
 import { toast } from "@/components/ui/use-toast"
 import { saveToken, saveUserCVStatus, isAuthenticated } from "@/lib/auth"
+import { LoadingSpinner } from "@/components/loading-spinner"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -79,58 +80,90 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
+        <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Iniciar Sesión</CardTitle>
           <CardDescription>Ingresa tus credenciales para acceder a tu cuenta</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Correo electrónico</Label>
-              <Input id="email" name="email" type="email" placeholder="tu@ejemplo.com" required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
-              <Input id="password" name="password" type="password" required />
-            </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
+          {/* Botón de Google en la parte superior */}
+          <div className="mb-6">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full gap-2 py-6"
+              onClick={handleGoogleLogin}
+              disabled={isLoading}
+            >
+              <GoogleIcon className="h-5 w-5" />
+              Iniciar con Google
             </Button>
-          </form>
+            
+            <div className="relative mt-6 mb-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-gray-50 px-2 text-muted-foreground">O continuar con email</span>
+              </div>
+            </div>
+          </div>
           
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                name="email" 
+                type="email" 
+                placeholder="Ingresa tu correo electrónico" 
+                required 
+                className="mt-1"
+              />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-gray-50 px-2 text-muted-foreground">O continúa con</span>
+            <div>
+              <Label htmlFor="password">Contraseña</Label>
+              <Input 
+                id="password" 
+                name="password" 
+                type="password" 
+                placeholder="••••••••"
+                required 
+                className="mt-1"
+              />
             </div>
-          </div>
-
-          <Button 
-            type="button" 
-            variant="outline"
-            className="w-full gap-2"
-            onClick={handleGoogleLogin}
-            disabled={isLoading}
-          >
-            <GoogleIcon className="h-5 w-5" />
-            Iniciar con Google
-          </Button>
+            
+            <div className="text-right">
+              
+            </div>
+            
+            <Button 
+              type="submit" 
+              className="w-full mt-6" 
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <LoadingSpinner className="mr-2" />
+                  Iniciando sesión...
+                </>
+              ) : (
+                "Iniciar Sesión"
+              )}
+            </Button>
+            
+            <div className="text-center mt-4">
+              <span className="text-sm text-gray-600">¿No tienes una cuenta? </span>
+              <Link href="/register" className="text-sm font-medium text-primary hover:underline">
+                Regístrate aquí
+              </Link>
+            </div>
+            <div className="text-center">
+              <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
+          </form>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <div className="text-sm text-center text-muted-foreground">
-            <Link href="/forgot-password" className="hover:text-primary">
-              ¿Olvidaste tu contraseña?
-            </Link>
-          </div>
-          <div className="text-sm text-center text-muted-foreground">
-            ¿No tienes una cuenta?{" "}
-            <Link href="/register" className="hover:text-primary">
-              Regístrate aquí
-            </Link>
-          </div>
-        </CardFooter>
       </Card>
     </div>
   )

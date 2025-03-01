@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { isAuthenticated, getToken, decodeToken, hasUploadedCV, markCVAsUploaded, saveUserCVStatus } from '@/lib/auth'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
-import { FileIcon, UploadIcon } from 'lucide-react'
+import { FileIcon, UploadIcon, ArrowLeft } from 'lucide-react'
 import Cookies from 'js-cookie'
 // Importar el contexto de registro
 import { RegistrationContext } from '@/app/register/page'
@@ -23,7 +23,11 @@ interface UserProfileData {
   cv: File | null
 }
 
-export default function UploadCVPage() {
+interface UploadCVPageProps {
+  onBackClick?: () => void;
+}
+
+export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [feedback, setFeedback] = useState<{ status: 'success' | 'error', message: string } | null>(null)
@@ -305,10 +309,21 @@ export default function UploadCVPage() {
                 </p>
               </div>
               
-              <div className="flex justify-end">
+              <div className="flex justify-between">
+                {isRegistrationFlow && onBackClick && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onBackClick}
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Volver al paso anterior
+                  </Button>
+                )}
                 <Button 
                   type="submit" 
                   disabled={isLoading}
+                  className={!isRegistrationFlow || !onBackClick ? "ml-auto" : ""}
                 >
                   {isLoading ? 'Guardando...' : 'Guardar y continuar'}
                 </Button>
