@@ -6,6 +6,20 @@ import Tokenizer from "../utils/tokenizer";
 import { sendResponses } from "../utils/sendResponses";
 import passport from "passport";
 import { setupGoogleStrategy } from "../auth/strategies/google.strategy";
+import { z } from "zod";
+
+// Schema de validación para el registro
+const registerSchema = z.object({
+  email: z.string().email("Email inválido"),
+  password: z.string()
+    .min(8, "La contraseña debe tener al menos 8 caracteres")
+    .regex(/[A-Z]/, "Debe contener al menos una mayúscula")
+    .regex(/[a-z]/, "Debe contener al menos una minúscula")
+    .regex(/[0-9]/, "Debe contener al menos un número")
+    .regex(/[^A-Za-z0-9]/, "Debe contener al menos un carácter especial"),
+  name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
+  surname: z.string().min(2, "El apellido debe tener al menos 2 caracteres")
+});
 
 export default class AuthController implements ControllerBase {
   private _root: string;
@@ -26,12 +40,54 @@ export default class AuthController implements ControllerBase {
   private onEndpoints() {
     this.onSignIn();
     this.onSignOut();
+    this.onRegister();
     this.setupGoogleAuth();
   }
 
   private setupGoogleAuth() {
     setupGoogleStrategy(this._router, passport);
   }
+
+  private onRegister() {
+    this.router.post("/register", async (req, res) => {
+      try {
+        // Validar datos de entrada
+        const validatedData = registerSchema.parse(req.body);
+
+        // Encriptar la contraseña
+        const encryptedPassword = await Encrypter.encrypt(validatedData.password);
+
+        // Usar el mismo flujo que Google Auth para crear un usuario
+        const user = await this.authService.getOrCreateGoogleUser({
+          email: validatedData.email,
+          name: validatedData.name,
+          surname: validatedData.surname,
+          // Pasamos la contraseña encriptada como un campo adicional
+          password: encryptedPassword
+        });
+
+        // Generar token para el usuario
+        const token = await Tokenizer.create({
+          userRoleId: user[0].roleId,
+          userId: user[0].id
+        });
+
+        // Devolver respuesta exitosa
+        sendResponses(res, 201, "Usuario registrado exitosamente", {
+          user,
+          token
+        });
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          // Errores de validación
+          return sendResponses(res, 400, error.errors[0].message);
+        }
+        console.error("Error registrando usuario:", error);
+        return sendResponses(res, 500, "Error interno del servidor");
+      }
+    });
+  }
+
   private onSignIn() {
     this.router.post("/sign-in", async (req, res) => {
       const username: string = req.body.username as string;

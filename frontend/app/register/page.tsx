@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -11,9 +11,9 @@ import { Label } from "@/components/ui/label"
 import { FormFeedback } from "@/components/form-feedback"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { cn } from "@/lib/utils"
-import { Check } from "lucide-react"
+import { Check, Info } from "lucide-react"
 import { GoogleIcon } from "@/components/ui/google-icon"
-import { register } from "./actions"
+import { register, registerBasicInfo } from "./actions"
 import { toast } from "@/components/ui/use-toast"
 
 interface RegisterData {
@@ -22,83 +22,204 @@ interface RegisterData {
   confirmPassword: string
   firstName: string
   lastName: string
+  isRegistered: boolean // Para saber si ya se registró en el paso 1
+}
+
+// Función para validar requisitos de contraseña
+function validatePassword(password: string): { isValid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  if (password.length < 8) {
+    errors.push("La contraseña debe tener al menos 8 caracteres");
+  }
+  if (!/[A-Z]/.test(password)) {
+    errors.push("Debe contener al menos una mayúscula");
+  }
+  if (!/[a-z]/.test(password)) {
+    errors.push("Debe contener al menos una minúscula");
+  }
+  if (!/[0-9]/.test(password)) {
+    errors.push("Debe contener al menos un número");
+  }
+  if (!/[^A-Za-z0-9]/.test(password)) {
+    errors.push("Debe contener al menos un carácter especial");
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
 }
 
 export default function RegisterPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const [formData, setFormData] = useState<RegisterData>({
     email: "",
     password: "",
     confirmPassword: "",
     firstName: "",
     lastName: "",
+    isRegistered: false
   })
+  const [isRegistered, setIsRegistered] = useState(false);
+
+  // Validar contraseña cuando cambia
+  useEffect(() => {
+    if (formData.password) {
+      const validation = validatePassword(formData.password);
+      setPasswordErrors(validation.errors);
+    } else {
+      setPasswordErrors([]);
+    }
+  }, [formData.password]);
 
   // Función para manejar el registro con Google
   const handleGoogleRegister = () => {
     window.location.href = '/auth/google/login'
   }
 
-  async function handleAccountSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  const handleAccountSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    // Validar que las contraseñas coincidan
+    // Verificar que las contraseñas coincidan
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Error",
         description: "Las contraseñas no coinciden",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
-
-    setCurrentStep(2)
-  }
-
-  async function handleProfileSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setIsLoading(true)
-
+    
+    setIsLoading(true);
+    
     try {
-      // Crear FormData con todos los campos
-      const data = new FormData()
-      data.append('email', formData.email)
-      data.append('password', formData.password)
-      data.append('firstName', formData.firstName)
-      data.append('lastName', formData.lastName)
-
-      const result = await register(data)
-
+      // Crear FormData para enviar al servidor
+      const formDataToSend = new FormData();
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('password', formData.password);
+      
+      // Llamar a la función de registro básico
+      const result = await registerBasicInfo(formDataToSend);
+      
       if (result.success) {
+        // Si el registro fue exitoso, mostrar mensaje de éxito
         toast({
           title: "Registro exitoso",
-          description: "Tu cuenta ha sido creada. Serás redirigido al login.",
-        })
+          description: "Cuenta creada correctamente. Ahora puedes completar tu perfil.",
+        });
         
-        // Redirigir al login después de 2 segundos
-        setTimeout(() => {
-          router.push('/login')
-        }, 2000)
+        // Si recibimos un token, guardarlo en localStorage
+        if (result.token) {
+          localStorage.setItem('token', result.token);
+          console.log("Token guardado en localStorage");
+        }
+        
+        // Si recibimos datos del usuario, guardarlos en localStorage
+        if (result.userData) {
+          localStorage.setItem('userData', JSON.stringify(result.userData));
+          console.log("Datos del usuario guardados en localStorage");
+        }
+        
+        // Marcar como registrado y avanzar al siguiente paso
+        setIsRegistered(true);
+        setCurrentStep(1);
       } else {
+        // Si hubo un error, mostrar mensaje de error
         toast({
           title: "Error",
           description: result.message,
           variant: "destructive",
-        })
+        });
       }
     } catch (error) {
-      console.error('Error durante el registro:', error)
+      console.error("Error en el registro:", error);
       toast({
         title: "Error",
-        description: "Ocurrió un error durante el registro. Por favor, intente nuevamente.",
+        description: "Ocurrió un error al procesar tu solicitud",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
+
+  const handleProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Si ya está registrado en el paso 1, solo redirigir al login
+    if (isRegistered) {
+      toast({
+        title: "Perfil actualizado",
+        description: "Tu cuenta ha sido creada. Serás redirigido al login.",
+      });
+      
+      // Redirigir al login después de 2 segundos
+      setTimeout(() => {
+        router.push('/login');
+      }, 2000);
+      
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      // Crear FormData para enviar al servidor
+      const formDataToSend = new FormData();
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('password', formData.password);
+      formDataToSend.append('firstName', formData.firstName);
+      formDataToSend.append('lastName', formData.lastName);
+      
+      // Llamar a la función de registro completo
+      const result = await register(formDataToSend);
+      
+      if (result.success) {
+        // Si el registro fue exitoso, mostrar mensaje de éxito
+        toast({
+          title: "Registro exitoso",
+          description: "Tu cuenta ha sido creada. Serás redirigido al login.",
+        });
+        
+        // Si recibimos un token, guardarlo en localStorage
+        if (result.token) {
+          localStorage.setItem('token', result.token);
+          console.log("Token guardado en localStorage");
+        }
+        
+        // Si recibimos datos del usuario, guardarlos en localStorage
+        if (result.userData) {
+          localStorage.setItem('userData', JSON.stringify(result.userData));
+          console.log("Datos del usuario guardados en localStorage");
+        }
+        
+        // Redirigir al login después de 2 segundos
+        setTimeout(() => {
+          router.push('/login');
+        }, 2000);
+      } else {
+        // Si hubo un error, mostrar mensaje de error
+        toast({
+          title: "Error",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error en el registro:", error);
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al procesar tu solicitud",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -163,6 +284,20 @@ export default function RegisterPage() {
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       disabled={isLoading}
                     />
+                    {/* Requisitos de contraseña */}
+                    <div className="text-sm mt-2 p-3 bg-gray-100 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-1 text-gray-500 mb-1">
+                        <Info className="h-4 w-4" />
+                        <span>Requisitos de contraseña:</span>
+                      </div>
+                      <ul className="space-y-1 list-disc pl-5 text-xs text-gray-600">
+                        <li className={formData.password.length >= 8 ? 'text-green-600' : ''}>Mínimo 8 caracteres</li>
+                        <li className={/[A-Z]/.test(formData.password) ? 'text-green-600' : ''}>Al menos una mayúscula</li>
+                        <li className={/[a-z]/.test(formData.password) ? 'text-green-600' : ''}>Al menos una minúscula</li>
+                        <li className={/[0-9]/.test(formData.password) ? 'text-green-600' : ''}>Al menos un número</li>
+                        <li className={/[^A-Za-z0-9]/.test(formData.password) ? 'text-green-600' : ''}>Al menos un carácter especial (!@#$%^&*)</li>
+                      </ul>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
@@ -175,15 +310,21 @@ export default function RegisterPage() {
                       onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                       disabled={isLoading}
                     />
+                    {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                      <p className="text-sm text-red-500 mt-1">Las contraseñas no coinciden</p>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex justify-end">
-                  <Button type="submit" disabled={isLoading}>
+                  <Button 
+                    type="submit" 
+                    disabled={isLoading || passwordErrors.length > 0 || formData.password !== formData.confirmPassword}
+                  >
                     {isLoading ? (
                       <>
                         <LoadingSpinner className="mr-2" />
-                        Validando...
+                        Registrando...
                       </>
                     ) : (
                       "Continuar"
@@ -264,7 +405,7 @@ export default function RegisterPage() {
                   {isLoading ? (
                     <>
                       <LoadingSpinner className="mr-2" />
-                      Registrando...
+                      Finalizando...
                     </>
                   ) : (
                     "Completar Registro"

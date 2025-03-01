@@ -19,50 +19,70 @@ BEGIN
     SELECT id INTO v_existing_user FROM user WHERE email = p_email LIMIT 1;
     
     IF v_existing_user IS NOT NULL THEN
-        SELECT 'EMAIL_EXISTS' as message;
+        -- Si el email ya existe, devolver un mensaje de error
+        SELECT 'EMAIL_EXISTS' as message, NULL as id, NULL as email, NULL as name, 
+               NULL as surname, NULL as roleId, NULL as hasCV, NULL as active;
     ELSE
         SET v_role_id = 2; -- ID del rol STUDENT
         
         -- Iniciar transacción
         START TRANSACTION;
         
-        -- Insertar en la tabla user
-        INSERT INTO user (
-            name,
-            surname,
-            email,
-            password,
-            active,
-            creation_datetime,
-            inactive_datetime,
-            id_role
-        ) VALUES (
-            p_name,
-            p_surname,
-            p_email,
-            p_password,
-            1,  -- active = true
-            NOW(), -- fecha de creación actual
-            NULL,
-            v_role_id
-        );
-        
-        -- Obtener el ID del usuario insertado
-        SET v_user_id = LAST_INSERT_ID();
-        
-        -- Insertar en la tabla student
-        INSERT INTO student (id, id_role)
-        VALUES (v_user_id, v_role_id);
-        
-        -- Confirmar transacción
-        COMMIT;
-        
-        -- Devolver SUCCESS
-        SELECT 'SUCCESS' as message;
+        BEGIN
+            -- Usar un bloque BEGIN/END para capturar errores
+            DECLARE EXIT HANDLER FOR SQLEXCEPTION
+            BEGIN
+                -- Si hay error, hacer rollback
+                ROLLBACK;
+                SELECT 'ERROR' as message, NULL as id, NULL as email, NULL as name, 
+                       NULL as surname, NULL as roleId, NULL as hasCV, NULL as active;
+            END;
+            
+            -- Insertar en la tabla user
+            INSERT INTO user (
+                name,
+                surname,
+                email,
+                password,
+                active,
+                creation_datetime,
+                inactive_datetime,
+                id_role
+            ) VALUES (
+                p_name,
+                p_surname,
+                p_email,
+                p_password,
+                1,  -- active = true
+                NOW(), -- fecha de creación actual
+                NULL,
+                v_role_id
+            );
+            
+            -- Obtener el ID del usuario insertado
+            SET v_user_id = LAST_INSERT_ID();
+            
+            -- Insertar en la tabla student
+            INSERT INTO student (id, id_role)
+            VALUES (v_user_id, v_role_id);
+            
+            -- Confirmar transacción
+            COMMIT;
+            
+            -- Devolver los datos del usuario creado, similar a get_or_create_google_user
+            SELECT 
+                'SUCCESS' as message,
+                u.id,
+                u.email,
+                u.name,
+                u.surname,
+                u.id_role as roleId,
+                u.active,
+                (SELECT 1 FROM student WHERE id = u.id AND cv_file IS NOT NULL) as hasCV
+            FROM user u
+            WHERE u.id = v_user_id;
+        END;
     END IF;
-    
-    -- Si hay error, hacer rollback
-    ROLLBACK;
 END //
 
 DROP PROCEDURE IF EXISTS get_or_create_google_user// 
