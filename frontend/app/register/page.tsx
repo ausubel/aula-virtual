@@ -126,7 +126,7 @@ export default function RegisterPage() {
         
         // Marcar como registrado y avanzar al siguiente paso
         setIsRegistered(true);
-        setCurrentStep(1);
+        setCurrentStep(2);
       } else {
         // Si hubo un error, mostrar mensaje de error
         toast({
