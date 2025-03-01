@@ -2,20 +2,38 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { isAuthenticated, getToken, decodeToken, hasUploadedCV, markCVAsUploaded, saveUserCVStatus } from '@/lib/auth'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
+import { FileIcon, UploadIcon } from 'lucide-react'
 import Cookies from 'js-cookie'
+
+interface UserProfileData {
+  firstName: string
+  lastName: string
+  phone: string
+  career: string
+  cv: File | null
+}
 
 export default function UploadCVPage() {
   const router = useRouter()
-  const [cv, setCv] = useState<File | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [feedback, setFeedback] = useState<{ status: 'success' | 'error', message: string } | null>(null)
   const [hasCheckedCV, setHasCheckedCV] = useState(false)
+  const [cvPreviewUrl, setCvPreviewUrl] = useState<string | null>(null)
+  const [formData, setFormData] = useState<UserProfileData>({
+    firstName: "",
+    lastName: "",
+    phone: "",
+    career: "",
+    cv: null,
+  })
 
   useEffect(() => {
     // Verificar si el usuario está autenticado
@@ -39,14 +57,33 @@ export default function UploadCVPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setCv(e.target.files[0])
+      const file = e.target.files[0];
+      setFormData({ ...formData, cv: file });
+      
+      // Crear URL para previsualización del PDF
+      const fileUrl = URL.createObjectURL(file);
+      setCvPreviewUrl(fileUrl);
+      
+      // Limpiar la URL al desmontar el componente
+      return () => {
+        URL.revokeObjectURL(fileUrl);
+      };
     }
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
-    if (!cv) {
+    // Validar que todos los campos estén completos
+    if (!formData.firstName || !formData.lastName || !formData.phone || !formData.career) {
+      setFeedback({
+        status: "error",
+        message: "Por favor, completa todos los campos del formulario."
+      })
+      return
+    }
+    
+    if (!formData.cv) {
       setFeedback({
         status: "error",
         message: "Por favor, selecciona un archivo PDF para tu CV."
@@ -59,7 +96,7 @@ export default function UploadCVPage() {
     
     try {
       // Convertir el archivo a base64
-      const base64File = await convertFileToBase64(cv)
+      const base64File = await convertFileToBase64(formData.cv)
       
       // Obtener el ID del usuario del token decodificado
       const token = getToken()
@@ -76,6 +113,20 @@ export default function UploadCVPage() {
         userId = 2 // ID fijo para pruebas
         console.log('Usando ID de usuario fijo para pruebas:', userId)
       }
+      
+      // Enviar los datos personales al servidor
+      await fetch(`/api/user/${userId}/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+          career: formData.career
+        })
+      })
       
       // Enviar el archivo al servidor
       console.log('Enviando solicitud a:', `/api/document/student/${userId}/cv`)
@@ -106,7 +157,7 @@ export default function UploadCVPage() {
       
       setFeedback({
         status: "success",
-        message: "Tu CV ha sido subido correctamente. Serás redirigido a la página principal."
+        message: "Tu perfil y CV han sido actualizados correctamente. Serás redirigido a la página principal."
       })
       
       // Redirigir al dashboard después de 2 segundos
@@ -114,10 +165,10 @@ export default function UploadCVPage() {
         router.push('/student')
       }, 2000)
     } catch (error) {
-      console.error('Error al subir el CV:', error)
+      console.error('Error al actualizar el perfil:', error)
       setFeedback({
         status: "error",
-        message: error instanceof Error ? error.message : "Error al subir el CV. Por favor, intenta de nuevo."
+        message: error instanceof Error ? error.message : "Error al actualizar el perfil. Por favor, intenta de nuevo."
       })
     } finally {
       setIsLoading(false)
@@ -136,42 +187,130 @@ export default function UploadCVPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Sube tu CV</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="mb-4">Para completar tu perfil y acceder a la plataforma, necesitamos que subas tu Curriculum Vitae en formato PDF.</p>
-          
-          {feedback && (
-            <Alert className={`mb-4 ${feedback.status === 'error' ? 'bg-red-50 text-red-800 border-red-200' : 'bg-green-50 text-green-800 border-green-200'}`}>
-              <AlertDescription>{feedback.message}</AlertDescription>
-            </Alert>
-          )}
-          
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <Label htmlFor="cv">Curriculum Vitae (PDF)</Label>
-              <Input 
-                id="cv" 
-                type="file" 
-                accept=".pdf" 
-                onChange={handleFileChange}
-                className="mt-1"
-              />
-            </div>
+      <div className="w-full max-w-7xl flex flex-col md:flex-row gap-6">
+        {/* Formulario en la columna izquierda */}
+        <Card className="w-full md:w-1/2">
+          <CardHeader>
+            <CardTitle>Completa tu perfil</CardTitle>
+            <CardDescription>Para finalizar tu registro, completa tus datos personales y sube tu CV</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {feedback && (
+              <Alert className={`mb-4 ${feedback.status === 'error' ? 'bg-red-50 text-red-800 border-red-200' : 'bg-green-50 text-green-800 border-green-200'}`}>
+                <AlertDescription>{feedback.message}</AlertDescription>
+              </Alert>
+            )}
             
-            <div className="flex justify-end">
-              <Button 
-                type="submit" 
-                disabled={isLoading || !cv}
-              >
-                {isLoading ? 'Subiendo...' : 'Subir CV'}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Datos personales */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">Nombre</Label>
+                  <Input
+                    id="firstName"
+                    name="firstName"
+                    required
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Apellidos</Label>
+                  <Input
+                    id="lastName"
+                    name="lastName"
+                    required
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Teléfono</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    required
+                    pattern="[0-9]{9}"
+                    title="Ingrese un número de teléfono válido de 9 dígitos"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="career">Carrera</Label>
+                  <Select
+                    name="career"
+                    value={formData.career}
+                    onValueChange={(value) => setFormData({ ...formData, career: value })}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger aria-label="Selecciona tu carrera">
+                      <SelectValue placeholder="Selecciona tu carrera" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="engineering">Ingeniería</SelectItem>
+                      <SelectItem value="business">Administración</SelectItem>
+                      <SelectItem value="it">Tecnologías de la Información</SelectItem>
+                      <SelectItem value="other">Otra</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Subida de CV */}
+              <div className="space-y-2">
+                <Label htmlFor="cv">Curriculum Vitae (PDF)</Label>
+                <Input 
+                  id="cv" 
+                  type="file" 
+                  accept=".pdf" 
+                  onChange={handleFileChange}
+                  className="mt-1"
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Por favor, sube tu CV en formato PDF. Este documento será utilizado para evaluar tu perfil.
+                </p>
+              </div>
+              
+              <div className="flex justify-end">
+                <Button 
+                  type="submit" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Guardando...' : 'Guardar y continuar'}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Previsualización del CV en la columna derecha */}
+        <Card className="w-full md:w-1/2 flex flex-col">
+          <CardHeader>
+            <CardTitle>Vista previa de tu CV</CardTitle>
+            <CardDescription>Asegúrate de que tu CV se vea correctamente antes de subirlo</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-grow flex flex-col">
+            {cvPreviewUrl ? (
+              <iframe 
+                src={cvPreviewUrl} 
+                className="w-full h-full min-h-[600px] border rounded-lg"
+                title="Vista previa del CV"
+              />
+            ) : (
+              <div className="w-full h-full min-h-[600px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground">
+                <FileIcon size={64} className="mb-4 opacity-30" />
+                <p className="text-center mb-2">No se ha seleccionado ningún archivo PDF</p>
+                <p className="text-center text-sm max-w-xs">Selecciona un archivo PDF en el formulario para ver una previsualización</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
