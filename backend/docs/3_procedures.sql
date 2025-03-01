@@ -19,9 +19,7 @@ BEGIN
     SELECT id INTO v_existing_user FROM user WHERE email = p_email LIMIT 1;
     
     IF v_existing_user IS NOT NULL THEN
-        -- Si el email ya existe, devolver un mensaje de error
-        SELECT 'EMAIL_EXISTS' as message, NULL as id, NULL as email, NULL as name, 
-               NULL as surname, NULL as roleId, NULL as hasCV, NULL as active;
+        SELECT 'EMAIL_EXISTS' as message;
     ELSE
         SET v_role_id = 2; -- ID del rol STUDENT
         
@@ -34,8 +32,7 @@ BEGIN
             BEGIN
                 -- Si hay error, hacer rollback
                 ROLLBACK;
-                SELECT 'ERROR' as message, NULL as id, NULL as email, NULL as name, 
-                       NULL as surname, NULL as roleId, NULL as hasCV, NULL as active;
+                SELECT 'ERROR' as message;
             END;
             
             -- Insertar en la tabla user
@@ -69,18 +66,8 @@ BEGIN
             -- Confirmar transacción
             COMMIT;
             
-            -- Devolver los datos del usuario creado, similar a get_or_create_google_user
-            SELECT 
-                'SUCCESS' as message,
-                u.id,
-                u.email,
-                u.name,
-                u.surname,
-                u.id_role as roleId,
-                u.active,
-                (SELECT 1 FROM student WHERE id = u.id AND cv_file IS NOT NULL) as hasCV
-            FROM user u
-            WHERE u.id = v_user_id;
+            -- Devolver SUCCESS
+            SELECT 'SUCCESS' as message;
         END;
     END IF;
 END //
