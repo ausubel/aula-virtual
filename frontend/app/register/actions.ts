@@ -17,6 +17,8 @@ const basicInfoSchema = z.object({
 const profileSchema = z.object({
   firstName: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
   lastName: z.string().min(2, "El apellido debe tener al menos 2 caracteres"),
+  phone: z.string().optional(),
+  career: z.string().optional(),
 })
 
 // Función para imprimir logs numerados
@@ -159,37 +161,67 @@ export async function register(formData: FormData) {
   try {
     logStep(1, "Iniciando proceso de registro completo");
     
-    // Extraer y validar datos
-    logStep(2, "Validando datos");
+    // Extraer y validar datos básicos
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    const firstName = formData.get('firstName') as string;
+    const lastName = formData.get('lastName') as string;
+    
+    // Extraer datos adicionales opcionales
+    const phone = formData.get('phone') as string;
+    const career = formData.get('career') as string;
+    const cvBase64 = formData.get('cv') as string;
+    
+    logStep(2, "Datos extraídos del formulario", { 
+      email, 
+      password: "********",
+      firstName,
+      lastName,
+      phone: phone || "(no proporcionado)",
+      career: career || "(no proporcionado)",
+      cv: cvBase64 ? "Archivo PDF presente" : "(no proporcionado)"
+    });
+    
+    // Validar datos
+    logStep(3, "Validando datos con Zod");
     const validatedData = {
-      ...basicInfoSchema.parse({
-        email: formData.get('email'),
-        password: formData.get('password'),
-      }),
-      ...profileSchema.parse({
-        firstName: formData.get('firstName'),
-        lastName: formData.get('lastName'),
+      ...basicInfoSchema.parse({ email, password }),
+      ...profileSchema.parse({ 
+        firstName, 
+        lastName,
+        phone: phone || undefined,
+        career: career || undefined
       })
-    }
-    logStep(3, "Validación exitosa");
+    };
+    
+    logStep(4, "Validación exitosa");
 
     // Preparar datos para el endpoint de autenticación
-    logStep(4, "Preparando datos para el backend");
+    logStep(5, "Preparando datos para el backend");
     const userData = {
       email: validatedData.email,
       password: validatedData.password,
       name: validatedData.firstName,
-      surname: validatedData.lastName
+      surname: validatedData.lastName,
+      // Añadir campos adicionales si están presentes
+      ...(validatedData.phone && { phoneNumber: validatedData.phone }),
+      ...(validatedData.career && { profession: validatedData.career }),
+      ...(cvBase64 && { cv_file: cvBase64 })
     }
-    logStep(5, "Datos preparados");
+    
+    logStep(6, "Datos preparados", {
+      ...userData,
+      password: "********", // No mostrar la contraseña real en logs
+      cv_file: cvBase64 ? "Archivo PDF presente (base64)" : undefined
+    });
 
     // URL correcta para el backend - usando el endpoint de autenticación
     const API_URL = 'http://localhost:3000';
-    logStep(6, `Realizando petición a: ${API_URL}/auth/register`);
+    logStep(7, `Realizando petición a: ${API_URL}/auth/register`);
     
     // Imprimir el cuerpo de la petición exactamente como se enviará
     const requestBody = JSON.stringify(userData);
-    logStep('6.1', "Cuerpo de la petición (JSON)", requestBody);
+    logStep('7.1', "Cuerpo de la petición (JSON)", requestBody.substring(0, 500) + (requestBody.length > 500 ? '...' : ''));
     
     // Llamar al endpoint de registro
     const response = await fetch(`${API_URL}/auth/register`, {
@@ -199,8 +231,8 @@ export async function register(formData: FormData) {
       },
       body: requestBody,
     })
-    logStep(7, `Respuesta recibida - Status: ${response.status}`);
-    logStep('7.1', "Headers de la respuesta", {
+    logStep(8, `Respuesta recibida - Status: ${response.status}`);
+    logStep('8.1', "Headers de la respuesta", {
       contentType: response.headers.get('content-type'),
       contentLength: response.headers.get('content-length')
     });
@@ -211,18 +243,18 @@ export async function register(formData: FormData) {
     try {
       // Primero intentamos obtener el texto de la respuesta para depuración
       responseText = await response.clone().text();
-      logStep('7.2', "Texto de la respuesta", responseText);
+      logStep('8.2', "Texto de la respuesta", responseText);
       
       // Luego intentamos parsear como JSON
       data = await response.json();
-      logStep(8, "Datos de la respuesta (JSON)", data);
+      logStep(9, "Datos de la respuesta (JSON)", data);
     } catch (error) {
-      logStep(8, "Error al parsear la respuesta JSON", { error, responseText });
+      logStep(9, "Error al parsear la respuesta JSON", { error, responseText });
       data = { message: "Error al procesar la respuesta del servidor" };
     }
 
     if (!response.ok) {
-      logStep(9, "Error en la respuesta", { status: response.status, message: data?.message });
+      logStep(10, "Error en la respuesta", { status: response.status, message: data?.message });
       return {
         success: false,
         message: data?.message || 'Error al registrar usuario',
@@ -231,11 +263,11 @@ export async function register(formData: FormData) {
 
     // Guardar el token en localStorage o cookies si es necesario
     if (data?.data?.token) {
-      logStep(10, "Guardando token", { token: data.data.token.substring(0, 10) + '...' });
+      logStep(11, "Guardando token", { token: data.data.token.substring(0, 10) + '...' });
       // Aquí podrías guardar el token en localStorage o cookies
     }
 
-    logStep(11, "Registro exitoso");
+    logStep(12, "Registro exitoso");
     return {
       success: true,
       message: 'Usuario registrado exitosamente',

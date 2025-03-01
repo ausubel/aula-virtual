@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils'
 import { FileIcon, UploadIcon } from 'lucide-react'
 import Cookies from 'js-cookie'
+// Importar el contexto de registro
+import { RegistrationContext } from '@/app/register/page'
 
 interface UserProfileData {
   firstName: string
@@ -35,7 +37,16 @@ export default function UploadCVPage() {
     cv: null,
   })
 
+  // Obtener el contexto de registro
+  const registrationContext = useContext(RegistrationContext);
+  const isRegistrationFlow = registrationContext.isRegistrationFlow;
+
   useEffect(() => {
+    // Si estamos en el flujo de registro, no necesitamos verificar la autenticación
+    if (isRegistrationFlow) {
+      return;
+    }
+    
     // Verificar si el usuario está autenticado
     if (!isAuthenticated()) {
       console.error('No hay token, redirigiendo a login')
@@ -53,7 +64,7 @@ export default function UploadCVPage() {
         router.push('/student')
       }
     }
-  }, [router, hasCheckedCV])
+  }, [router, hasCheckedCV, isRegistrationFlow])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -98,14 +109,22 @@ export default function UploadCVPage() {
       // Convertir el archivo a base64
       const base64File = await convertFileToBase64(formData.cv)
       
-      // Obtener el ID del usuario del token decodificado
-      const token = getToken()
+      // Obtener el ID del usuario del token decodificado o del contexto de registro
       let userId = 0
       
-      if (token) {
-        const decodedToken = decodeToken(token)
-        userId = decodedToken?.id || 0
-        console.log('ID de usuario obtenido del token:', userId)
+      if (isRegistrationFlow && registrationContext.userId) {
+        // Si estamos en el flujo de registro, usar el ID del contexto
+        userId = registrationContext.userId;
+        console.log('ID de usuario obtenido del contexto de registro:', userId)
+      } else {
+        // Si no, obtener el ID del token
+        const token = getToken()
+        
+        if (token) {
+          const decodedToken = decodeToken(token)
+          userId = decodedToken?.id || 0
+          console.log('ID de usuario obtenido del token:', userId)
+        }
       }
       
       // Si no se pudo obtener el ID del token, usar un valor por defecto para pruebas
@@ -157,13 +176,20 @@ export default function UploadCVPage() {
       
       setFeedback({
         status: "success",
-        message: "Tu perfil y CV han sido actualizados correctamente. Serás redirigido a la página principal."
+        message: "Tu perfil y CV han sido actualizados correctamente."
       })
       
-      // Redirigir al dashboard después de 2 segundos
-      setTimeout(() => {
-        router.push('/student')
-      }, 2000)
+      // Si estamos en el flujo de registro, llamar a la función onComplete del contexto
+      if (isRegistrationFlow) {
+        setTimeout(() => {
+          registrationContext.onComplete();
+        }, 1500);
+      } else {
+        // Si no, redirigir al dashboard después de 2 segundos
+        setTimeout(() => {
+          router.push('/student')
+        }, 2000)
+      }
     } catch (error) {
       console.error('Error al actualizar el perfil:', error)
       setFeedback({
@@ -186,7 +212,10 @@ export default function UploadCVPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className={cn(
+      "flex items-center justify-center bg-gray-50",
+      isRegistrationFlow ? "p-0" : "min-h-screen p-4"
+    )}>
       <div className="w-full max-w-7xl flex flex-col md:flex-row gap-6">
         {/* Formulario en la columna izquierda */}
         <Card className="w-full md:w-1/2">

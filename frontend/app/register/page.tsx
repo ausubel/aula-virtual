@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, createContext } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -11,10 +11,31 @@ import { Label } from "@/components/ui/label"
 import { FormFeedback } from "@/components/form-feedback"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { cn } from "@/lib/utils"
-import { Check, Info } from "lucide-react"
+import { Check, Info, FileIcon } from "lucide-react"
 import { GoogleIcon } from "@/components/ui/google-icon"
 import { register, registerBasicInfo } from "./actions"
 import { toast } from "@/components/ui/use-toast"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import dynamic from 'next/dynamic'
+
+// Crear un contexto para compartir el estado de registro
+export const RegistrationContext = createContext({
+  isRegistrationFlow: false,
+  userId: null as number | null,
+  token: null as string | null,
+  onComplete: () => {}
+});
+
+// Importar dinámicamente el componente UploadCVPage para evitar problemas de SSR
+const UploadCVPage = dynamic(() => import('../profile/upload-cv/page'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex justify-center items-center min-h-[600px]">
+      <LoadingSpinner className="h-8 w-8" />
+      <span className="ml-2">Cargando formulario...</span>
+    </div>
+  )
+})
 
 interface RegisterData {
   email: string
@@ -22,7 +43,10 @@ interface RegisterData {
   confirmPassword: string
   firstName: string
   lastName: string
-  isRegistered: boolean // Para saber si ya se registró en el paso 1
+  phone: string
+  career: string
+  cv: File | null
+  isRegistered: boolean
 }
 
 // Función para validar requisitos de contraseña
@@ -51,20 +75,36 @@ function validatePassword(password: string): { isValid: boolean; errors: string[
   };
 }
 
+// Función para convertir un archivo a base64
+const convertFileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = error => reject(error)
+  })
+}
+
 export default function RegisterPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
+  const [cvPreviewUrl, setCvPreviewUrl] = useState<string | null>(null)
   const [formData, setFormData] = useState<RegisterData>({
     email: "",
     password: "",
     confirmPassword: "",
     firstName: "",
     lastName: "",
+    phone: "",
+    career: "",
+    cv: null,
     isRegistered: false
   })
   const [isRegistered, setIsRegistered] = useState(false);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [token, setToken] = useState<string | null>(null);
 
   // Validar contraseña cuando cambia
   useEffect(() => {
@@ -76,10 +116,44 @@ export default function RegisterPage() {
     }
   }, [formData.password]);
 
+  // Limpiar la URL de previsualización al desmontar el componente
+  useEffect(() => {
+    return () => {
+      if (cvPreviewUrl) {
+        URL.revokeObjectURL(cvPreviewUrl);
+      }
+    };
+  }, [cvPreviewUrl]);
+
   // Función para manejar el registro con Google
   const handleGoogleRegister = () => {
     window.location.href = '/auth/google/login'
   }
+
+  // Manejar cambio de archivo CV
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setFormData({ ...formData, cv: file });
+      
+      // Crear URL para previsualización del PDF
+      const fileUrl = URL.createObjectURL(file);
+      setCvPreviewUrl(fileUrl);
+    }
+  }
+
+  // Función para manejar la finalización del registro
+  const handleRegistrationComplete = () => {
+    toast({
+      title: "Registro completado",
+      description: "Tu perfil ha sido actualizado correctamente. Serás redirigido al login.",
+    });
+    
+    // Redirigir al login después de 2 segundos
+    setTimeout(() => {
+      router.push('/login');
+    }, 2000);
+  };
 
   const handleAccountSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,15 +186,20 @@ export default function RegisterPage() {
           description: "Cuenta creada correctamente. Ahora puedes completar tu perfil.",
         });
         
-        // Si recibimos un token, guardarlo en localStorage
+        // Si recibimos un token, guardarlo en localStorage y en el estado
         if (result.token) {
           localStorage.setItem('token', result.token);
+          setToken(result.token);
           console.log("Token guardado en localStorage");
         }
         
         // Si recibimos datos del usuario, guardarlos en localStorage
         if (result.userData) {
           localStorage.setItem('userData', JSON.stringify(result.userData));
+          // Extraer el ID del usuario
+          if (result.userData.id) {
+            setUserId(result.userData.id);
+          }
           console.log("Datos del usuario guardados en localStorage");
         }
         
@@ -150,18 +229,13 @@ export default function RegisterPage() {
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Si ya está registrado en el paso 1, solo redirigir al login
-    if (isRegistered) {
+    // Validar que todos los campos obligatorios estén completos
+    if (!formData.firstName || !formData.lastName) {
       toast({
-        title: "Perfil actualizado",
-        description: "Tu cuenta ha sido creada. Serás redirigido al login.",
+        title: "Error",
+        description: "Por favor, completa al menos tu nombre y apellidos",
+        variant: "destructive",
       });
-      
-      // Redirigir al login después de 2 segundos
-      setTimeout(() => {
-        router.push('/login');
-      }, 2000);
-      
       return;
     }
     
@@ -174,6 +248,16 @@ export default function RegisterPage() {
       formDataToSend.append('password', formData.password);
       formDataToSend.append('firstName', formData.firstName);
       formDataToSend.append('lastName', formData.lastName);
+      
+      // Añadir campos adicionales si están presentes
+      if (formData.phone) formDataToSend.append('phone', formData.phone);
+      if (formData.career) formDataToSend.append('career', formData.career);
+      
+      // Convertir CV a base64 si existe
+      if (formData.cv) {
+        const base64File = await convertFileToBase64(formData.cv);
+        formDataToSend.append('cv', base64File);
+      }
       
       // Llamar a la función de registro completo
       const result = await register(formDataToSend);
@@ -221,9 +305,22 @@ export default function RegisterPage() {
     }
   };
 
+  // Función para volver al paso 1
+  const handleBackToStep1 = () => {
+    setCurrentStep(1);
+  };
+
+  // Valores del contexto de registro
+  const registrationContextValue = {
+    isRegistrationFlow: true,
+    userId,
+    token,
+    onComplete: handleRegistrationComplete
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl">
+      <Card className={cn("w-full", currentStep === 1 ? "max-w-2xl" : "max-w-7xl")}>
         <CardHeader>
           <CardTitle>Registro de Estudiante</CardTitle>
           <CardDescription>Complete el formulario para crear su cuenta de estudiante</CardDescription>
@@ -366,53 +463,26 @@ export default function RegisterPage() {
               </div>
             </>
           ) : (
-            <form onSubmit={handleProfileSubmit} className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">Nombre</Label>
-                  <Input
-                    id="firstName"
-                    name="firstName"
-                    required
-                    value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    disabled={isLoading}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Apellidos</Label>
-                  <Input
-                    id="lastName"
-                    name="lastName"
-                    required
-                    value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-between">
+            <div className="w-full">
+              {/* Botón para volver al paso 1 */}
+              <div className="mb-4">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setCurrentStep(1)}
-                  disabled={isLoading}
+                  onClick={handleBackToStep1}
+                  className="mb-4"
                 >
-                  Atrás
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <LoadingSpinner className="mr-2" />
-                      Finalizando...
-                    </>
-                  ) : (
-                    "Completar Registro"
-                  )}
+                  Volver al paso anterior
                 </Button>
               </div>
-            </form>
+              
+              {/* Renderizar el componente UploadCVPage dentro del contexto */}
+              <RegistrationContext.Provider value={registrationContextValue}>
+                <div className="upload-cv-container">
+                  <UploadCVPage />
+                </div>
+              </RegistrationContext.Provider>
+            </div>
           )}
         </CardContent>
       </Card>
