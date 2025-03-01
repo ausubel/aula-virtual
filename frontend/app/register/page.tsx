@@ -8,40 +8,32 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { FormFeedback } from "@/components/form-feedback"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { cn } from "@/lib/utils"
 import { Check } from "lucide-react"
 import { GoogleIcon } from "@/components/ui/google-icon"
-import Cookies from "js-cookie"
+import { register } from "./actions"
+import { toast } from "@/components/ui/use-toast"
 
 interface RegisterData {
   email: string
   password: string
+  confirmPassword: string
   firstName: string
   lastName: string
-  phone: string
-  career: string
-  cv: File | null
 }
 
 export default function RegisterPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
-  const [feedback, setFeedback] = useState<{
-    status: "success" | "error" | "warning"
-    message: string
-  } | null>(null)
   const [formData, setFormData] = useState<RegisterData>({
     email: "",
     password: "",
+    confirmPassword: "",
     firstName: "",
     lastName: "",
-    phone: "",
-    career: "",
-    cv: null,
   })
 
   // Función para manejar el registro con Google
@@ -51,50 +43,57 @@ export default function RegisterPage() {
 
   async function handleAccountSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setIsLoading(true)
-    setFeedback(null)
+    
+    // Validar que las contraseñas coincidan
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Las contraseñas no coinciden",
+        variant: "destructive",
+      })
+      return
+    }
 
-    // Simulamos la validación del email
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-
-    setIsLoading(false)
     setCurrentStep(2)
-    setFeedback({
-      status: "success",
-      message: "Cuenta creada exitosamente. Por favor, complete sus datos personales.",
-    })
   }
 
   async function handleProfileSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsLoading(true)
-    setFeedback(null)
 
     try {
-      // Aquí se realizaría la llamada al API para registrar al usuario
-      // Simulamos el envío del formulario completo
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // Crear FormData con todos los campos
+      const data = new FormData()
+      data.append('email', formData.email)
+      data.append('password', formData.password)
+      data.append('firstName', formData.firstName)
+      data.append('lastName', formData.lastName)
 
-      // Simulamos una respuesta exitosa con un token de autenticación
-      const mockToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicm9sZUlkIjoxLCJoYXNVcGxvYWRlZENWIjpmYWxzZSwiaWF0IjoxNjE0NjE2MjIyfQ.mock_signature"
-      
-      // Establecer el token en las cookies
-      Cookies.set('auth_token', mockToken, { expires: 7 }) // Expira en 7 días
-      
-      setFeedback({
-        status: "success",
-        message: "Registro completado exitosamente. Redirigiendo...",
-      })
-      
-      // Redirigir a la página de subida de CV después de 2 segundos
-      setTimeout(() => {
-        router.push('/profile/upload-cv')
-      }, 2000)
+      const result = await register(data)
+
+      if (result.success) {
+        toast({
+          title: "Registro exitoso",
+          description: "Tu cuenta ha sido creada. Serás redirigido al login.",
+        })
+        
+        // Redirigir al login después de 2 segundos
+        setTimeout(() => {
+          router.push('/login')
+        }, 2000)
+      } else {
+        toast({
+          title: "Error",
+          description: result.message,
+          variant: "destructive",
+        })
+      }
     } catch (error) {
       console.error('Error durante el registro:', error)
-      setFeedback({
-        status: "error",
-        message: "Ocurrió un error durante el registro. Por favor, intente nuevamente."
+      toast({
+        title: "Error",
+        description: "Ocurrió un error durante el registro. Por favor, intente nuevamente.",
+        variant: "destructive",
       })
     } finally {
       setIsLoading(false)
@@ -105,8 +104,8 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader>
-          <CardTitle>Registro de Participante</CardTitle>
-          <CardDescription>Complete el formulario para inscribirse en el programa de entrenamiento</CardDescription>
+          <CardTitle>Registro de Estudiante</CardTitle>
+          <CardDescription>Complete el formulario para crear su cuenta de estudiante</CardDescription>
         </CardHeader>
         <CardContent>
           {/* Stepper */}
@@ -167,18 +166,24 @@ export default function RegisterPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
-                    <Input id="confirmPassword" name="confirmPassword" type="password" required disabled={isLoading} />
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      required
+                      value={formData.confirmPassword}
+                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      disabled={isLoading}
+                    />
                   </div>
                 </div>
-
-                {feedback && <FormFeedback status={feedback.status} message={feedback.message} />}
 
                 <div className="flex justify-end">
                   <Button type="submit" disabled={isLoading}>
                     {isLoading ? (
                       <>
                         <LoadingSpinner className="mr-2" />
-                        Creando cuenta...
+                        Validando...
                       </>
                     ) : (
                       "Continuar"
@@ -244,52 +249,22 @@ export default function RegisterPage() {
                     disabled={isLoading}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Teléfono</Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    required
-                    pattern="[0-9]{9}"
-                    title="Ingrese un número de teléfono válido de 9 dígitos"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    disabled={isLoading}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="career">Carrera</Label>
-                  <Select
-                    name="career"
-                    value={formData.career}
-                    onValueChange={(value) => setFormData({ ...formData, career: value })}
-                    disabled={isLoading}
-                  >
-                    <SelectTrigger aria-label="Selecciona tu carrera">
-                      <SelectValue placeholder="Selecciona tu carrera" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="engineering">Ingeniería</SelectItem>
-                      <SelectItem value="business">Administración</SelectItem>
-                      <SelectItem value="it">Tecnologías de la Información</SelectItem>
-                      <SelectItem value="other">Otra</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
 
-              {feedback && <FormFeedback status={feedback.status} message={feedback.message} />}
-
-              <div className="flex justify-end space-x-4">
-                <Button variant="outline" type="button" onClick={() => setCurrentStep(1)} disabled={isLoading}>
+              <div className="flex justify-between">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setCurrentStep(1)}
+                  disabled={isLoading}
+                >
                   Atrás
                 </Button>
                 <Button type="submit" disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <LoadingSpinner className="mr-2" />
-                      Completando registro...
+                      Registrando...
                     </>
                   ) : (
                     "Completar Registro"
