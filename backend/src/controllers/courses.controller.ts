@@ -32,17 +32,8 @@ export default class CoursesController implements ControllerBase {
 
     private async createCourse(req: Request, res: Response) {
         try {
-            console.log('Recibiendo solicitud createCourse:', {
-                body: req.body,
-                headers: req.headers
-            });
-            
             const { name, description, hours, teacherId } = req.body;
-            console.log('Datos extraídos:', { name, description, hours, teacherId });
-            
             const result = await this.db.query(StoredProcedures.CreateCourse, [name, description, hours, teacherId]);
-            console.log('Resultado de la creación:', result);
-            
             res.json(result);
         } catch (error) {
             console.error('Error en createCourse:', error);
