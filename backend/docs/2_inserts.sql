@@ -49,11 +49,11 @@ VALUES ('Desarrollo Web Full Stack', 'Curso completo de desarrollo web', 120, 2,
     ('Desarrollo Web Backend', 'Curso completo de desarrollo web backend', 120, 4, '2024-01-01'),
     ('Desarrollo Web Full Stack Avanzado', 'Curso completo de desarrollo web full stack avanzado', 120, 2, '2024-01-01');
 
-INSERT INTO student_course (id, student_id, course_id)
-VALUES ('e320b21f-7357-4f87-967e-11b806e53584', 5, 1),
-    ('e320b21f-7357-4f87-967e-11b806e53587', 6, 1),
-    ('e320b21f-7357-4f87-967e-11b806e53585', 5, 2),
-    ('e320b21f-7357-4f87-967e-11b806e53588', 6, 2);
+INSERT INTO student_course (student_id, course_id)
+VALUES (5, 1),
+    (6, 1),
+    (5, 2),
+    (6, 2);
 
 INSERT INTO lesson (course_id,title,description,time,order_)
 VALUES (1,'Introducción','Curso introductorio de desarrollo web',120,1),

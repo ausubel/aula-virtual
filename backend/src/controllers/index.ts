@@ -4,6 +4,8 @@ import AuthController from "./auth.controler";
 import RegisterController from "./register.controler";
 import EmailController from "./email.controller";
 import DocumentController from "./document.controller";
+import CoursesController from "./courses.controller";
+import TeachersController from "./teachers.controller";
 
 export default class ControllerInitializer {
     private app: Application;
@@ -15,7 +17,9 @@ export default class ControllerInitializer {
             new AuthController(),
             new RegisterController(),
             new EmailController(),
-            new DocumentController()
+            new DocumentController(),
+            new CoursesController(),
+            new TeachersController()
         ];
     }
 

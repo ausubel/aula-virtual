@@ -1,5 +1,5 @@
 import type React from "react"
-import { NavBar } from "@/components/nav-bar"
+import { StudentNavBar } from "@/components/nav-bar/student-nav"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 
 export default function StudentLayout({
@@ -10,8 +10,8 @@ export default function StudentLayout({
   return (
     <ProtectedRoute requiredRoles={[2]}> {/* Asumiendo que el rol 2 es estudiante */}
       <div className="min-h-screen flex flex-col">
-        <NavBar />
-        <main className="flex-1 container mx-auto px-4 py-6">
+        <StudentNavBar />
+        <main className="flex-1">
           {children}
         </main>
       </div>

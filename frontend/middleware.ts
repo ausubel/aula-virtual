@@ -1,96 +1,109 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { jwtDecode } from 'jwt-decode'
+
+interface DecodedToken {
+  id: number;
+  email: string;
+  roleId: number;
+}
 
 export function middleware(request: NextRequest) {
-  // Obtener el token del localStorage no es posible en el middleware
-  // porque se ejecuta en el servidor, así que verificamos la cookie
-  const token = request.cookies.get('auth_token')
-  
-  // Verificar si hay un token en la URL (para el caso de redirección después de autenticación)
+  const token = request.cookies.get('auth_token')?.value
   const url = request.nextUrl.clone()
-  const tokenInUrl = url.searchParams.get('token')
-  
-  // Si hay un token en la URL, permitir el acceso sin verificar la cookie
-  if (tokenInUrl && (url.pathname.startsWith('/profile') || url.pathname.startsWith('/debug'))) {
+
+  // Si no hay token y la ruta es protegida, redirigir al login
+  if (!token) {
+    if (isProtectedRoute(url.pathname)) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
     return NextResponse.next()
   }
 
-  // Lista de rutas protegidas
-  const protectedRoutes = ['/dashboard', '/profile', '/student']
+  try {
+    // Decodificar el token para obtener el rol
+    const decoded = jwtDecode<DecodedToken>(token)
+    const isAdmin = decoded.roleId === 1
+    const isTeacher = decoded.roleId === 3
+    const isStudent = decoded.roleId === 2
 
-  // Verificar si la ruta actual está protegida
-  const isProtectedRoute = protectedRoutes.some(route => 
-    request.nextUrl.pathname.startsWith(route)
-  )
+    // Rutas administrativas
+    if (url.pathname.startsWith('/admin')) {
+      if (!isAdmin) {
+        // Si no es admin, redirigir a su dashboard correspondiente
+        if (isStudent) {
+          return NextResponse.redirect(new URL('/student', request.url))
+        } else if (isTeacher) {
+          return NextResponse.redirect(new URL('/teacher', request.url))
+        }
+      }
+      return NextResponse.next()
+    }
 
-  // Si es una ruta protegida y no hay token, redirigir al login
-  if (isProtectedRoute && !token) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
+    // Rutas de estudiante
+    if (url.pathname.startsWith('/student')) {
+      if (!isStudent) {
+        // Si no es estudiante, redirigir a su dashboard correspondiente
+        if (isAdmin) {
+          return NextResponse.redirect(new URL('/admin', request.url))
+        } else if (isTeacher) {
+          return NextResponse.redirect(new URL('/teacher', request.url))
+        }
+      }
+      return NextResponse.next()
+    }
 
-  // Verificar si es una ruta de cierre de sesión
-  const isLogoutRoute = ['/logout', '/force-logout', '/debug-logout', '/test-logout', '/cookie-logout'].some(route => 
-    request.nextUrl.pathname === route
-  )
+    // Rutas de profesor
+    if (url.pathname.startsWith('/teacher')) {
+      if (!isTeacher) {
+        // Si no es profesor, redirigir a su dashboard correspondiente
+        if (isAdmin) {
+          return NextResponse.redirect(new URL('/admin', request.url))
+        } else if (isStudent) {
+          return NextResponse.redirect(new URL('/student', request.url))
+        }
+      }
+      return NextResponse.next()
+    }
 
-  // Si es una ruta de cierre de sesión, permitir el acceso sin redirigir
-  if (isLogoutRoute) {
-    return NextResponse.next()
-  }
-
-  // Verificar si es la página de subida de CV
-  const isUploadCVPage = request.nextUrl.pathname === '/profile/upload-cv'
-  
-  // Permitir acceso a la página de subida de CV si hay token
-  if (isUploadCVPage && token) {
-    return NextResponse.next()
-  }
-
-  // Verificar si el usuario está intentando acceder a la página de estudiante
-  if (token && request.nextUrl.pathname.startsWith('/student')) {
-    // Obtener el valor de la cookie que indica si el usuario ha subido su CV
-    const hasUploadedCV = request.cookies.get('has_uploaded_cv')
-    
-    // Si el usuario no ha subido su CV, redirigir a la página de subida
-    // Pero solo si no viene de la página de subida de CV para evitar bucles
-    if (!hasUploadedCV || hasUploadedCV.value !== 'true') {
-      const referer = request.headers.get('referer') || ''
-      const isFromUploadCV = referer.includes('/profile/upload-cv')
-      
-      if (!isFromUploadCV) {
-        console.log('Usuario sin CV, redirigiendo a página de subida')
-        return NextResponse.redirect(new URL('/profile/upload-cv', request.url))
+    // Redirigir desde la raíz o login según el rol
+    if (url.pathname === '/' || url.pathname === '/login') {
+      if (isAdmin) {
+        return NextResponse.redirect(new URL('/admin', request.url))
+      } else if (isTeacher) {
+        return NextResponse.redirect(new URL('/teacher', request.url))
+      } else if (isStudent) {
+        return NextResponse.redirect(new URL('/student', request.url))
       }
     }
-  }
 
-  // Si hay un token y el usuario intenta acceder al login, redirigir al dashboard de estudiante
-  // Pero NO redirigir si viene de una página de logout
-  if (token && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/')) {
-    const referer = request.headers.get('referer') || ''
-    const isFromLogout = ['/logout', '/force-logout', '/debug-logout', '/test-logout', '/cookie-logout'].some(route => 
-      referer.includes(route)
-    )
-    
-    if (!isFromLogout) {
-      return NextResponse.redirect(new URL('/student', request.url))
-    }
+    return NextResponse.next()
+  } catch (error) {
+    // Si hay un error al decodificar el token, redirigir al login
+    console.error('Error decodificando token:', error)
+    return NextResponse.redirect(new URL('/login', request.url))
   }
+}
 
-  return NextResponse.next()
+function isProtectedRoute(pathname: string): boolean {
+  const protectedRoutes = [
+    '/admin',
+    '/student',
+    '/teacher',
+    '/profile',
+    '/dashboard'
+  ]
+  return protectedRoutes.some(route => pathname.startsWith(route))
 }
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/profile/:path*',
+    '/',
+    '/admin/:path*',
     '/student/:path*',
-    '/login',
-    '/logout',
-    '/force-logout',
-    '/debug-logout',
-    '/test-logout',
-    '/cookie-logout',
-    '/debug'
+    '/teacher/:path*',
+    '/profile/:path*',
+    '/dashboard/:path*',
+    '/login'
   ]
 }
