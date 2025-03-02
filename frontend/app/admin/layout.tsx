@@ -1,5 +1,5 @@
 import type React from "react"
-import { NavBar } from "@/components/nav-bar"
+import { AdminNavBar } from "@/components/nav-bar/admin-nav"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 
 export default function AdminLayout({
@@ -10,8 +10,10 @@ export default function AdminLayout({
   return (
     <ProtectedRoute requiredRoles={[1]}> {/* Asumiendo que el rol 1 es admin */}
       <div className="min-h-screen flex flex-col">
-        <NavBar />
-        {children}
+        <AdminNavBar />
+        <main className="flex-1">
+          {children}
+        </main>
       </div>
     </ProtectedRoute>
   )

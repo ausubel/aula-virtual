@@ -1,32 +1,37 @@
-export enum StoredProcedures {
-  //#region Certificates
-  GetAllCertificatesByStudentId = "CALL get_all_certificates_by_student_id(?)",
-  GetCertificateByCourseId = "CALL get_certificate_by_course_id(?)",
-  //#endregion
-
-  //#region Auth & User
-  RegisterStudent = "CALL register_student(?, ?, ?, ?)",
-  GetPasswordByEmail = "CALL get_password_by_email(?)",
-  GetUserDataById = "CALL get_user_data_by_id(?)",
-  UploadCV = "CALL upload_cv(?, ?)",
-  GetOrCreateGoogleUser = 'CALL get_or_create_google_user(?, ?, ?)',
-  //#endregion
-
-  //#region Courses
-  CreateCourse = "CALL create_course(?, ?, ?, ?)",
-  GetAllCourses = "CALL get_all_courses()",
-  GetCourseById = "CALL get_course_by_id(?)",
-  AssignStudentsToCourse = "CALL assign_students_list_to_course(?, ?)",
-  GetStudentsByCourseId = "CALL get_students_by_course_id(?)",
-  CreateLessonForCourse = "CALL create_lesson_for_course(?, ?, ?, ?)",
-  GetLessonsByCourseId = "CALL get_lessons_by_course_id(?)",
-  CreateLessonVideo = "CALL create_lesson_video_by_lesson_id(?, ?)",
-  GetCourseDetailsById = "CALL get_course_details_by_id(?)",
-  UpdateLesson = "CALL update_lesson(?, ?, ?, ?)",
-  DeleteLesson = "CALL delete_lesson(?)",
-  DeleteVideo = "CALL delete_video(?)",
-  GetAllStudents = "CALL get_all_students()",
-  //#endregion
-}
+export const StoredProcedures = {
+    // Auth procedures
+    GetPasswordByEmail: 'CALL get_password_by_email(?)',
+    GetUserDataById: 'CALL get_user_data_by_id(?)',
+    GetOrCreateGoogleUser: 'CALL get_or_create_google_user(?, ?, ?)',
+    RegisterStudent: 'CALL register_student(?, ?, ?, ?)',
+    
+    // Course procedures
+    CreateCourse: 'CALL create_course(?, ?, ?, ?)',
+    GetAllCourses: 'CALL get_all_courses()',
+    GetCourseDetailsById: 'CALL get_course_details_by_id(?)',
+    GetCoursesByStudentId: 'CALL get_courses_by_student_id(?)',
+    GetStudentsByCourseId: 'CALL get_students_by_course_id(?)',
+    AssignStudentsToCourse: 'CALL assign_students_list_to_course(?, ?)',
+    GetAllStudents: 'CALL get_all_students()',
+    update_course: 'CALL update_course(?, ?, ?, ?, ?)',
+    RemoveStudentFromCourse: 'CALL remove_student_from_course(?, ?)',
+    
+    // Lesson procedures
+    GetLessonsByCourseId: 'CALL get_lessons_by_course_id(?)',
+    CreateLessonForCourse: 'CALL create_lesson_for_course(?, ?, ?, ?)',
+    UpdateLesson: 'CALL update_lesson(?, ?, ?, ?)',
+    DeleteLesson: 'CALL delete_lesson(?)',
+    CreateLessonVideo: 'CALL create_lesson_video_by_lesson_id(?, ?)',
+    DeleteVideo: 'CALL delete_video(?)',
+    
+    // Document procedures
+    UploadCV: 'CALL upload_cv(?, ?)',
+    GetAllCertificatesByStudentId: 'CALL get_all_certificates_by_student_id(?)',
+    GetCertificateByCourseId: 'CALL get_certificate_by_course_id(?)',
+    
+    // Teacher procedures
+    GetAllTeachers: 'CALL get_all_teachers()',
+    EnsureDefaultTeacher: 'CALL ensure_default_teacher()'
+};
 
 export default StoredProcedures;

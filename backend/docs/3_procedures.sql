@@ -198,21 +198,16 @@ END //
 
 DROP PROCEDURE IF EXISTS get_all_students//
 
-/* Prueba
-CALL get_all_students();
-*/
-
 CREATE PROCEDURE get_all_students()
 BEGIN
     SELECT 
         u.id,
-        u.email,
         u.name,
-        u.surname
+        u.email,
+        0 as progress
     FROM user u
-    INNER JOIN student s ON u.id = s.id
-    WHERE u.id_role = 2 and u.active = 1;
-END //
+    WHERE u.id_role = 2; -- Asumiendo que el id_role 2 corresponde a estudiantes
+END//
 
 DROP PROCEDURE IF EXISTS create_course//
 
@@ -349,21 +344,22 @@ BEGIN
     WHERE c.id = p_course_id;
 END //
 
+-- Procedimiento para obtener los estudiantes de un curso
 DROP PROCEDURE IF EXISTS get_students_by_course_id//
-
-/* Prueba
-CALL get_students_by_course_id(1);
-*/
 
 CREATE PROCEDURE get_students_by_course_id(
     IN p_course_id INT
 )
 BEGIN
     SELECT 
-        sc.student_id
-    FROM student_course sc
-    WHERE sc.course_id = p_course_id;
-END //
+        u.id,
+        u.name,
+        u.email,
+        0 as progress
+    FROM user u
+    INNER JOIN student_course cs ON u.id = cs.student_id
+    WHERE cs.course_id = p_course_id;
+END//
 
 DROP PROCEDURE IF EXISTS get_courses_by_student_id//
 
@@ -425,19 +421,31 @@ DROP PROCEDURE IF EXISTS get_lessons_by_course_id//
 CALL get_lessons_by_course_id(7);
 */
 
-CREATE PROCEDURE get_lessons_by_course_id(
-    IN p_course_id INT
-)
+CREATE PROCEDURE get_lessons_by_course_id(IN p_course_id INT)
 BEGIN
     SELECT 
         l.id,
         l.title,
         l.description,
-        l.time
+        l.time,
+        COALESCE(
+            JSON_ARRAYAGG(
+                IF(v.id IS NOT NULL,
+                    JSON_OBJECT(
+                        'id', v.id,
+                        'videoPath', v.video_path
+                    ),
+                    NULL
+                )
+            ),
+            JSON_ARRAY()
+        ) as videos
     FROM lesson l
+    LEFT JOIN lesson_video v ON l.id = v.lesson_id
     WHERE l.course_id = p_course_id
-    ORDER BY l.order_ ASC;
-END //
+    GROUP BY l.id, l.title, l.description, l.time
+    ORDER BY l.id ASC;
+END//
 
 DROP PROCEDURE IF EXISTS create_lesson_video_by_lesson_id//
 
@@ -448,118 +456,41 @@ SELECT * FROM lesson_video;
 
 CREATE PROCEDURE create_lesson_video_by_lesson_id(
     IN p_lesson_id INT,
-    IN p_video_path LONGTEXT
+    IN p_video_path VARCHAR(255)
 )
 BEGIN
+    -- Insertamos el nuevo video
     INSERT INTO lesson_video (lesson_id, video_path)
     VALUES (p_lesson_id, p_video_path);
     
-    SELECT 'SUCCESS' as message;
-END //
+    -- Obtenemos el ID del video insertado
+    SET @video_id = LAST_INSERT_ID();
+    
+    -- Devolvemos los datos del video
+    SELECT 
+        id,
+        video_path as videoPath,
+        lesson_id as lessonId
+    FROM lesson_video
+    WHERE id = @video_id;
+END//
 
 DROP PROCEDURE IF EXISTS get_course_details_by_id//
 
-/* Prueba
-SET @result = NULL;
-CALL get_course_details_by_id(7, @result);
-SELECT @result;
-*/
-
-CREATE PROCEDURE get_course_details_by_id(
-    IN p_course_id INT,
-    OUT p_result JSON
-)
-BEGIN 
-    DECLARE course_json JSON;
-    DECLARE lessons_json JSON;
-    DECLARE videos_json JSON;
-    
-    DROP TABLE IF EXISTS temp_course;
-    DROP TABLE IF EXISTS temp_lessons;
-    DROP TABLE IF EXISTS temp_videos;
-    -- Crear tabla temporal para el curso y profesor
-    CREATE TEMPORARY TABLE temp_course AS
+CREATE PROCEDURE get_course_details_by_id(IN p_course_id INT)
+BEGIN
     SELECT 
         c.id,
         c.name,
         c.description,
         c.hours,
-        u.id AS teacher_id,
-        u.name AS teacher_name,
-        u.surname AS teacher_surname
+        c.teacher_id,
+        CONCAT(u.name, ' ', u.surname) as teacher_name,
+        (SELECT COUNT(*) FROM student_course sc WHERE sc.course_id = c.id) as student_count
     FROM course c
-    INNER JOIN user u ON c.teacher_id = u.id
+    LEFT JOIN user u ON c.teacher_id = u.id
     WHERE c.id = p_course_id;
-    
-    -- Crear tabla temporal para las lecciones
-    CREATE TEMPORARY TABLE temp_lessons AS
-    SELECT 
-        l.id,
-        l.title,
-        l.description,
-        l.time,
-        l.order_
-    FROM lesson l
-    WHERE l.course_id = p_course_id
-    ORDER BY l.order_ ASC;
-    
-    -- Crear tabla temporal para los videos
-    CREATE TEMPORARY TABLE temp_videos AS
-    SELECT 
-        lv.id,
-        lv.lesson_id,
-        lv.video_path
-    FROM lesson_video lv
-    INNER JOIN lesson l ON lv.lesson_id = l.id
-    WHERE l.course_id = p_course_id;
-    
-    -- Convertir curso a JSON
-    SELECT JSON_OBJECT(
-        'id', id,
-        'name', name,
-        'description', description,
-        'hours', hours,
-        'teacher', JSON_OBJECT(
-            'id', teacher_id,
-            'name', teacher_name,
-            'surname', teacher_surname
-        )
-    ) INTO course_json
-    FROM temp_course;
-    
-    -- Convertir lecciones a JSON array
-    SELECT COALESCE(JSON_ARRAYAGG(
-        JSON_OBJECT(
-            'id', l.id,
-            'title', l.title,
-            'description', l.description,
-            'time', l.time,
-            'order', l.order_,
-            'videos', (
-                SELECT COALESCE(JSON_ARRAYAGG(
-                    JSON_OBJECT(
-                        'id', v.id,
-                        'video_path', v.video_path
-                    )
-                ), JSON_ARRAY())
-                FROM temp_videos v
-                WHERE v.lesson_id = l.id
-            )
-        )
-    ), JSON_ARRAY()) INTO lessons_json
-    FROM temp_lessons l;
-    
-    -- Combinar todo en un único JSON
-    SET p_result = JSON_OBJECT(
-        'course', course_json,
-        'lessons', lessons_json
-    );
-    
-    -- Limpiar tablas temporales
-    DROP TEMPORARY TABLE IF EXISTS temp_course;
-    DROP TEMPORARY TABLE IF EXISTS temp_lessons;
-    DROP TEMPORARY TABLE IF EXISTS temp_videos;
-END //
+END//
 
 DROP PROCEDURE IF EXISTS update_lesson_student_finish//
 
@@ -649,32 +580,47 @@ BEGIN
         c.name,
         c.description,
         c.hours,
-        c.teacher_id as teacherId,
-        CONCAT(u.name, ' ', u.surname) as teacherName,
-        (SELECT COUNT(*) FROM student_course sc WHERE sc.course_id = c.id) as studentCount
+        c.teacher_id,
+        CONCAT(u.name, ' ', u.surname) as teacher_name,
+        (SELECT COUNT(*) FROM student_course sc WHERE sc.course_id = c.id) as student_count
     FROM course c
     LEFT JOIN user u ON c.teacher_id = u.id
-    ORDER BY c.creation_datetime DESC;
+    ORDER BY c.id DESC;
 END //
 
 DROP PROCEDURE IF EXISTS update_lesson//
 
 CREATE PROCEDURE update_lesson(
     IN p_lesson_id INT,
-    IN p_title VARCHAR(255),
+    IN p_title VARCHAR(100),
     IN p_description TEXT,
     IN p_time INT
 )
 BEGIN
-    UPDATE lesson 
+    UPDATE lesson
     SET 
         title = p_title,
         description = p_description,
         time = p_time
     WHERE id = p_lesson_id;
     
-    SELECT 'SUCCESS' as message;
-END //
+    -- Devolver la lección actualizada
+    SELECT 
+        l.id,
+        l.title,
+        l.description,
+        l.time,
+        JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'id', v.id,
+                'video_path', v.video_path
+            )
+        ) as videos
+    FROM lesson l
+    LEFT JOIN lesson_video v ON l.id = v.lesson_id
+    WHERE l.id = p_lesson_id
+    GROUP BY l.id, l.title, l.description, l.time;
+END//
 
 DROP PROCEDURE IF EXISTS delete_lesson//
 
@@ -698,6 +644,243 @@ CREATE PROCEDURE delete_video(
     IN p_video_id INT
 )
 BEGIN
-    DELETE FROM lesson_video WHERE id = p_video_id;
-    SELECT 'SUCCESS' as message;
+    -- Verificar si el video existe
+    DECLARE v_exists INT;
+    SELECT COUNT(*) INTO v_exists FROM lesson_video WHERE id = p_video_id;
+    
+    IF v_exists > 0 THEN
+        -- Eliminar el video
+        DELETE FROM lesson_video WHERE id = p_video_id;
+        SELECT 'SUCCESS' as message, p_video_id as id;
+    ELSE
+        SELECT 'NOT_FOUND' as message, p_video_id as id;
+    END IF;
 END //
+
+DROP PROCEDURE IF EXISTS ensure_default_teacher//
+
+CREATE PROCEDURE ensure_default_teacher()
+BEGIN
+    DECLARE v_teacher_id INT;
+    
+    -- Verificar si ya existe un profesor
+    SELECT id INTO v_teacher_id FROM teacher LIMIT 1;
+    
+    -- Si no existe ningún profesor, crear uno por defecto
+    IF v_teacher_id IS NULL THEN
+        -- Primero crear el usuario
+        INSERT INTO user (
+            name,
+            surname,
+            email,
+            username,
+            userpass,
+            active,
+            creation_datetime,
+            id_role
+        ) VALUES (
+            'Profesor',
+            'Por Defecto',
+            'profesor@default.com',
+            'profesor.default',
+            '$2b$10$ZQh5hVxYWJtO5ZuKxvUrruYXNL2V9YvzqeuZW4QJxwxLjr1VOO.Hy', -- contraseña: 123456
+            1,
+            NOW(),
+            3 -- rol de profesor
+        );
+        
+        -- Obtener el ID del usuario creado
+        SET v_teacher_id = LAST_INSERT_ID();
+        
+        -- Crear el registro en la tabla teacher
+        INSERT INTO teacher (id, id_role, degree, profile)
+        VALUES (v_teacher_id, 3, 'Profesor', 'Profesor por defecto del sistema');
+    END IF;
+    
+    -- Devolver el ID del profesor
+    SELECT v_teacher_id as teacher_id;
+END//
+
+DROP PROCEDURE IF EXISTS update_course//
+
+CREATE PROCEDURE update_course(
+    IN p_course_id INT,
+    IN p_name VARCHAR(100),
+    IN p_description TEXT,
+    IN p_hours INT,
+    IN p_teacher_id INT
+)
+BEGIN
+    UPDATE course
+    SET 
+        name = p_name,
+        description = p_description,
+        hours = p_hours,
+        teacher_id = p_teacher_id
+    WHERE id = p_course_id;
+    
+    -- Devolver los datos actualizados
+    SELECT 
+        c.id,
+        c.name,
+        c.description,
+        c.hours,
+        c.teacher_id,
+        CONCAT(u.name, ' ', u.surname) as teacher_name,
+        (SELECT COUNT(*) FROM student_course sc WHERE sc.course_id = c.id) as student_count
+    FROM course c
+    LEFT JOIN user u ON c.teacher_id = u.id
+    WHERE c.id = p_course_id;
+END//
+
+DROP PROCEDURE IF EXISTS remove_student_from_course//
+
+/* Prueba
+CALL remove_student_from_course(1, 2);
+*/
+
+CREATE PROCEDURE remove_student_from_course(
+    IN p_course_id INT,
+    IN p_student_id INT
+)
+BEGIN
+    DECLARE v_course_exists INT;
+    DECLARE v_student_in_course INT;
+    
+    -- Verificar que el curso existe
+    SELECT COUNT(1) INTO v_course_exists FROM course WHERE id = p_course_id;
+    
+    -- Verificar que el estudiante está en el curso
+    SELECT COUNT(1) INTO v_student_in_course 
+    FROM student_course 
+    WHERE course_id = p_course_id AND student_id = p_student_id;
+    
+    IF v_course_exists = 0 THEN
+        SELECT 'COURSE_NOT_FOUND' as message;
+    ELSEIF v_student_in_course = 0 THEN
+        SELECT 'STUDENT_NOT_IN_COURSE' as message;
+    ELSE
+        -- Eliminar las asignaciones de lecciones
+        DELETE FROM lesson_student 
+        WHERE student_id = p_student_id 
+        AND lesson_id IN (SELECT id FROM lesson WHERE course_id = p_course_id);
+        
+        -- Eliminar la asignación del curso
+        DELETE FROM student_course 
+        WHERE course_id = p_course_id AND student_id = p_student_id;
+        
+        SELECT 'SUCCESS' as message, p_student_id as student_id;
+    END IF;
+END//
+
+DROP PROCEDURE IF EXISTS assign_students_list_to_course//
+
+CREATE PROCEDURE assign_students_list_to_course(
+    IN p_course_id INT,
+    IN p_student_list_ids JSON
+)
+BEGIN
+    -- Declarar variables
+    DECLARE v_course_exists INT;
+    DECLARE v_valid_students INT;
+    
+    -- Verificar que el curso existe
+    SELECT COUNT(1) INTO v_course_exists FROM course WHERE id = p_course_id;
+    
+    -- Convertir la lista JSON en una tabla temporal
+    DROP TEMPORARY TABLE IF EXISTS student_ids;
+    CREATE TEMPORARY TABLE student_ids AS
+    SELECT t.id 
+    FROM JSON_TABLE(
+        p_student_list_ids, 
+        '$[*]' COLUMNS(id INT PATH '$')
+    ) t;
+    
+    IF v_course_exists = 0 THEN
+        SELECT 'COURSE_NOT_FOUND' as message;
+    ELSE
+        -- Crear tabla temporal con solo los estudiantes que existen y que no están en el curso
+        DROP TEMPORARY TABLE IF EXISTS valid_student_ids;
+        CREATE TEMPORARY TABLE valid_student_ids AS
+        SELECT s.id
+        FROM student_ids s
+        INNER JOIN user u ON s.id = u.id
+        WHERE u.id_role = 2
+        AND s.id NOT IN (SELECT student_id FROM student_course WHERE course_id = p_course_id);
+        
+        -- Verificar si hay estudiantes válidos
+        SELECT COUNT(1) INTO v_valid_students FROM valid_student_ids;
+        
+        IF v_valid_students = 0 THEN
+            SELECT 'NO_VALID_STUDENTS' as message;
+        ELSE
+            -- Asignar los estudiantes válidos al curso
+            INSERT INTO student_course (course_id, student_id) 
+            SELECT p_course_id, id FROM valid_student_ids;
+            
+            SELECT 'SUCCESS' as message, v_valid_students as count;
+        END IF;
+    END IF;
+END//
+
+-- Procedimiento para asignar estudiantes a un curso
+DROP PROCEDURE IF EXISTS assign_students_list_to_course//
+
+CREATE PROCEDURE assign_students_list_to_course(
+    IN p_course_id INT,
+    IN p_student_list_ids JSON
+)
+BEGIN
+    -- Declarar variables
+    DECLARE v_course_exists INT;
+    DECLARE v_valid_students INT;
+    
+    -- Verificar que el curso existe
+    SELECT COUNT(1) INTO v_course_exists FROM course WHERE id = p_course_id;
+    
+    -- Convertir la lista JSON en una tabla temporal
+    DROP TEMPORARY TABLE IF EXISTS student_ids;
+    CREATE TEMPORARY TABLE student_ids (
+        student_id INT
+    );
+    
+    -- Insertar los IDs de estudiantes desde el JSON a la tabla temporal
+    INSERT INTO student_ids (student_id)
+    SELECT t.id 
+    FROM JSON_TABLE(
+        p_student_list_ids, 
+        '$[*]' COLUMNS(id INT PATH '$')
+    ) t;
+    
+    IF v_course_exists = 0 THEN
+        SELECT 'COURSE_NOT_FOUND' as message;
+    ELSE
+        -- Crear tabla temporal con solo los estudiantes que existen y que no están en el curso
+        DROP TEMPORARY TABLE IF EXISTS valid_student_ids;
+        CREATE TEMPORARY TABLE valid_student_ids (
+            student_id INT
+        );
+        
+        INSERT INTO valid_student_ids (student_id)
+        SELECT s.student_id
+        FROM student_ids s
+        INNER JOIN user u ON s.student_id = u.id
+        WHERE u.id_role = 2 -- Asumiendo que el id_role 2 corresponde a estudiantes
+        AND s.student_id NOT IN (SELECT student_id FROM student_course WHERE course_id = p_course_id);
+        
+        -- Verificar si hay estudiantes válidos
+        SELECT COUNT(1) INTO v_valid_students FROM valid_student_ids;
+        
+        IF v_valid_students = 0 THEN
+            SELECT 'NO_VALID_STUDENTS' as message;
+        ELSE
+            -- Asignar los estudiantes válidos al curso
+            -- No especificamos la columna uuid, se generará automáticamente
+            INSERT INTO student_course (course_id, student_id) 
+            SELECT p_course_id, student_id FROM valid_student_ids;
+            
+            SELECT 'SUCCESS' as message, v_valid_students as count;
+        END IF;
+    END IF;
+END//
+DELIMITER ;

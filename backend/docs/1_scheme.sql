@@ -58,15 +58,15 @@ CREATE TABLE course (
 );
 
 CREATE TABLE student_course (
-    id VARCHAR(36) PRIMARY KEY,
+    uuid VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
     student_id INT,
     course_id INT,
     finished BIT NOT NULL DEFAULT 0,
     has_certificate BIT NOT NULL DEFAULT 0,
     creation_datetime DATETIME DEFAULT NOW(),
     finished_datetime DATETIME DEFAULT NULL,
-    FOREIGN KEY (student_id) REFERENCES student(id),
-    FOREIGN KEY (course_id) REFERENCES course(id)
+    FOREIGN KEY (student_id) REFERENCES student(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES course(id) ON DELETE CASCADE
 );
 
 CREATE TABLE lesson (
