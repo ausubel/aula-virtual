@@ -635,3 +635,69 @@ BEGIN
         )
     );
 END //
+
+DROP PROCEDURE IF EXISTS get_all_courses//
+
+/* Prueba
+CALL get_all_courses();
+*/
+
+CREATE PROCEDURE get_all_courses()
+BEGIN
+    SELECT 
+        c.id,
+        c.name,
+        c.description,
+        c.hours,
+        c.teacher_id as teacherId,
+        CONCAT(u.name, ' ', u.surname) as teacherName,
+        (SELECT COUNT(*) FROM student_course sc WHERE sc.course_id = c.id) as studentCount
+    FROM course c
+    LEFT JOIN user u ON c.teacher_id = u.id
+    ORDER BY c.creation_datetime DESC;
+END //
+
+DROP PROCEDURE IF EXISTS update_lesson//
+
+CREATE PROCEDURE update_lesson(
+    IN p_lesson_id INT,
+    IN p_title VARCHAR(255),
+    IN p_description TEXT,
+    IN p_time INT
+)
+BEGIN
+    UPDATE lesson 
+    SET 
+        title = p_title,
+        description = p_description,
+        time = p_time
+    WHERE id = p_lesson_id;
+    
+    SELECT 'SUCCESS' as message;
+END //
+
+DROP PROCEDURE IF EXISTS delete_lesson//
+
+CREATE PROCEDURE delete_lesson(
+    IN p_lesson_id INT
+)
+BEGIN
+    -- Primero eliminar los registros relacionados
+    DELETE FROM lesson_video WHERE lesson_id = p_lesson_id;
+    DELETE FROM lesson_student WHERE lesson_id = p_lesson_id;
+    
+    -- Luego eliminar la lección
+    DELETE FROM lesson WHERE id = p_lesson_id;
+    
+    SELECT 'SUCCESS' as message;
+END //
+
+DROP PROCEDURE IF EXISTS delete_video//
+
+CREATE PROCEDURE delete_video(
+    IN p_video_id INT
+)
+BEGIN
+    DELETE FROM lesson_video WHERE id = p_video_id;
+    SELECT 'SUCCESS' as message;
+END //
