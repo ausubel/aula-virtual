@@ -25,6 +25,7 @@ export enum StoredProcedures {
   UpdateLesson = "CALL update_lesson(?, ?, ?, ?)",
   DeleteLesson = "CALL delete_lesson(?)",
   DeleteVideo = "CALL delete_video(?)",
+  GetAllStudents = "CALL get_all_students()",
   //#endregion
 }
 
