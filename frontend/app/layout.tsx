@@ -2,6 +2,8 @@ import type React from "react"
 import { Inter } from "next/font/google"
 import { NotificationToaster } from "@/components/ui/notifications"
 import "./globals.css"
+import { NavBar } from "@/components/nav-bar"
+import { ThemeProvider } from "@/components/theme-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -13,17 +15,17 @@ export default function RootLayout({
   return (
     <html lang="es" className="h-full">
       <body className={`${inter.className} h-full antialiased`}>
-        <NotificationToaster />
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="light">
+          <NotificationToaster />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )
 }
 
-
-
-import './globals.css'
-
 export const metadata = {
-      generator: 'v0.dev'
-    };
+  title: 'Aula Virtual',
+  description: 'Plataforma de aprendizaje en línea',
+  generator: 'v0.dev'
+};

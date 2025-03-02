@@ -2,6 +2,76 @@ USE virtual_class;
 
 DELIMITER //
 
+DROP PROCEDURE IF EXISTS register_student//
+
+CREATE PROCEDURE register_student(
+    IN p_email VARCHAR(50),
+    IN p_name VARCHAR(50),
+    IN p_surname VARCHAR(50),
+    IN p_password VARCHAR(60)
+)
+BEGIN
+    DECLARE v_user_id INT;
+    DECLARE v_role_id INT;
+    DECLARE v_existing_user INT;
+    
+    -- Verificar si el email ya existe
+    SELECT id INTO v_existing_user FROM user WHERE email = p_email LIMIT 1;
+    
+    IF v_existing_user IS NOT NULL THEN
+        SELECT 'EMAIL_EXISTS' as message;
+    ELSE
+        SET v_role_id = 2; -- ID del rol STUDENT
+        
+        -- Iniciar transacción
+        START TRANSACTION;
+        
+        BEGIN
+            -- Usar un bloque BEGIN/END para capturar errores
+            DECLARE EXIT HANDLER FOR SQLEXCEPTION
+            BEGIN
+                -- Si hay error, hacer rollback
+                ROLLBACK;
+                SELECT 'ERROR' as message;
+            END;
+            
+            -- Insertar en la tabla user
+            INSERT INTO user (
+                name,
+                surname,
+                email,
+                password,
+                active,
+                creation_datetime,
+                inactive_datetime,
+                id_role
+            ) VALUES (
+                p_name,
+                p_surname,
+                p_email,
+                p_password,
+                1,  -- active = true
+                NOW(), -- fecha de creación actual
+                NULL,
+                v_role_id
+            );
+            
+            -- Obtener el ID del usuario insertado
+            SET v_user_id = LAST_INSERT_ID();
+            
+            -- Insertar en la tabla student
+            INSERT INTO student (id, id_role)
+            VALUES (v_user_id, v_role_id);
+            
+            -- Confirmar transacción
+            COMMIT;
+            
+            -- Devolver SUCCESS
+            SELECT 'SUCCESS' as message;
+        END;
+    END IF;
+END //
+
 DROP PROCEDURE IF EXISTS get_or_create_google_user// 
 
 -- Login procedures
