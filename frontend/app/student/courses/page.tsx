@@ -1,11 +1,13 @@
 'use client'
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { PlusIcon, SearchIcon, BookOpenIcon, UsersIcon, ClockIcon } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import { getToken } from "@/lib/auth"
+import { jwtDecode } from "jwt-decode"
 
 // Definición del tipo de curso basado en la respuesta del backend
 interface Course {
@@ -18,6 +20,13 @@ interface Course {
   studentCount: number
   progress?: number // Opcional ya que vendrá del estado del estudiante
   image?: string // Opcional para mostrar una imagen del curso
+}
+
+interface DecodedToken {
+  userId: number;
+  userRoleId: number;
+  iat?: number;
+  exp?: number;
 }
 
 // Datos simulados actualizados según la estructura del backend
@@ -60,6 +69,27 @@ const mockCourses: Course[] = [
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>(mockCourses)
   const [searchTerm, setSearchTerm] = useState("")
+  const [studentId, setStudentId] = useState<number | null>(null)
+
+  useEffect(() => {
+    const token = getToken()
+    if (token) {
+      try {
+        const decoded = jwtDecode<DecodedToken>(token)
+        if (decoded && decoded.userId) {
+          console.log('Token decodificado:', decoded)
+          setStudentId(decoded.userId)
+          console.log('ID del estudiante:', decoded.userId)
+        } else {
+          console.error('El token no contiene userId')
+        }
+      } catch (error) {
+        console.error('Error al decodificar el token:', error)
+      }
+    } else {
+      console.log('No se encontró el token')
+    }
+  }, [])
 
   // Filtrar cursos según el término de búsqueda
   const filteredCourses = courses.filter(course => 
