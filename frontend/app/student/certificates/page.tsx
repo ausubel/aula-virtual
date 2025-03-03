@@ -1,54 +1,101 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { AwardIcon, DownloadIcon, CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { getToken } from "@/lib/auth"
+import { jwtDecode } from "jwt-decode"
+import { useToast } from "@/hooks/use-toast"
+import { DocumentService } from "@/services/document.service"
 
-// Datos simulados de certificados
-const mockCertificates = [
-  {
-    id: 1,
-    name: "Matemáticas Avanzadas",
-    hours: 40,
-    date_emission: new Date(2023, 11, 15),
-    file: "/certificates/math-certificate.pdf"
-  },
-  {
-    id: 2,
-    name: "Programación Web",
-    hours: 60,
-    date_emission: new Date(2023, 10, 20),
-    file: "/certificates/web-certificate.pdf"
-  },
-  {
-    id: 3,
-    name: "Inglés Técnico",
-    hours: 30,
-    date_emission: new Date(2023, 9, 5),
-    file: "/certificates/english-certificate.pdf"
-  }
-]
+interface Certificate {
+  id: number;
+  name: string;
+  hours: number;
+  date_emission: Date;
+  file?: string;
+}
+
+interface DecodedToken {
+  userId: number;
+  userRoleId: number;
+  iat?: number;
+  exp?: number;
+}
 
 export default function CertificatesPage() {
-  const [certificates, setCertificates] = useState(mockCertificates)
-  const [isLoading, setIsLoading] = useState(false)
+  const [certificates, setCertificates] = useState<Certificate[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const { toast } = useToast()
 
-  // Función simulada para descargar un certificado
-  const handleDownload = (certificate: typeof certificates[0]) => {
+  useEffect(() => {
+    const token = getToken()
+    if (token) {
+      try {
+        const decoded = jwtDecode<DecodedToken>(token)
+        if (decoded && decoded.userId) {
+          loadStudentCertificates(decoded.userId)
+        } else {
+          console.error('El token no contiene userId')
+          toast({
+            title: "Error",
+            description: "No se pudo identificar al usuario",
+            variant: "destructive"
+          })
+        }
+      } catch (error) {
+        console.error('Error al decodificar el token:', error)
+        toast({
+          title: "Error",
+          description: "Error al verificar la identidad del usuario",
+          variant: "destructive"
+        })
+      }
+    } else {
+      console.log('No se encontró el token')
+      toast({
+        title: "Error",
+        description: "No hay sesión activa",
+        variant: "destructive"
+      })
+    }
+  }, [])
+
+  const loadStudentCertificates = async (userId: number) => {
+    try {
+      setIsLoading(true)
+      const data = await DocumentService.getAllCertificatesByStudentId(userId)
+      setCertificates(data)
+    } catch (error) {
+      console.error('Error al cargar los certificados:', error)
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los certificados",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Función para descargar un certificado
+  const handleDownload = (certificate: Certificate) => {
     setIsLoading(true)
     
-    // Simulamos una descarga
+    // Por implementar la descarga real del certificado
     setTimeout(() => {
       console.log(`Descargando certificado: ${certificate.name}`)
       setIsLoading(false)
-      
-      // En una implementación real, aquí se descargaría el archivo
       alert(`El certificado de ${certificate.name} se ha descargado correctamente.`)
     }, 1500)
+  }
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center min-h-screen">Cargando certificados...</div>
   }
 
   return (
@@ -80,7 +127,7 @@ export default function CertificatesPage() {
                 </div>
                 <CardDescription className="flex items-center mt-2">
                   <CalendarIcon className="h-4 w-4 mr-1" />
-                  {format(certificate.date_emission, "dd 'de' MMMM 'de' yyyy", { locale: es })}
+                  {format(new Date(certificate.date_emission), "dd 'de' MMMM 'de' yyyy", { locale: es })}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -104,4 +151,4 @@ export default function CertificatesPage() {
       )}
     </div>
   )
-} 
+}
