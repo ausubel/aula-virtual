@@ -12,7 +12,7 @@ BEGIN
         c.id,
         c.name,
         c.hours,
-        IFNULL(sc.finished_datetime, sc.creation_datetime) as date_emission,
+        CONVERT_TZ(IFNULL(sc.finished_datetime, sc.creation_datetime), 'UTC', 'UTC') as date_emission,
         NULL as file
     FROM student_course sc
     INNER JOIN course c ON sc.course_id = c.id
@@ -31,7 +31,7 @@ BEGIN
         c.name,
         c.description,
         c.hours,
-        c.creation_datetime as date_emission,
+        CONVERT_TZ(c.creation_datetime, 'UTC', 'UTC') as date_emission,
         CONCAT(u.name, ' ', u.surname) as teacher_name,
         t.degree as teacher_degree,
         t.profile as teacher_profile,
@@ -56,8 +56,7 @@ END//
 
 DELIMITER ;
 
--- Insertar datos de prueba
--- Primero, asegurarnos de que el profesor tenga los datos completos
+-- Actualizamos los datos de prueba
 UPDATE teacher 
 SET degree = 'Doctor en Ciencias de la Computación',
     profile = 'Profesor con más de 10 años de experiencia en desarrollo de software y educación en tecnología.'
@@ -67,24 +66,19 @@ WHERE id IN (
     WHERE id IN (1, 2)
 );
 
--- Actualizar algunos cursos con descripciones
 UPDATE course
 SET description = CASE id 
     WHEN 1 THEN 'Curso completo de desarrollo web, abarcando front-end y back-end con las últimas tecnologías.'
     WHEN 2 THEN 'Curso intensivo de bases de datos SQL, desde conceptos básicos hasta administración avanzada.'
     ELSE description
-END
+END,
+creation_datetime = NOW()
 WHERE id IN (1, 2);
 
--- Asignar certificados a estudiantes específicos
 UPDATE student_course 
 SET has_certificate = 1,
     finished = 1,
-    finished_datetime = NOW()
+    finished_datetime = NOW(),
+    creation_datetime = NOW()
 WHERE student_id IN (5, 6)
 AND course_id IN (1, 2);
-
--- Test queries
--- CALL get_all_certificates_by_student_id(5);
--- CALL get_certificate_by_course_id(1);
--- CALL get_certificates_count_by_student(5);

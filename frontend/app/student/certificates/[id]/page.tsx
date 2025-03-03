@@ -7,23 +7,12 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
 import { CalendarIcon, AwardIcon, DownloadIcon, ArrowLeftIcon, GraduationCapIcon, UserIcon } from "lucide-react"
-import { format } from "date-fns"
+import { format, parseISO } from "date-fns"
 import { es } from "date-fns/locale"
 import { DocumentService } from "@/services/document.service"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
-
-interface Certificate {
-  id: number;
-  name: string;
-  description?: string;
-  hours: number;
-  date_emission: Date;
-  teacher_name?: string;
-  teacher_degree?: string;
-  teacher_profile?: string;
-  file?: string;
-}
+import type { Certificate } from "@/types/certificate"
 
 export default function CertificateDetailsPage({ params }: { params: { id: string } }) {
   const [certificate, setCertificate] = useState<Certificate | null>(null)
@@ -34,9 +23,14 @@ export default function CertificateDetailsPage({ params }: { params: { id: strin
     const loadCertificate = async () => {
       try {
         setIsLoading(true)
-        const data = await DocumentService.getCertificateByCourseId(Number(params.id))
-        console.log('Certificado cargado:', data)
-        setCertificate(data)
+        const certificateData = await DocumentService.getCertificateByCourseId(Number(params.id))
+        console.log('Certificado cargado:', certificateData);
+        
+        if (!certificateData.id || !certificateData.name || !certificateData.hours) {
+          throw new Error('Datos del certificado incompletos');
+        }
+        
+        setCertificate(certificateData);
       } catch (error) {
         console.error('Error al cargar el certificado:', error)
         toast({
@@ -54,6 +48,17 @@ export default function CertificateDetailsPage({ params }: { params: { id: strin
     }
   }, [params.id])
 
+  // Función auxiliar para formatear la fecha de forma segura
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return "Fecha no disponible";
+    try {
+      return format(parseISO(dateString), "dd 'de' MMMM 'de' yyyy", { locale: es });
+    } catch (error) {
+      console.error('Error al formatear la fecha:', error, dateString);
+      return "Fecha no disponible";
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -68,7 +73,6 @@ export default function CertificateDetailsPage({ params }: { params: { id: strin
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Detalles del Certificado - Skeleton */}
           <Card>
             <CardHeader>
               <Skeleton className="h-8 w-3/4" />
@@ -80,7 +84,6 @@ export default function CertificateDetailsPage({ params }: { params: { id: strin
             </CardContent>
           </Card>
 
-          {/* Vista Previa - Skeleton */}
           <Card>
             <CardHeader>
               <Skeleton className="h-6 w-1/3" />
@@ -141,7 +144,7 @@ export default function CertificateDetailsPage({ params }: { params: { id: strin
             </div>
             <CardDescription className="flex items-center mt-2">
               <CalendarIcon className="h-4 w-4 mr-1" />
-              {format(new Date(certificate.date_emission), "dd 'de' MMMM 'de' yyyy", { locale: es })}
+              {formatDate(certificate.date_emission)}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">

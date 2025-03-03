@@ -30,7 +30,7 @@ export default class DocumentModel extends ModelBase {
         id: row.id,
         name: row.name,
         hours: row.hours,
-        date_emission: row.date_emission,
+        date_emission: row.date_emission?.toISOString(),
         file: row.file
       }));
 
@@ -45,24 +45,41 @@ export default class DocumentModel extends ModelBase {
   async getCertificateByCourseId(courseId: number): Promise<Certificate | null> {
     try {
       console.log('Consultando certificado para curso:', courseId);
-      const [rows] = await this.database.query(
+      const [resultRows] = await this.database.query(
         StoredProcedures.GetCertificateByCourseId,
         [courseId]
       );
-      console.log('Resultado raw de la consulta:', rows);
+      
+      // Extraemos los resultados de la estructura anidada
+      const [results] = resultRows;
+      console.log('Resultados extraídos:', results);
 
-      // Si no hay resultados, retornar null
-      if (!rows || !Array.isArray(rows[0]) || !rows[0][0]) {
-        console.log('No se encontró el certificado');
+      // Si no hay resultados o el array está vacío, retornar null
+      if (!Array.isArray(results) || results.length === 0) {
+        console.log('No se encontraron resultados');
         return null;
       }
 
-      const row = rows[0][0];
+      // Extraemos el primer registro
+      const row = results[0];
+      console.log('Datos del certificado encontrado:', row);
+
+      // Verificamos que tengamos datos válidos
+      if (!row || !row.id) {
+        console.log('Datos del certificado inválidos');
+        return null;
+      }
+
+      // Mapear los campos del certificado asegurando formato de fecha ISO
       const certificate: Certificate = {
         id: row.id,
         name: row.name,
+        description: row.description,
         hours: row.hours,
-        date_emission: row.date_emission,
+        date_emission: row.date_emission?.toISOString() || new Date().toISOString(),
+        teacher_name: row.teacher_name,
+        teacher_degree: row.teacher_degree,
+        teacher_profile: row.teacher_profile,
         file: row.file
       };
 
