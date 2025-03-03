@@ -4,13 +4,14 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { AwardIcon, DownloadIcon, CalendarIcon } from "lucide-react"
+import { AwardIcon, DownloadIcon, CalendarIcon, EyeIcon } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { getToken } from "@/lib/auth"
 import { jwtDecode } from "jwt-decode"
 import { useToast } from "@/hooks/use-toast"
 import { DocumentService } from "@/services/document.service"
+import Link from "next/link"
 
 interface Certificate {
   id: number;
@@ -45,7 +46,7 @@ export default function CertificatesPage() {
         description: "No se pudieron cargar los certificados",
         variant: "destructive"
       })
-      setCertificates([]) // Asegurar que siempre tengamos un array
+      setCertificates([])
     } finally {
       setIsLoading(false)
     }
@@ -125,9 +126,14 @@ export default function CertificatesPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="aspect-[1.4/1] bg-gradient-to-br from-blue-50 to-indigo-50 rounded-md flex items-center justify-center">
-                  <AwardIcon className="h-16 w-16 text-blue-500" />
-                </div>
+                <Link href={`/student/certificates/${certificate.id}`}>
+                  <div className="aspect-[1.4/1] bg-gradient-to-br from-blue-50 to-indigo-50 rounded-md flex items-center justify-center group cursor-pointer hover:from-blue-100 hover:to-indigo-100 transition-colors">
+                    <div className="relative">
+                      <AwardIcon className="h-16 w-16 text-blue-500" />
+                      <EyeIcon className="absolute bottom-0 right-0 h-6 w-6 text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </div>
+                </Link>
               </CardContent>
               <CardFooter>
                 <Button 
