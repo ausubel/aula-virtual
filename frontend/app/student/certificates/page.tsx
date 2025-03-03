@@ -32,12 +32,32 @@ export default function CertificatesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
 
+  const loadStudentCertificates = async (userId: number) => {
+    try {
+      setIsLoading(true)
+      const data = await DocumentService.getAllCertificatesByStudentId(userId)
+      console.log('Certificados cargados:', data)
+      setCertificates(data || [])
+    } catch (error) {
+      console.error('Error al cargar los certificados:', error)
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los certificados",
+        variant: "destructive"
+      })
+      setCertificates([]) // Asegurar que siempre tengamos un array
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   useEffect(() => {
     const token = getToken()
     if (token) {
       try {
         const decoded = jwtDecode<DecodedToken>(token)
         if (decoded && decoded.userId) {
+          console.log('ID del estudiante:', decoded.userId)
           loadStudentCertificates(decoded.userId)
         } else {
           console.error('El token no contiene userId')
@@ -46,6 +66,7 @@ export default function CertificatesPage() {
             description: "No se pudo identificar al usuario",
             variant: "destructive"
           })
+          setIsLoading(false)
         }
       } catch (error) {
         console.error('Error al decodificar el token:', error)
@@ -54,6 +75,7 @@ export default function CertificatesPage() {
           description: "Error al verificar la identidad del usuario",
           variant: "destructive"
         })
+        setIsLoading(false)
       }
     } else {
       console.log('No se encontró el token')
@@ -62,37 +84,9 @@ export default function CertificatesPage() {
         description: "No hay sesión activa",
         variant: "destructive"
       })
+      setIsLoading(false)
     }
   }, [])
-
-  const loadStudentCertificates = async (userId: number) => {
-    try {
-      setIsLoading(true)
-      const data = await DocumentService.getAllCertificatesByStudentId(userId)
-      setCertificates(data)
-    } catch (error) {
-      console.error('Error al cargar los certificados:', error)
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los certificados",
-        variant: "destructive"
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // Función para descargar un certificado
-  const handleDownload = (certificate: Certificate) => {
-    setIsLoading(true)
-    
-    // Por implementar la descarga real del certificado
-    setTimeout(() => {
-      console.log(`Descargando certificado: ${certificate.name}`)
-      setIsLoading(false)
-      alert(`El certificado de ${certificate.name} se ha descargado correctamente.`)
-    }, 1500)
-  }
 
   if (isLoading) {
     return <div className="flex justify-center items-center min-h-screen">Cargando certificados...</div>
@@ -137,9 +131,9 @@ export default function CertificatesPage() {
               </CardContent>
               <CardFooter>
                 <Button 
-                  className="w-full" 
-                  onClick={() => handleDownload(certificate)}
+                  className="w-full"
                   disabled={isLoading}
+                  onClick={() => console.log('Descargar certificado:', certificate.id)}
                 >
                   <DownloadIcon className="h-4 w-4 mr-2" />
                   Descargar Certificado

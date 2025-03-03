@@ -26,9 +26,19 @@ export default class DocumentController implements ControllerBase {
     this.router.get("/student/:studentId/certificates", async (req, res) => {
       try {
         const { studentId } = req.params;
+        console.log('Obteniendo certificados para el estudiante:', studentId);
+        
         const certificates: Certificate[] = await this.certificateService.getAllCertificatesByStudentId(Number(studentId));
+        console.log('Certificados encontrados:', certificates);
+
+        // Si no hay certificados, devolver array vacío
+        if (!certificates || certificates.length === 0) {
+          return sendResponses(res, 200, "Success", { certificates: [] });
+        }
+
         return sendResponses(res, 200, "Success", { certificates });
       } catch (error) {
+        console.error('Error en onGetAllCertificatesByStudentId:', error);
         return sendResponses(res, 500, "Internal Server Error");
       }
     });
@@ -38,9 +48,18 @@ export default class DocumentController implements ControllerBase {
     this.router.get("/course/:courseId", async (req, res) => {
       try {
         const { courseId } = req.params;
+        console.log('Obteniendo certificado para el curso:', courseId);
+        
         const certificate: Certificate = await this.certificateService.getCertificateByCourseId(Number(courseId));
+        console.log('Certificado encontrado:', certificate);
+
+        if (!certificate) {
+          return sendResponses(res, 404, "Certificate not found");
+        }
+
         return sendResponses(res, 200, "Success", { certificate });
       } catch (error) {
+        console.error('Error en onGetCertificateByCourseId:', error);
         return sendResponses(res, 500, "Internal Server Error");
       }
     });
@@ -53,7 +72,6 @@ export default class DocumentController implements ControllerBase {
         const { file } = req.body;
         
         console.log(`Recibida solicitud para subir CV del estudiante ID: ${studentId}`);
-        console.log("Contenido del cuerpo de la solicitud:", req.body);
         
         if (!file) {
           console.error("Error: No se proporcionó ningún archivo");
