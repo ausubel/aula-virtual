@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { getToken } from "@/lib/auth"
 import { jwtDecode } from "jwt-decode"
+import { useToast } from "@/hooks/use-toast"
+import { CoursesService } from "@/services/courses.service"
 
 // Definición del tipo de curso basado en la respuesta del backend
 interface Course {
@@ -15,11 +17,9 @@ interface Course {
   name: string
   description: string
   hours: number
-  teacherId: number
-  teacherName: string
-  studentCount: number
-  progress?: number // Opcional ya que vendrá del estado del estudiante
-  image?: string // Opcional para mostrar una imagen del curso
+  progress?: number
+  hasCertificate?: boolean
+  image?: string
 }
 
 interface DecodedToken {
@@ -29,47 +29,11 @@ interface DecodedToken {
   exp?: number;
 }
 
-// Datos simulados actualizados según la estructura del backend
-const mockCourses: Course[] = [
-  {
-    id: 1,
-    name: "Introducción a la Programación",
-    description: "Aprende los fundamentos de la programación con JavaScript",
-    hours: 32, // 8 semanas * 4 horas
-    teacherId: 1,
-    teacherName: "Ana Martínez",
-    studentCount: 120,
-    progress: 0,
-    image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y29kaW5nfGVufDB8fDB8fHww"
-  },
-  {
-    id: 2,
-    name: "Desarrollo Web Frontend",
-    description: "Domina HTML, CSS y React para crear interfaces modernas",
-    hours: 48, // 12 semanas * 4 horas
-    teacherId: 2,
-    teacherName: "Carlos López",
-    studentCount: 85,
-    progress: 45,
-    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8d2ViJTIwZGV2ZWxvcG1lbnR8ZW58MHx8MHx8fDA%3D"
-  },
-  {
-    id: 3,
-    name: "Bases de Datos SQL",
-    description: "Aprende a diseñar y gestionar bases de datos relacionales",
-    hours: 24, // 6 semanas * 4 horas
-    teacherId: 3,
-    teacherName: "María García",
-    studentCount: 65,
-    progress: 75,
-    image: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8ZGF0YWJhc2V8ZW58MHx8MHx8fDA%3D"
-  }
-]
-
 export default function CoursesPage() {
-  const [courses, setCourses] = useState<Course[]>(mockCourses)
+  const [courses, setCourses] = useState<Course[]>([])
   const [searchTerm, setSearchTerm] = useState("")
-  const [studentId, setStudentId] = useState<number | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const { toast } = useToast()
 
   useEffect(() => {
     const token = getToken()
@@ -77,26 +41,59 @@ export default function CoursesPage() {
       try {
         const decoded = jwtDecode<DecodedToken>(token)
         if (decoded && decoded.userId) {
-          console.log('Token decodificado:', decoded)
-          setStudentId(decoded.userId)
-          console.log('ID del estudiante:', decoded.userId)
+          loadStudentCourses(decoded.userId)
         } else {
           console.error('El token no contiene userId')
+          toast({
+            title: "Error",
+            description: "No se pudo identificar al usuario",
+            variant: "destructive"
+          })
         }
       } catch (error) {
         console.error('Error al decodificar el token:', error)
+        toast({
+          title: "Error",
+          description: "Error al verificar la identidad del usuario",
+          variant: "destructive"
+        })
       }
     } else {
       console.log('No se encontró el token')
+      toast({
+        title: "Error",
+        description: "No hay sesión activa",
+        variant: "destructive"
+      })
     }
   }, [])
+
+  const loadStudentCourses = async (userId: number) => {
+    try {
+      setIsLoading(true)
+      const data = await CoursesService.getCoursesByStudentId(userId)
+      setCourses(data)
+    } catch (error) {
+      console.error('Error al cargar los cursos:', error)
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los cursos",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   // Filtrar cursos según el término de búsqueda
   const filteredCourses = courses.filter(course => 
     course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    course.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    course.teacherName.toLowerCase().includes(searchTerm.toLowerCase())
+    course.description.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center min-h-screen">Cargando cursos...</div>
+  }
 
   return (
     <div className="space-y-6">
@@ -121,62 +118,66 @@ export default function CoursesPage() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCourses.map((course) => (
-          <Card key={course.id} className="overflow-hidden flex flex-col">
-            <div className="h-48 overflow-hidden">
-              <img 
-                src={course.image || '/placeholder.jpg'} 
-                alt={course.name} 
-                className="w-full h-full object-cover transition-transform hover:scale-105"
-              />
-            </div>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="line-clamp-1">{course.name}</CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground mt-1">
-                    {course.teacherName}
-                  </CardDescription>
-                </div>
-                <Badge variant="outline">{`${course.hours} horas`}</Badge>
+      {filteredCourses.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          No se encontraron cursos
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredCourses.map((course) => (
+            <Card key={course.id} className="overflow-hidden flex flex-col">
+              <div className="h-48 overflow-hidden">
+                <img 
+                  src={course.image || '/placeholder.jpg'} 
+                  alt={course.name} 
+                  className="w-full h-full object-cover transition-transform hover:scale-105"
+                />
               </div>
-            </CardHeader>
-            <CardContent className="flex-grow">
-              <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                {course.description}
-              </p>
-              <div className="flex flex-col space-y-3">
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <ClockIcon className="h-4 w-4 mr-2" />
-                  <span>{course.hours} horas totales</span>
-                </div>
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <UsersIcon className="h-4 w-4 mr-2" />
-                  <span>{course.studentCount} estudiantes</span>
-                </div>
-                {course.progress !== undefined && (
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span>Progreso</span>
-                      <span>{course.progress}%</span>
-                    </div>
-                    <Progress value={course.progress} className="h-2" />
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="line-clamp-1">{course.name}</CardTitle>
                   </div>
-                )}
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full" asChild>
-                <a href={`/student/courses/${course.id}`}>
-                  <BookOpenIcon className="h-4 w-4 mr-2" />
-                  {course.progress ? "Continuar Curso" : "Comenzar Curso"}
-                </a>
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
+                  <Badge variant="outline">{`${course.hours} horas`}</Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                  {course.description}
+                </p>
+                <div className="flex flex-col space-y-3">
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <ClockIcon className="h-4 w-4 mr-2" />
+                    <span>{course.hours} horas totales</span>
+                  </div>
+                  {course.progress !== undefined && (
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span>Progreso</span>
+                        <span>{course.progress}%</span>
+                      </div>
+                      <Progress value={course.progress} className="h-2" />
+                    </div>
+                  )}
+                  {course.hasCertificate && (
+                    <Badge variant="secondary" className="w-fit">
+                      Certificado disponible
+                    </Badge>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full" asChild>
+                  <a href={`/student/courses/${course.id}`}>
+                    <BookOpenIcon className="h-4 w-4 mr-2" />
+                    {course.progress ? "Continuar Curso" : "Comenzar Curso"}
+                  </a>
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

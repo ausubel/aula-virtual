@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BookOpen, Clock, FileText, PlayCircle, Download, CheckCircle } from "lucide-react"
+import { BookOpen, Clock, FileText, PlayCircle, Download } from "lucide-react"
+import { CoursesService } from "@/services/courses.service"
+import { useToast } from "@/hooks/use-toast"
 
 // Interfaces basadas en la respuesta del backend
 interface Lesson {
@@ -14,7 +16,10 @@ interface Lesson {
   title: string
   description: string
   time: number
-  videos: string[]
+  videos: Array<{
+    id: number
+    videoPath: string
+  }> | string[]
 }
 
 interface CourseDetail {
@@ -28,44 +33,53 @@ interface CourseDetail {
   progress?: number
 }
 
-// Mock data actualizado según la estructura del backend
-const mockLessons: Lesson[] = [
-  {
-    id: 1,
-    title: "Introducción al curso",
-    description: "Visión general del curso y objetivos",
-    time: 30,
-    videos: ["https://example.com/video1.mp4"]
-  },
-  {
-    id: 2,
-    title: "Conceptos básicos",
-    description: "Fundamentos y terminología",
-    time: 45,
-    videos: ["https://example.com/video2.mp4"]
-  }
-]
-
-const mockCourseDetails: CourseDetail = {
-  id: 1,
-  name: "Desarrollo Web Frontend",
-  description: "Aprende HTML, CSS y JavaScript desde cero hasta un nivel avanzado",
-  hours: 12,
-  teacherId: 1,
-  teacherName: "Ana Martínez",
-  studentCount: 120,
-  progress: 45
-}
-
 export default function CoursePage({ params }: { params: { id: string } }) {
-  const [courseData] = useState<CourseDetail>(mockCourseDetails)
-  const [lessons] = useState<Lesson[]>(mockLessons)
+  const [courseData, setCourseData] = useState<CourseDetail | null>(null)
+  const [lessons, setLessons] = useState<Lesson[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const { toast } = useToast()
+
+  useEffect(() => {
+    const loadCourseData = async () => {
+      try {
+        setIsLoading(true)
+        // Cargar detalles del curso
+        const courseDetails = await CoursesService.getCourseDetails(Number(params.id))
+        setCourseData(courseDetails)
+
+        // Cargar lecciones del curso
+        const courseLessons = await CoursesService.getLessonsByCourse(Number(params.id))
+        setLessons(courseLessons)
+      } catch (err) {
+        console.error('Error loading course data:', err)
+        setError(err instanceof Error ? err.message : 'Error al cargar el curso')
+        toast({
+          title: "Error",
+          description: "No se pudo cargar la información del curso",
+          variant: "destructive"
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadCourseData()
+  }, [params.id, toast])
 
   // Función para formatear minutos a formato "HH:mm"
   const formatTime = (minutes: number) => {
     const hours = Math.floor(minutes / 60)
     const mins = minutes % 60
     return `${hours > 0 ? `${hours}h ` : ''}${mins}min`
+  }
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center min-h-screen">Cargando...</div>
+  }
+
+  if (error || !courseData) {
+    return <div className="flex justify-center items-center min-h-screen text-red-500">{error || 'Error al cargar el curso'}</div>
   }
 
   return (

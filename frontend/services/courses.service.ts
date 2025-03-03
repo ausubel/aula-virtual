@@ -610,4 +610,33 @@ export class CoursesService {
       throw error;
     }
   }
+
+  static async getCoursesByStudentId(studentId: number) {
+    try {
+      const response = await fetch(`${this.BASE_URL}/courses/student/${studentId}`, {
+        headers: {
+          'Authorization': `Bearer ${AuthService.getToken()}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error('Error al obtener los cursos del estudiante');
+      }
+
+      const data = await response.json();
+      return data.map((course: any) => ({
+        id: course.course_id,
+        name: course.name || '',
+        description: course.description || '',
+        hours: course.hours || 0,
+        progress: course.finished ? 100 : 0,
+        hasCertificate: course.has_certificate || false
+      }));
+    } catch (error) {
+      console.error('Error en getCoursesByStudentId:', error);
+      throw error;
+    }
+  }
 }

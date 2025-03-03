@@ -20,6 +20,7 @@ export default class CoursesController implements ControllerBase {
         this.router.post('/', this.createCourse.bind(this));
         this.router.get('/', this.getAllCourses.bind(this));
         this.router.get('/students', this.getAllStudents.bind(this));
+        this.router.get('/student/:id', this.getCoursesByStudentId.bind(this));
         this.router.get('/:id', this.getCourseDetails.bind(this));
         this.router.put('/:id', this.updateCourse.bind(this));
         this.router.delete('/:id', this.deleteCourse.bind(this));
@@ -579,6 +580,40 @@ export default class CoursesController implements ControllerBase {
         } catch (error) {
             console.error('Error en removeStudentFromCourse:', error);
             res.status(500).json({ message: 'Error al eliminar el estudiante del curso' });
+        }
+    }
+
+    private async getCoursesByStudentId(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            console.log('Obteniendo cursos del estudiante:', id);
+            
+            // Verificar que el ID del estudiante es un número
+            const studentId = parseInt(id);
+            if (isNaN(studentId)) {
+                return res.status(400).json({ message: 'El ID del estudiante debe ser un número' });
+            }
+
+            // Verificar que el estudiante existe
+            const [userExists] = await this.db.query('SELECT id FROM student WHERE id = ?', [studentId]);
+            if (!Array.isArray(userExists) || userExists.length === 0) {
+                return res.status(404).json({ message: 'Estudiante no encontrado' });
+            }
+            
+            const [rows] = await this.db.query(StoredProcedures.GetCoursesByStudentId, [studentId]);
+            console.log('Resultado de la consulta:', JSON.stringify(rows, null, 2));
+            
+            if (!Array.isArray(rows)) {
+                console.error('La respuesta no es un array:', rows);
+                return res.status(500).json({ message: 'Error en el formato de respuesta del servidor' });
+            }
+            
+            // Si el resultado es un array anidado, tomamos el primer elemento
+            const courses = Array.isArray(rows[0]) ? rows[0] : rows;
+            res.json(courses);
+        } catch (error) {
+            console.error('Error en getCoursesByStudentId:', error);
+            res.status(500).json({ message: 'Error al obtener los cursos del estudiante' });
         }
     }
 }

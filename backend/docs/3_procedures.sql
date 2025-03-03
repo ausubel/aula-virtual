@@ -372,17 +372,33 @@ CREATE PROCEDURE get_courses_by_student_id(
 )
 BEGIN
     SELECT
-        sc.id,
-        sc.course_id,
+        c.id,
+        c.id as course_id,
         c.name,
         c.description,
         c.hours,
+        c.teacher_id,
+        u.name as teacher_name,
+        sc.has_certificate,
         sc.finished,
-        sc.has_certificate
+        IFNULL(
+            (
+                SELECT CAST(
+                    (COUNT(CASE WHEN ls.finished = 1 THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0)) 
+                    AS DECIMAL(5,2)
+                )
+                FROM lesson_student ls
+                JOIN lesson l ON ls.lesson_id = l.id
+                WHERE l.course_id = c.id 
+                AND ls.student_id = p_student_id
+            ),
+            0
+        ) as progress
     FROM student_course sc
     INNER JOIN course c ON sc.course_id = c.id
+    LEFT JOIN user u ON c.teacher_id = u.id
     WHERE sc.student_id = p_student_id;
-END //
+END//
 
 DROP PROCEDURE IF EXISTS create_lesson_for_course//
 
