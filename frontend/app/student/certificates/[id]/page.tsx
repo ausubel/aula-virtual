@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { CalendarIcon, AwardIcon, DownloadIcon, ArrowLeftIcon } from "lucide-react"
+import { Separator } from "@/components/ui/separator"
+import { CalendarIcon, AwardIcon, DownloadIcon, ArrowLeftIcon, GraduationCapIcon, UserIcon } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DocumentService } from "@/services/document.service"
@@ -15,8 +16,12 @@ import Link from "next/link"
 interface Certificate {
   id: number;
   name: string;
+  description?: string;
   hours: number;
   date_emission: Date;
+  teacher_name?: string;
+  teacher_degree?: string;
+  teacher_profile?: string;
   file?: string;
 }
 
@@ -70,6 +75,7 @@ export default function CertificateDetailsPage({ params }: { params: { id: strin
               <Skeleton className="h-4 w-1/4 mt-2" />
             </CardHeader>
             <CardContent className="space-y-6">
+              <Skeleton className="h-20 w-full" />
               <Skeleton className="h-10 w-full" />
             </CardContent>
           </Card>
@@ -139,8 +145,42 @@ export default function CertificateDetailsPage({ params }: { params: { id: strin
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Descripción del curso */}
+            {certificate.description && (
+              <div className="text-sm text-muted-foreground">
+                {certificate.description}
+              </div>
+            )}
+
+            {/* Información del profesor */}
+            {certificate.teacher_name && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium flex items-center">
+                    <UserIcon className="h-4 w-4 mr-2" />
+                    Profesor
+                  </h3>
+                  <div className="space-y-1">
+                    <p className="font-medium">{certificate.teacher_name}</p>
+                    {certificate.teacher_degree && (
+                      <p className="text-sm text-muted-foreground flex items-center">
+                        <GraduationCapIcon className="h-4 w-4 mr-1" />
+                        {certificate.teacher_degree}
+                      </p>
+                    )}
+                    {certificate.teacher_profile && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {certificate.teacher_profile}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
             <Button 
-              className="w-full" 
+              className="w-full mt-6" 
               size="lg"
               onClick={() => {
                 toast({

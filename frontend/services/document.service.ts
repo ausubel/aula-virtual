@@ -3,8 +3,12 @@ import { AuthService } from './auth.service';
 interface Certificate {
   id: number;
   name: string;
+  description?: string;
   hours: number;
   date_emission: Date;
+  teacher_name?: string;
+  teacher_degree?: string;
+  teacher_profile?: string;
   file?: string;
 }
 
@@ -49,7 +53,7 @@ export class DocumentService {
 
   static async getCertificateByCourseId(courseId: number): Promise<Certificate> {
     try {
-      console.log('Obteniendo certificado del curso:', courseId);
+      console.log('Obteniendo certificado detallado del curso:', courseId);
       const response = await fetch(`${this.BASE_URL}/document/course/${courseId}`, {
         headers: {
           'Authorization': `Bearer ${AuthService.getToken()}`
@@ -63,13 +67,16 @@ export class DocumentService {
       }
 
       const result: ApiResponse<{certificate: Certificate}> = await response.json();
-      console.log('Respuesta completa del backend:', result);
+      console.log('Respuesta completa del backend (detallada):', result);
       
       if (!result.data || !result.data.certificate) {
         throw new Error('No se encontró el certificado');
       }
 
-      return result.data.certificate;
+      const certificate = result.data.certificate;
+      console.log('Certificado con información detallada:', certificate);
+
+      return certificate;
     } catch (error) {
       console.error('Error en getCertificateByCourseId:', error);
       throw error;
