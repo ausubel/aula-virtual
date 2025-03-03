@@ -98,4 +98,4 @@ export function StudentNavBar() {
       </div>
     </header>
   )
-} 
+}

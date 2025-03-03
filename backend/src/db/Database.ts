@@ -13,7 +13,7 @@ class DatabaseParameters {
 		this.user = "root";
 		this.connectionLimit = 10;
 		this.database = "virtual_class";
-		this.password = "Navia1212.";
+		this.password = "root";
 	}
 }
 export default class Database {
