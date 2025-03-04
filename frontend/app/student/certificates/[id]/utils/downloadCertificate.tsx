@@ -1,4 +1,4 @@
-import { Certificate } from '@/types/certificate';
+import { Certificate } from '../../../../../types/certificate';
 import { pdf, Document } from '@react-pdf/renderer';
 import { CertificateTemplate } from '../template/CertificateTemplate';
 import React from 'react';
