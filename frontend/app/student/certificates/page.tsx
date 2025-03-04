@@ -38,7 +38,12 @@ export default function CertificatesPage() {
       setIsLoading(true)
       const data = await DocumentService.getAllCertificatesByStudentId(userId)
       console.log('Certificados cargados:', data)
-      setCertificates(data || [])
+      // Transform date_emission from string to Date
+      const transformedData = data?.map(cert => ({
+        ...cert,
+        date_emission: new Date(cert.date_emission)
+      })) || []
+      setCertificates(transformedData)
     } catch (error) {
       console.error('Error al cargar los certificados:', error)
       toast({

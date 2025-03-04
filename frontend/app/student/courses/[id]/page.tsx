@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast"
 import { getToken } from "@/lib/auth"
 import { jwtDecode } from "jwt-decode"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
+
 
 // Interfaces basadas en la respuesta del backend
 interface Video {
@@ -222,14 +224,13 @@ export default function CoursePage({ params }: { params: { id: string } }) {
     <div className="container mx-auto pl-5 pr-4 pt-1">
       <div className="space-y-4">
         {/* Botón para regresar - Ajustado el espaciado */}
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => router.back()}
+        <Link 
+          href="/student/certificates"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
         >
-          <ChevronLeft className="h-4 w-4 mr-2" />
-          Regresar
-        </Button>
+          <ChevronLeft className="mr-2 h-4 w-4" />
+          Volver a Mis Cursos
+        </Link>
 
         {/* Encabezado del curso */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
