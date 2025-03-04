@@ -1,120 +1,113 @@
-import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
+import React from 'react';
+import { Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import type { Certificate } from '@/types/certificate';
 
-// Configuración de estilos usando fuentes del sistema
 const styles = StyleSheet.create({
   page: {
-    width: '100%',
-    height: '100%',
-    flexDirection: 'column',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#FFFFFF',
     padding: 40,
-    position: 'relative',
   },
   border: {
-    position: 'absolute',
-    top: 20,
-    left: 20,
-    right: 20,
-    bottom: 20,
-    borderWidth: 2,
-    borderStyle: 'solid',
-    borderColor: '#8b5cf6',
+    flex: 1,
+    margin: 15,
+    padding: 20,
+    border: '3 solid #8b5cf6',
     borderRadius: 10,
+    position: 'relative',
   },
   decorativeBorder: {
     position: 'absolute',
-    top: 25,
-    left: 25,
-    right: 25,
-    bottom: 25,
-    borderWidth: 1,
-    borderStyle: 'solid',
-    borderColor: '#c4b5fd',
-    borderRadius: 8,
+    top: 5,
+    left: 5,
+    right: 5,
+    bottom: 5,
+    border: '1 solid #c4b5fd',
+    borderRadius: 6,
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   header: {
-    marginTop: 40,
-    marginBottom: 20,
+    marginTop: 20,
+    marginBottom: 30,
     textAlign: 'center',
   },
   institutionName: {
-    fontSize: 24,
+    fontSize: 28,
     fontFamily: 'Helvetica-Bold',
     color: '#1a1a1a',
-    marginBottom: 10,
   },
   certifies: {
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: 'Helvetica',
     color: '#4b5563',
-    marginTop: 20,
-    marginBottom: 10,
+    marginBottom: 15,
     textAlign: 'center',
   },
   studentName: {
-    fontSize: 28,
+    fontSize: 32,
     fontFamily: 'Helvetica-Bold',
     textTransform: 'uppercase',
     color: '#1a1a1a',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 25,
   },
   participation: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'Helvetica',
     color: '#4b5563',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 15,
   },
   courseName: {
-    fontSize: 24,
+    fontSize: 26,
     fontFamily: 'Helvetica-Bold',
     textTransform: 'uppercase',
     color: '#1a1a1a',
     textAlign: 'center',
     marginBottom: 40,
-    paddingHorizontal: 20,
   },
   signatureSection: {
     marginTop: 'auto',
-    marginBottom: 40,
+    marginBottom: 30,
     alignItems: 'center',
   },
   signatureLine: {
     width: 200,
     height: 1,
     backgroundColor: '#000000',
-    marginBottom: 5,
+    marginBottom: 8,
   },
   teacherName: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'Helvetica',
-    color: '#6b7280',
-    marginBottom: 3,
+    color: '#4b5563',
+    marginBottom: 4,
   },
   teacherDegree: {
-    fontSize: 12,
+    fontSize: 14,
     fontFamily: 'Helvetica-Bold',
     color: '#374151',
   },
   footer: {
-    position: 'absolute',
-    bottom: 40,
-    left: 0,
-    right: 0,
+    marginTop: 'auto',
     textAlign: 'center',
-  },
-  date: {
-    fontSize: 12,
-    fontFamily: 'Helvetica',
-    color: '#6b7280',
   },
   onlineText: {
     fontSize: 12,
     fontFamily: 'Helvetica',
     color: '#6b7280',
-    marginBottom: 5,
+    marginBottom: 4,
+  },
+  date: {
+    fontSize: 12,
+    fontFamily: 'Helvetica',
+    color: '#6b7280',
   },
 });
 
@@ -124,42 +117,40 @@ interface CertificateTemplateProps {
 
 export function CertificateTemplate({ certificate }: CertificateTemplateProps) {
   return (
-    <Document>
-      <Page size="A4" style={styles.page}>
-        {/* Bordes decorativos */}
-        <View style={styles.border} />
+    <Page size={[595, 421]} style={styles.page}>
+      <View style={styles.border}>
         <View style={styles.decorativeBorder} />
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <Text style={styles.institutionName}>Aula Virtual</Text>
+          </View>
 
-        {/* Contenido del certificado */}
-        <View style={styles.header}>
-          <Text style={styles.institutionName}>Aula Virtual</Text>
+          <View>
+            <Text style={styles.certifies}>Certifica a</Text>
+            <Text style={styles.studentName}>{certificate.student_name}</Text>
+
+            <Text style={styles.participation}>Por participar y aprobar el</Text>
+            <Text style={styles.courseName}>Curso de {certificate.name}</Text>
+          </View>
+
+          <View style={styles.signatureSection}>
+            <View style={styles.signatureLine} />
+            <Text style={styles.teacherName}>{certificate.teacher_name}</Text>
+            <Text style={styles.teacherDegree}>{certificate.teacher_degree}</Text>
+          </View>
+
+          <View style={styles.footer}>
+            <Text style={styles.onlineText}>Certificado de aprobación online:</Text>
+            <Text style={styles.date}>
+              {new Date(certificate.date_emission).toLocaleDateString('es-ES', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+              })}
+            </Text>
+          </View>
         </View>
-
-        <Text style={styles.certifies}>Certifica a</Text>
-        <Text style={styles.studentName}>{certificate.student_name}</Text>
-
-        <Text style={styles.participation}>Por participar y aprobar el</Text>
-        <Text style={styles.courseName}>Curso de {certificate.name}</Text>
-
-        {/* Sección de firma */}
-        <View style={styles.signatureSection}>
-          <View style={styles.signatureLine} />
-          <Text style={styles.teacherName}>{certificate.teacher_name}</Text>
-          <Text style={styles.teacherDegree}>{certificate.teacher_degree}</Text>
-        </View>
-
-        {/* Pie de página */}
-        <View style={styles.footer}>
-          <Text style={styles.onlineText}>Certificado de aprobación online:</Text>
-          <Text style={styles.date}>
-            {new Date(certificate.date_emission).toLocaleDateString('es-ES', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric'
-            })}
-          </Text>
-        </View>
-      </Page>
-    </Document>
+      </View>
+    </Page>
   );
 }

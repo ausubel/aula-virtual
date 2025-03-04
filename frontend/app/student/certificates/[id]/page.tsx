@@ -15,21 +15,8 @@ import { getToken } from "@/lib/auth"
 import { jwtDecode } from "jwt-decode"
 import Link from "next/link"
 import type { Certificate } from "@/types/certificate"
-import dynamic from 'next/dynamic'
+import { CertificatePreview } from './preview/CertificatePreview'
 import { downloadCertificate } from './utils/downloadCertificate'
-
-// Cargar el componente de vista previa del PDF dinámicamente (solo del lado del cliente)
-const DynamicCertificatePreview = dynamic(
-  () => import('./preview/CertificatePreview').then(mod => mod.CertificatePreview),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-full min-h-[500px] flex items-center justify-center bg-muted">
-        <AwardIcon className="h-24 w-24 text-muted-foreground animate-pulse" />
-      </div>
-    )
-  }
-)
 
 interface DecodedToken {
   userId: number;
@@ -271,7 +258,7 @@ export default function CertificateDetailsPage({ params }: { params: { id: strin
           </CardHeader>
           <CardContent>
             <div className="aspect-[1.4/1] rounded-md">
-              <DynamicCertificatePreview certificate={certificate} />
+              <CertificatePreview certificate={certificate} />
             </div>
           </CardContent>
         </Card>

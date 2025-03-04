@@ -5,13 +5,11 @@ import React from 'react';
 
 export async function downloadCertificate(certificate: Certificate) {
   try {
-    // Crear el documento PDF usando createElement
-    const element = React.createElement(Document, {},
-      React.createElement(CertificateTemplate, { certificate })
-    );
-    
-    // Generar el blob del PDF
-    const blob = await pdf(element).toBlob();
+    const blob = await pdf(
+      <Document>
+        <CertificateTemplate certificate={certificate} />
+      </Document>
+    ).toBlob();
     
     // Crear una URL para el blob
     const url = URL.createObjectURL(blob);
