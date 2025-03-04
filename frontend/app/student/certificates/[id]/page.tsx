@@ -15,6 +15,21 @@ import { getToken } from "@/lib/auth"
 import { jwtDecode } from "jwt-decode"
 import Link from "next/link"
 import type { Certificate } from "@/types/certificate"
+import dynamic from 'next/dynamic'
+import { downloadCertificate } from './utils/downloadCertificate'
+
+// Cargar el componente de vista previa del PDF dinámicamente (solo del lado del cliente)
+const DynamicCertificatePreview = dynamic(
+  () => import('./preview/CertificatePreview').then(mod => mod.CertificatePreview),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full min-h-[500px] flex items-center justify-center bg-muted">
+        <AwardIcon className="h-24 w-24 text-muted-foreground animate-pulse" />
+      </div>
+    )
+  }
+)
 
 interface DecodedToken {
   userId: number;
@@ -230,11 +245,17 @@ export default function CertificateDetailsPage({ params }: { params: { id: strin
             <Button 
               className="w-full mt-6" 
               size="lg"
-              onClick={() => {
-                toast({
-                  title: "Próximamente",
-                  description: "La descarga de certificados estará disponible pronto",
-                })
+              onClick={async () => {
+                try {
+                  await downloadCertificate(certificate);
+                } catch (error) {
+                  console.error('Error al descargar el certificado:', error);
+                  toast({
+                    title: "Error",
+                    description: "No se pudo descargar el certificado",
+                    variant: "destructive"
+                  });
+                }
               }}
             >
               <DownloadIcon className="mr-2 h-5 w-5" />
@@ -249,20 +270,8 @@ export default function CertificateDetailsPage({ params }: { params: { id: strin
             <CardTitle>Vista Previa</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="aspect-[1.4/1] bg-gradient-to-br from-blue-50 to-indigo-50 rounded-md flex items-center justify-center">
-              {certificate.file ? (
-                <div className="w-full h-full flex items-center justify-center">
-                  {/* Aquí irá el visor de PDF cuando esté disponible */}
-                  <p className="text-sm text-muted-foreground">Vista previa no disponible</p>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <AwardIcon className="h-24 w-24 text-blue-500 mx-auto mb-4" />
-                  <p className="text-sm text-muted-foreground">
-                    Vista previa no disponible
-                  </p>
-                </div>
-              )}
+            <div className="aspect-[1.4/1] rounded-md">
+              <DynamicCertificatePreview certificate={certificate} />
             </div>
           </CardContent>
         </Card>
