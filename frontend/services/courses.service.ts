@@ -613,6 +613,7 @@ export class CoursesService {
 
   static async getCoursesByStudentId(studentId: number) {
     try {
+      console.log('Obteniendo cursos para el estudiante:', studentId);
       const response = await fetch(`${this.BASE_URL}/courses/student/${studentId}`, {
         headers: {
           'Authorization': `Bearer ${AuthService.getToken()}`
@@ -626,14 +627,28 @@ export class CoursesService {
       }
 
       const data = await response.json();
-      return data.map((course: any) => ({
-        id: course.course_id,
-        name: course.name || '',
-        description: course.description || '',
-        hours: course.hours || 0,
-        progress: course.finished ? 100 : 0,
-        hasCertificate: course.has_certificate || false
-      }));
+      console.log('Datos completos recibidos del backend:', data);
+      
+      // Procesar correctamente todos los campos que devuelve el backend
+      return data.map((course: any) => {
+        // Procesar los campos Buffer
+        const hasCertificateBuffer = course.has_certificate?.data;
+        const finishedBuffer = course.finished?.data;
+        
+        return {
+          id: course.course_id || course.id,
+          name: course.name || '',
+          description: course.description || '',
+          hours: course.hours || 0,
+          teacherId: course.teacher_id,
+          teacherName: course.teacher_name,
+          // Convertir progress de string a número o usar 0
+          progress: course.progress ? parseFloat(course.progress) : 0,
+          // Convertir los buffers a booleanos
+          hasCertificate: hasCertificateBuffer ? hasCertificateBuffer[0] === 1 : false,
+          finished: finishedBuffer ? finishedBuffer[0] === 1 : false
+        };
+      });
     } catch (error) {
       console.error('Error en getCoursesByStudentId:', error);
       throw error;

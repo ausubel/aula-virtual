@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { PlusIcon, SearchIcon, BookOpenIcon, UsersIcon, ClockIcon } from "lucide-react"
+import { PlusIcon, SearchIcon, BookOpenIcon, UsersIcon, ClockIcon, User } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -11,15 +11,17 @@ import { jwtDecode } from "jwt-decode"
 import { useToast } from "@/hooks/use-toast"
 import { CoursesService } from "@/services/courses.service"
 
-// Definición del tipo de curso basado en la respuesta del backend
+// Definición del tipo de curso basado en la respuesta completa del backend
 interface Course {
   id: number
   name: string
   description: string
   hours: number
+  teacherId?: number
+  teacherName?: string
   progress?: number
   hasCertificate?: boolean
-  image?: string
+  finished?: boolean
 }
 
 interface DecodedToken {
@@ -72,6 +74,7 @@ export default function CoursesPage() {
     try {
       setIsLoading(true)
       const data = await CoursesService.getCoursesByStudentId(userId)
+      console.log('Cursos recibidos con datos mejorados:', data);
       setCourses(data)
       
       // Guardar cursos en localStorage para usar como respaldo
@@ -148,7 +151,6 @@ export default function CoursesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCourses.map((course) => (
             <Card key={course.id} className="flex flex-col">
-              {/* Eliminada la sección de imágenes */}
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
@@ -166,6 +168,14 @@ export default function CoursesPage() {
                     <ClockIcon className="h-4 w-4 mr-2" />
                     <span>{course.hours} horas totales</span>
                   </div>
+                  
+                  {course.teacherName && (
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <User className="h-4 w-4 mr-2" />
+                      <span>Profesor: {course.teacherName}</span>
+                    </div>
+                  )}
+                  
                   {course.progress !== undefined && (
                     <div className="space-y-1">
                       <div className="flex justify-between text-sm">
@@ -175,9 +185,16 @@ export default function CoursesPage() {
                       <Progress value={course.progress} className="h-2" />
                     </div>
                   )}
+                  
                   {course.hasCertificate && (
                     <Badge variant="secondary" className="w-fit">
                       Certificado disponible
+                    </Badge>
+                  )}
+                  
+                  {course.finished && (
+                    <Badge variant="secondary" className="w-fit bg-green-100 text-green-800 hover:bg-green-200">
+                      Curso completado
                     </Badge>
                   )}
                 </div>
