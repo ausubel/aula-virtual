@@ -6,43 +6,52 @@ interface CertificatePreviewProps {
 
 export function CertificatePreview({ certificate }: CertificatePreviewProps) {
   return (
-    <div className="w-full h-full min-h-[400px] bg-white rounded-lg shadow-inner p-8 relative">
-      {/* Bordes decorativos */}
-      <div className="absolute inset-4 border-2 border-purple-500 rounded-lg"></div>
-      <div className="absolute inset-5 border border-purple-300 rounded-lg"></div>
+    <div className="w-full h-full min-h-[300px] bg-white rounded-lg shadow-inner p-4 relative bw-0.5 bc-gray-300"> {/* shadow-lg → shadow-inner */}
+      {/* Bordes decorativos - cambiados a azul para coincidir con la versión PDF */}
+      <div className="absolute inset-2 border-[1px] border-blue-900 rounded-lg"></div> {/* border-purple-500 → border-blue-900 (#0C1421) */}
+      <div className="absolute inset-3 border-[0.5px] border-blue-700 rounded-lg"></div> {/* border-purple-300 → border-blue-700 (#455A64) */}
 
-      {/* Contenido del certificado */}
-      <div className="mt-10 mb-5 text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Aula Virtual</h1>
-      </div>
+      {/* Contenedor principal con flexbox para centrar verticalmente */}
+      <div className="flex flex-col justify-between items-center h-full py-3">
+        {/* Título superior */}
+        <div className="w-full text-center mb-2">
+          <h1 className="text-xl font-bold text-blue-900">Aula Virtual</h1> {/* text-gray-900 → text-blue-900 */}
+        </div>
 
-      <div className="text-center space-y-4">
-        <p className="text-gray-600">Certifica a</p>
-        <h2 className="text-2xl font-bold text-gray-900 uppercase">{certificate.student_name}</h2>
+        {/* Contenido principal centrado */}
+        <div className="w-full flex flex-col items-center text-center px-2 space-y-2">
+          <p className="text-xs text-gray-600 w-full">Certifica a</p>
+          <h2 className="text-lg font-bold text-gray-900 uppercase w-full">
+            {certificate.student_name}
+          </h2>
 
-        <p className="text-gray-600">Por participar y aprobar el</p>
-        <h3 className="text-xl font-bold text-gray-900 uppercase">
-          Curso de {certificate.name}
-        </h3>
-      </div>
+          <p className="text-xs text-gray-600 w-full">Por participar y aprobar el</p>
+          <h3 className="text-base font-bold text-blue-900 uppercase w-full"> {/* text-gray-900 → text-blue-900 */}
+            Curso de {certificate.name}
+          </h3>
+        </div>
 
-      {/* Sección de firma */}
-      <div className="mt-auto mb-10 text-center">
-        <div className="w-48 h-px bg-gray-400 mx-auto mb-2"></div>
-        <p className="text-gray-500">{certificate.teacher_name}</p>
-        <p className="text-sm font-semibold text-gray-700">{certificate.teacher_degree}</p>
-      </div>
+        {/* Elemento decorativo (equivalente al placeholder de icono) */}
+        <div className="text-blue-500 font-bold my-3 text-sm">[Icono/Imagen]</div>
 
-      {/* Pie de página */}
-      <div className="absolute bottom-8 left-0 right-0 text-center">
-        <p className="text-sm text-gray-500">Certificado de aprobación online:</p>
-        <p className="text-sm text-gray-500">
-          {new Date(certificate.date_emission).toLocaleDateString('es-ES', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-          })}
-        </p>
+        {/* Sección de firma */}
+        <div className="flex flex-col items-center">
+          <div className="w-16 h-px bg-gray-400 mb-1"></div>
+          <p className="text-xs text-gray-500 text-center">{certificate.teacher_name}</p>
+          <p className="text-[0.65rem] font-semibold text-gray-700 text-center">{certificate.teacher_degree}</p>
+        </div>
+
+        {/* Pie de página */}
+        <div className="w-full text-center mt-2">
+          <p className="text-xs font-semibold text-gray-700">Aprobado el</p>
+          <p className="text-xs text-gray-500">
+            {new Date(certificate.date_emission).toLocaleDateString('es-ES', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            })}
+          </p>
+        </div>
       </div>
     </div>
   );
