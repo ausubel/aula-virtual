@@ -166,8 +166,10 @@ export default function CertificateDetailsPage({ params }: { params: { id: strin
         <Card>
           <CardHeader>
             <div className="flex justify-between items-start">
-              <CardTitle className="text-2xl font-bold">{certificate.name}</CardTitle>
-              <Badge variant="outline" className="ml-2">
+              <CardTitle className="text-2xl font-bold">
+                ¡{certificate.student_name} aprobó el Curso de {certificate.name}!
+              </CardTitle>
+              <Badge variant="outline" className="ml-2 shrink-0">
                 {certificate.hours} horas
               </Badge>
             </div>
