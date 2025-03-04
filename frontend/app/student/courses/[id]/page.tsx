@@ -4,22 +4,24 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BookOpen, Clock, FileText, PlayCircle, Download } from "lucide-react"
+import { BookOpen, Clock, FileText, PlayCircle, Download, User } from "lucide-react"
 import { CoursesService } from "@/services/courses.service"
 import { useToast } from "@/hooks/use-toast"
 import { getToken } from "@/lib/auth"
 import { jwtDecode } from "jwt-decode"
 
 // Interfaces basadas en la respuesta del backend
+interface Video {
+  id: number
+  videoPath: string
+}
+
 interface Lesson {
   id: number
   title: string
   description: string
   time: number
-  videos: Array<{
-    id: number
-    videoPath: string
-  }> | string[]
+  videos: Video[] | string[]
 }
 
 interface Course {
@@ -30,7 +32,9 @@ interface Course {
   progress?: number
   hasCertificate?: boolean
   image?: string
+  teacherId?: number
   teacherName?: string
+  finished?: boolean
 }
 
 interface DecodedToken {
@@ -45,6 +49,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -133,6 +138,38 @@ export default function CoursePage({ params }: { params: { id: string } }) {
     return `${hours > 0 ? `${hours}h ` : ''}${mins}min`
   }
 
+  // Función para determinar si una lección tiene video
+  const hasVideo = (lesson: Lesson): boolean => {
+    return lesson.videos && 
+           Array.isArray(lesson.videos) && 
+           lesson.videos.length > 0 && 
+           (typeof lesson.videos[0] === 'object') &&
+           ('videoPath' in lesson.videos[0]) &&
+           !!lesson.videos[0].videoPath;
+  }
+
+  // Función para obtener la primera URL de video de una lección (si existe)
+  const getFirstVideoUrl = (lesson: Lesson): string | null => {
+    if (!hasVideo(lesson)) return null;
+    
+    const videos = lesson.videos as Video[];
+    return videos[0].videoPath;
+  }
+
+  // Función para determinar el botón de acción según estado del curso
+  const getLessonActionText = (lesson: Lesson): string => {
+    return hasVideo(lesson) ? "Ver detalles" : "Ver detalles";
+  }
+  
+  // Función para mostrar detalles de una lección cuando se hace clic
+  const handleLessonClick = (lesson: Lesson) => {
+    setSelectedLesson(lesson);
+    toast({
+      title: `Lección: ${lesson.title}`,
+      description: "Próximamente podrás acceder al contenido de esta lección",
+    });
+  }
+
   if (isLoading) {
     return <div className="flex justify-center items-center min-h-screen">Cargando...</div>
   }
@@ -147,26 +184,41 @@ export default function CoursePage({ params }: { params: { id: string } }) {
         {/* Contenido Principal */}
         <div className="lg:col-span-3 space-y-6">
           {/* Banner o imagen de curso */}
-          <div className="aspect-video bg-black rounded-lg relative">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <PlayCircle className="h-16 w-16 text-white opacity-80" />
+          <div className="aspect-video bg-gradient-to-r from-blue-600 to-indigo-800 rounded-lg relative flex items-center justify-center">
+            <div className="text-center text-white">
+              <h1 className="text-4xl font-bold mb-4">{courseData.name}</h1>
+              {courseData.finished && (
+                <span className="inline-block bg-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                  Curso completado
+                </span>
+              )}
             </div>
           </div>
 
           {/* Información del curso */}
           <div className="space-y-4">
-            <h1 className="text-3xl font-bold">{courseData.name}</h1>
-            <p className="text-muted-foreground">{courseData.description}</p>
+            <p className="text-lg text-muted-foreground">{courseData.description}</p>
 
-            <div className="flex items-center gap-4 text-sm">
+            <div className="flex flex-wrap items-center gap-4 text-sm">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
                 <span>{`${courseData.hours} horas`}</span>
               </div>
               {courseData.teacherName && (
                 <div className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  <span>Profesor: {courseData.teacherName}</span>
+                </div>
+              )}
+              {courseData.progress !== undefined && (
+                <div className="flex items-center gap-2">
                   <BookOpen className="h-4 w-4" />
-                  <span>{courseData.teacherName}</span>
+                  <span>Progreso: {courseData.progress}%</span>
+                </div>
+              )}
+              {courseData.hasCertificate && (
+                <div className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                  Certificado disponible
                 </div>
               )}
             </div>
@@ -188,13 +240,27 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                   {lessons.length > 0 ? (
                     <div className="space-y-2">
                       {lessons.map((lesson) => (
-                        <Button key={lesson.id} variant="ghost" className="w-full justify-start">
-                          <div className="flex items-center gap-2 w-full">
-                            <PlayCircle className="h-4 w-4" />
-                            <span className="flex-grow text-left">{lesson.title}</span>
-                            <span className="text-muted-foreground">{formatTime(lesson.time)}</span>
+                        <div key={lesson.id} className="border rounded-lg p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-grow">
+                              <h3 className="font-medium">{lesson.title}</h3>
+                              <p className="text-sm text-muted-foreground mb-2">{lesson.description}</p>
+                              <div className="flex items-center text-xs text-muted-foreground">
+                                <Clock className="h-3 w-3 mr-1" />
+                                <span>{formatTime(lesson.time)}</span>
+                              </div>
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="ml-4"
+                              onClick={() => handleLessonClick(lesson)}
+                            >
+                              <PlayCircle className="h-4 w-4 mr-2" />
+                              {getLessonActionText(lesson)}
+                            </Button>
                           </div>
-                        </Button>
+                        </div>
                       ))}
                     </div>
                   ) : (
@@ -211,14 +277,21 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                 <CardContent className="space-y-4 pt-6">
                   {lessons.length > 0 ? (
                     lessons.map((lesson) => (
-                      <div key={lesson.id} className="flex items-center justify-between">
+                      <div key={lesson.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-2">
                           <FileText className="h-4 w-4" />
-                          <span>{lesson.title}</span>
+                          <span className="font-medium">{lesson.title}</span>
                         </div>
-                        <Button variant="ghost" size="icon">
-                          <Download className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">{formatTime(lesson.time)}</span>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleLessonClick(lesson)}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     ))
                   ) : (
