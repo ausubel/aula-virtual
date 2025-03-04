@@ -8,8 +8,8 @@ export function CertificatePreview({ certificate }: CertificatePreviewProps) {
   return (
     <div className="w-full h-full min-h-[300px] bg-white rounded-lg shadow-inner p-4 relative bw-0.5 bc-gray-300"> {/* shadow-lg → shadow-inner */}
       {/* Bordes decorativos - cambiados a azul para coincidir con la versión PDF */}
-      <div className="absolute inset-2 border-[1px] border-blue-900 rounded-lg"></div> {/* border-purple-500 → border-blue-900 (#0C1421) */}
-      <div className="absolute inset-3 border-[0.5px] border-blue-700 rounded-lg"></div> {/* border-purple-300 → border-blue-700 (#455A64) */}
+      <div className="absolute inset-2 border-[3px] border-blue-900"></div> {/* border-purple-500 → border-blue-900 (#0C1421) */}
+      <div className="absolute inset-3 border-[1px] border-blue-700 m-1"></div>{/* border-purple-300 → border-blue-700 (#455A64) */}
 
       {/* Contenedor principal con flexbox para centrar verticalmente */}
       <div className="flex flex-col justify-between items-center h-full py-3">
