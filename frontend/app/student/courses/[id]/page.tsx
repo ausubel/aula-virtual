@@ -4,11 +4,12 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BookOpen, Clock, FileText, PlayCircle, Download, User, AlertCircle } from "lucide-react"
+import { BookOpen, Clock, FileText, PlayCircle, Download, User, AlertCircle, ChevronLeft } from "lucide-react"
 import { CoursesService } from "@/services/courses.service"
 import { useToast } from "@/hooks/use-toast"
 import { getToken } from "@/lib/auth"
 import { jwtDecode } from "jwt-decode"
+import { useRouter } from "next/navigation"
 
 // Interfaces basadas en la respuesta del backend
 interface Video {
@@ -45,6 +46,7 @@ interface DecodedToken {
 }
 
 export default function CoursePage({ params }: { params: { id: string } }) {
+  const router = useRouter()
   const [courseData, setCourseData] = useState<Course | null>(null)
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -217,8 +219,18 @@ export default function CoursePage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="space-y-6">
+    <div className="container mx-auto pl-5 pr-4 pt-1">
+      <div className="space-y-4">
+        {/* Botón para regresar - Ajustado el espaciado */}
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => router.back()}
+        >
+          <ChevronLeft className="h-4 w-4 mr-2" />
+          Regresar
+        </Button>
+
         {/* Encabezado del curso */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
           <div>
