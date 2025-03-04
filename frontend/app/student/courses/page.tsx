@@ -73,6 +73,21 @@ export default function CoursesPage() {
       setIsLoading(true)
       const data = await CoursesService.getCoursesByStudentId(userId)
       setCourses(data)
+      
+      // Guardar cursos en localStorage para usar como respaldo
+      try {
+        // Solo guardamos los campos básicos que necesitamos para mostrar información mínima
+        const simplifiedCourses = data.map((course: Course) => ({
+          id: course.id,
+          name: course.name,
+          description: course.description,
+          hours: course.hours,
+        }));
+        localStorage.setItem('studentCourses', JSON.stringify(simplifiedCourses));
+        console.log('Datos de cursos guardados en localStorage:', simplifiedCourses);
+      } catch (storageError) {
+        console.error('Error al guardar cursos en localStorage:', storageError);
+      }
     } catch (error) {
       console.error('Error al cargar los cursos:', error)
       toast({
