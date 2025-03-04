@@ -28,9 +28,9 @@ export default class DocumentService {
     }
   }
 
-  async getCertificateByCourseId(courseId: number): Promise<Certificate | null> {
+  async getCertificateByCourseId(courseId: number, studentId?: number): Promise<Certificate | null> {
     try {
-      const certificate = await this.documentModel.getCertificateByCourseId(courseId);
+      const certificate = await this.documentModel.getCertificateByCourseId(courseId, studentId);
       
       if (!certificate) {
         return null;
@@ -46,6 +46,7 @@ export default class DocumentService {
         teacher_name: certificate.teacher_name || undefined,
         teacher_degree: certificate.teacher_degree || undefined,
         teacher_profile: certificate.teacher_profile || undefined,
+        student_name: certificate.student_name || undefined,
         file: certificate.file || undefined
       };
 

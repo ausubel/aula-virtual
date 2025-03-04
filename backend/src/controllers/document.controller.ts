@@ -48,9 +48,10 @@ export default class DocumentController implements ControllerBase {
     this.router.get("/course/:courseId", async (req, res) => {
       try {
         const { courseId } = req.params;
-        console.log('Obteniendo certificado para el curso:', courseId);
+        const studentId = req.query.studentId ? Number(req.query.studentId) : undefined;
+        console.log('Obteniendo certificado para el curso:', courseId, 'Estudiante ID:', studentId);
         
-        const certificate = await this.documentService.getCertificateByCourseId(Number(courseId));
+        const certificate = await this.documentService.getCertificateByCourseId(Number(courseId), studentId);
         console.log('Certificado encontrado:', certificate);
 
         if (!certificate) {

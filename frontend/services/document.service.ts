@@ -17,9 +17,16 @@ export class DocumentService {
     }
   }
 
-  static async getCertificateByCourseId(courseId: number): Promise<Certificate> {
+  static async getCertificateByCourseId(courseId: number, studentId?: number): Promise<Certificate> {
     try {
-      const response = await fetch(`${this.BASE_URL}/document/course/${courseId}`);
+      const url = new URL(`${this.BASE_URL}/document/course/${courseId}`);
+      
+      // Añadir el studentId como parámetro de consulta si está definido
+      if (studentId) {
+        url.searchParams.append('studentId', studentId.toString());
+      }
+      
+      const response = await fetch(url.toString());
       if (!response.ok) throw new Error('Error al obtener certificado');
 
       const data: ApiResponse<CertificateResponse> = await response.json();

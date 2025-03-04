@@ -7,5 +7,6 @@ export interface Certificate {
   teacher_name?: string;
   teacher_degree?: string;
   teacher_profile?: string;
+  student_name?: string;
   file?: string;
 }

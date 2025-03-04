@@ -42,12 +42,13 @@ export default class DocumentModel extends ModelBase {
     }
   }
 
-  async getCertificateByCourseId(courseId: number): Promise<Certificate | null> {
+  async getCertificateByCourseId(courseId: number, studentId?: number): Promise<Certificate | null> {
     try {
-      console.log('Consultando certificado para curso:', courseId);
+      console.log('Consultando certificado para curso:', courseId, 'y estudiante:', studentId || 'no especificado');
+      
       const [resultRows] = await this.database.query(
         StoredProcedures.GetCertificateByCourseId,
-        [courseId]
+        [courseId, studentId || null]
       );
       
       // Extraemos los resultados de la estructura anidada
@@ -80,6 +81,7 @@ export default class DocumentModel extends ModelBase {
         teacher_name: row.teacher_name,
         teacher_degree: row.teacher_degree,
         teacher_profile: row.teacher_profile,
+        student_name: row.student_name,
         file: row.file
       };
 

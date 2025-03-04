@@ -6,24 +6,53 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
-import { CalendarIcon, AwardIcon, DownloadIcon, ArrowLeftIcon, GraduationCapIcon, UserIcon } from "lucide-react"
+import { CalendarIcon, AwardIcon, DownloadIcon, ArrowLeftIcon, GraduationCapIcon, UserIcon, BookmarkIcon } from "lucide-react"
 import { format, parseISO } from "date-fns"
 import { es } from "date-fns/locale"
 import { DocumentService } from "@/services/document.service"
 import { useToast } from "@/hooks/use-toast"
+import { getToken } from "@/lib/auth"
+import { jwtDecode } from "jwt-decode"
 import Link from "next/link"
 import type { Certificate } from "@/types/certificate"
+
+interface DecodedToken {
+  userId: number;
+  userRoleId: number;
+  iat?: number;
+  exp?: number;
+}
 
 export default function CertificateDetailsPage({ params }: { params: { id: string } }) {
   const [certificate, setCertificate] = useState<Certificate | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [userId, setUserId] = useState<number | null>(null)
   const { toast } = useToast()
 
+  // Obtener el ID del usuario del token
+  useEffect(() => {
+    const token = getToken();
+    if (token) {
+      try {
+        const decoded = jwtDecode<DecodedToken>(token);
+        if (decoded && decoded.userId) {
+          setUserId(decoded.userId);
+        }
+      } catch (error) {
+        console.error('Error al decodificar el token:', error);
+      }
+    }
+  }, []);
+
+  // Cargar el certificado cuando tenemos el userId
   useEffect(() => {
     const loadCertificate = async () => {
       try {
         setIsLoading(true)
-        const certificateData = await DocumentService.getCertificateByCourseId(Number(params.id))
+        const certificateData = await DocumentService.getCertificateByCourseId(
+          Number(params.id), 
+          userId || undefined
+        )
         console.log('Certificado cargado:', certificateData);
         
         if (!certificateData.id || !certificateData.name || !certificateData.hours) {
@@ -43,10 +72,10 @@ export default function CertificateDetailsPage({ params }: { params: { id: strin
       }
     }
 
-    if (params.id) {
+    if (params.id && userId !== null) {
       loadCertificate()
     }
-  }, [params.id])
+  }, [params.id, userId])
 
   // Función auxiliar para formatear la fecha de forma segura
   const formatDate = (dateString: string | undefined) => {
@@ -153,6 +182,20 @@ export default function CertificateDetailsPage({ params }: { params: { id: strin
               <div className="text-sm text-muted-foreground">
                 {certificate.description}
               </div>
+            )}
+
+            {/* Información del estudiante */}
+            {certificate.student_name && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium flex items-center">
+                    <BookmarkIcon className="h-4 w-4 mr-2" />
+                    Certificado a nombre de
+                  </h3>
+                  <p className="font-medium">{certificate.student_name}</p>
+                </div>
+              </>
             )}
 
             {/* Información del profesor */}
