@@ -218,134 +218,131 @@ export default function CoursePage({ params }: { params: { id: string } }) {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Contenido Principal */}
-        <div className="lg:col-span-3 space-y-6">
-          {/* Banner o imagen de curso */}
-          <div className="aspect-video bg-gradient-to-r from-blue-600 to-indigo-800 rounded-lg relative flex items-center justify-center">
-            <div className="text-center text-white">
-              <h1 className="text-4xl font-bold mb-4">{courseData.name}</h1>
-              {courseData.finished && (
-                <span className="inline-block bg-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                  Curso completado
-                </span>
-              )}
-            </div>
+      <div className="space-y-6">
+        {/* Encabezado del curso */}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+          <div>
+            <h1 className="text-3xl font-bold">{courseData.name}</h1>
+            {courseData.finished && (
+              <span className="mt-2 inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                Curso completado
+              </span>
+            )}
           </div>
+        </div>
 
-          {/* Información del curso */}
-          <div className="space-y-4">
-            <p className="text-lg text-muted-foreground">{courseData.description}</p>
+        {/* Información del curso */}
+        <div className="space-y-4">
+          <p className="text-lg text-muted-foreground">{courseData.description}</p>
 
-            <div className="flex flex-wrap items-center gap-4 text-sm">
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span>{`${courseData.hours} horas`}</span>
+            </div>
+            {courseData.teacherName && (
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                <span>{`${courseData.hours} horas`}</span>
+                <User className="h-4 w-4" />
+                <span>Profesor: {courseData.teacherName}</span>
               </div>
-              {courseData.teacherName && (
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  <span>Profesor: {courseData.teacherName}</span>
-                </div>
-              )}
-              {courseData.progress !== undefined && (
-                <div className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4" />
-                  <span>Progreso: {courseData.progress}%</span>
-                </div>
-              )}
-              {courseData.hasCertificate && (
-                <div className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                  Certificado disponible
-                </div>
-              )}
-            </div>
+            )}
+            {courseData.progress !== undefined && (
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4" />
+                <span>Progreso: {courseData.progress}%</span>
+              </div>
+            )}
+            {courseData.hasCertificate && (
+              <div className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                Certificado disponible
+              </div>
+            )}
           </div>
+        </div>
 
-          {/* Pestañas de contenido */}
-          <Tabs defaultValue="content">
-            <TabsList>
-              <TabsTrigger value="content">Contenido</TabsTrigger>
-              <TabsTrigger value="resources">Recursos</TabsTrigger>
-            </TabsList>
+        {/* Pestañas de contenido */}
+        <Tabs defaultValue="content">
+          <TabsList>
+            <TabsTrigger value="content">Contenido</TabsTrigger>
+            <TabsTrigger value="resources">Recursos</TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="content" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Lecciones del curso</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {lessons.length > 0 ? (
-                    <div className="space-y-2">
-                      {lessons.map((lesson) => (
-                        <div key={lesson.id} className="border rounded-lg p-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-grow">
-                              <h3 className="font-medium">{lesson.title}</h3>
-                              <p className="text-sm text-muted-foreground mb-2">{lesson.description}</p>
-                              <div className="flex items-center text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3 mr-1" />
-                                <span>{formatTime(lesson.time)}</span>
-                              </div>
+          <TabsContent value="content" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Lecciones del curso</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {lessons.length > 0 ? (
+                  <div className="space-y-2">
+                    {lessons.map((lesson) => (
+                      <div key={lesson.id} className="border rounded-lg p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-grow">
+                            <h3 className="font-medium">{lesson.title}</h3>
+                            <p className="text-sm text-muted-foreground mb-2">{lesson.description}</p>
+                            <div className="flex items-center text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3 mr-1" />
+                              <span>{formatTime(lesson.time)}</span>
                             </div>
-                            {renderLessonButton(lesson)}
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-4 text-muted-foreground">
-                      No hay lecciones disponibles
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="resources">
-              <Card>
-                <CardContent className="space-y-4 pt-6">
-                  {lessons.length > 0 ? (
-                    lessons.map((lesson) => (
-                      <div key={lesson.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          <span className="font-medium">{lesson.title}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">{formatTime(lesson.time)}</span>
-                          {hasVideo(lesson) ? (
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              asChild
-                            >
-                              <a href={getFirstVideoUrl(lesson)!} target="_blank" rel="noopener noreferrer">
-                                <Download className="h-4 w-4" />
-                              </a>
-                            </Button>
-                          ) : (
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              disabled
-                            >
-                              <AlertCircle className="h-4 w-4" />
-                            </Button>
-                          )}
+                          {renderLessonButton(lesson)}
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-4 text-muted-foreground">
-                      No hay recursos disponibles
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-muted-foreground">
+                    No hay lecciones disponibles
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="resources">
+            <Card>
+              <CardContent className="space-y-4 pt-6">
+                {lessons.length > 0 ? (
+                  lessons.map((lesson) => (
+                    <div key={lesson.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        <span className="font-medium">{lesson.title}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">{formatTime(lesson.time)}</span>
+                        {hasVideo(lesson) ? (
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            asChild
+                          >
+                            <a href={getFirstVideoUrl(lesson)!} target="_blank" rel="noopener noreferrer">
+                              <Download className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        ) : (
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            disabled
+                          >
+                            <AlertCircle className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4 text-muted-foreground">
+                    No hay recursos disponibles
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )
