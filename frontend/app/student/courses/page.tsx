@@ -101,10 +101,17 @@ export default function CoursesPage() {
   }
 
   // Filtrar cursos según el término de búsqueda
-  const filteredCourses = courses.filter(course => 
-    course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    course.description.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredCourses = courses.filter(course => {
+    const searchLower = searchTerm.toLowerCase().trim();
+    
+    // Si no hay término de búsqueda, mostrar todos los cursos
+    if (!searchLower) return true;
+    
+    // Filtrar por nombre del curso que comience con el término de búsqueda
+    const nameLower = course.name.toLowerCase();
+    
+    return nameLower.startsWith(searchLower);
+  });
 
   if (isLoading) {
     return <div className="flex justify-center items-center min-h-screen">Cargando cursos...</div>
@@ -125,7 +132,7 @@ export default function CoursesPage() {
           <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Buscar cursos..."
+            placeholder="Buscar cursos por nombre..."
             className="pl-8"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -140,14 +147,8 @@ export default function CoursesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCourses.map((course) => (
-            <Card key={course.id} className="overflow-hidden flex flex-col">
-              <div className="h-48 overflow-hidden">
-                <img 
-                  src={course.image || '/placeholder.jpg'} 
-                  alt={course.name} 
-                  className="w-full h-full object-cover transition-transform hover:scale-105"
-                />
-              </div>
+            <Card key={course.id} className="flex flex-col">
+              {/* Eliminada la sección de imágenes */}
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
