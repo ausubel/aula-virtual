@@ -16,11 +16,7 @@ import { cn } from "@/lib/utils"
 import { MobileNav } from "@/components/mobile-nav"
 
 const studentNavLinks = [
-  {
-    href: "/student",
-    label: "Dashboard",
-    icon: <LayoutDashboardIcon className="size-4 mr-2" />,
-  },
+
   {
     href: "/student/courses",
     label: "Mis Cursos",
@@ -57,7 +53,7 @@ export function StudentNavBar() {
               <MobileNav links={studentNavLinks} />
             </div>
             
-            <Link href="/student" className="flex items-center space-x-2">
+            <Link href="/courses" className="flex items-center space-x-2">
               <BookOpenIcon className="size-6" />
               <span className="text-lg font-semibold hidden sm:inline-block">Aula Virtual</span>
             </Link>

@@ -4,7 +4,11 @@ export const StoredProcedures = {
     GetUserDataById: 'CALL get_user_data_by_id(?)',
     GetOrCreateGoogleUser: 'CALL get_or_create_google_user(?, ?, ?)',
     RegisterStudent: 'CALL register_student(?, ?, ?, ?)',
-    
+
+    //User procedures
+    UpdateUserDataById: 'CALL update_user_data_by_id(?, ?, ?, ?, ?, ?, ?)',
+    GetStudentProfileData: 'CALL get_student_profile_data(?, @result); SELECT @result as profileData',
+
     // Course procedures
     CreateCourse: 'CALL create_course(?, ?, ?, ?)',
     GetAllCourses: 'CALL get_all_courses()',

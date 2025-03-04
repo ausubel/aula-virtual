@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 
-export default function StudentDashboard() {
+function StudentDashboard() {
   const courses = [
     {
       id: 1,
@@ -49,3 +49,4 @@ export default function StudentDashboard() {
   )
 }
 
+export default StudentDashboard

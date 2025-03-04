@@ -6,20 +6,20 @@ VALUES (1, 'ADMIN'),
     (2, 'STUDENT'),
     (3, 'TEACHER');
 
-INSERT INTO user (name, surname, email, password, active, id_role)
-VALUES ('Admin', 'Admin', 'admin@admin.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K', 1, 1),
-('Pepe','Rodríguez',  'pepe@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,3 ),
-('Papu','Rodríguez',  'papu@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,3 ),
-('Pupa','Rodríguez',  'pupa@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,3 ),
-('Maria', 'Garcia', 'maria@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2 ),
-('Carlos', 'Lopez', 'carlos@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2 ),
-('Laura', 'Martinez', 'laura@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2 ),
-('Joaquin', 'Gonzalez', 'joaquin@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2 ),
-('Jose', 'Molina', 'jose@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2 ),
-('Ana', 'Ruiz', 'ana@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2 ),
-('Sergio', 'Sanchez', 'sergio@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2 ),
-('Luis', 'Perez', 'luis@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2 ),
-('Miguel', 'Hernandez', 'miguel@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2 );
+INSERT INTO user (name, surname, email, password, active, id_role, phone)
+VALUES ('Admin', 'Admin', 'admin@admin.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K', 1, 1, '123456789'),
+('Pepe','Rodríguez',  'pepe@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,3, '123456789'),
+('Papu','Rodríguez',  'papu@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,3, '123456789'),
+('Pupa','Rodríguez',  'pupa@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,3, '123456789'),
+('Maria', 'Garcia', 'maria@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2, '123456789'),
+('Carlos', 'Lopez', 'carlos@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2, '123456789'),
+('Laura', 'Martinez', 'laura@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2, '123456789'),
+('Joaquin', 'Gonzalez', 'joaquin@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2, '123456789'),
+('Jose', 'Molina', 'jose@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2, '123456789'),
+('Ana', 'Ruiz', 'ana@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2, '123456789'),
+('Sergio', 'Sanchez', 'sergio@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2, '123456789'),
+('Luis', 'Perez', 'luis@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2, '123456789'),
+('Miguel', 'Hernandez', 'miguel@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2, '123456789'),
 
 INSERT INTO admin_general (id_admin_general)
 VALUES (1);
@@ -80,4 +80,8 @@ VALUES (1, 5),
     (2, 5),
     (2, 6),
     (3, 5),
-    (3, 6);
+    (3, 6),
+    (4, 5),
+    (4, 6),
+    (5, 5),
+    (5, 6);

@@ -169,6 +169,8 @@ BEGIN
         u.email,
         u.name,
         u.surname,
+        u.phone,
+        u.degree,
         u.id_role as roleId,
         u.active,
         (SELECT 1 FROM student WHERE id = u.id AND cv_file IS NOT NULL) as hasCV
@@ -883,4 +885,161 @@ BEGIN
         END IF;
     END IF;
 END//
+
+DROP PROCEDURE IF EXISTS update_user_data_by_id//
+
+/* Prueba
+CALL update_user_data_by_id(1, 'Juan', 'Perez', 'juanp@aula.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K','999999999','chistemas',true);
+*/
+
+CREATE PROCEDURE update_user_data_by_id(
+    IN p_id INT,
+    IN p_name VARCHAR(50),
+    IN p_surname VARCHAR(50),
+    IN p_email VARCHAR(50),
+    IN p_password VARCHAR(60),
+    IN p_phone VARCHAR(50),
+    IN p_degree VARCHAR(50)
+)
+BEGIN
+    UPDATE user 
+    SET 
+        name = p_name,
+        surname = p_surname,
+        email = p_email,
+        password = p_password,
+        phone = p_phone,
+        degree = p_degree
+    WHERE id = p_id;
+    
+    SELECT 'SUCCESS' as message;
+END//
+
+DROP PROCEDURE IF EXISTS get_student_profile_data//
+/*
+Pasos previos:
+update lesson_student
+set finished = 1
+where student_id = 5;
+
+update user
+set phone = '123123123'
+where id = 5;
+
+update student_course 
+set finished = 1, has_certificate = 1, finished_datetime = now()
+where uuid in ('4ca8fd69-f8bd-11ef-80e9-3c7c3fb98339','5e7802e2-f7ca-11ef-9ea0-3c7c3fb98339');
+
+Prueba
+CALL get_student_profile_data(5, @result);
+SELECT @result;
+*/
+CREATE PROCEDURE get_student_profile_data(
+    IN p_student_id INT,
+    OUT p_result JSON
+)
+BEGIN
+    DECLARE total_courses INT;
+    DECLARE completed_courses INT;
+    DECLARE total_progress DECIMAL(5,2);
+    DECLARE user_data JSON;
+    DECLARE certificates_data JSON;
+    DECLARE current_courses_data JSON;
+    
+    -- Get total courses enrolled
+    SELECT COUNT(1) INTO total_courses 
+    FROM student_course 
+    WHERE student_id = p_student_id;
+    
+    -- Get completed courses
+    SELECT COUNT(1) INTO completed_courses 
+    FROM student_course 
+    WHERE student_id = p_student_id AND finished = 1;
+    
+    -- Calculate total progress
+    IF total_courses > 0 THEN
+        SELECT (completed_courses / total_courses) * 100 INTO total_progress;
+    ELSE
+        SET total_progress = 0;
+    END IF;
+    
+    -- Get user basic information
+    SELECT JSON_OBJECT(
+        'name', CONCAT(u.name, ' ', u.surname),
+        'email', u.email,
+        'phone', u.phone,
+        'coursesEnrolled', total_courses,
+        'coursesCompleted', completed_courses,
+        'totalProgress', total_progress
+    ) INTO user_data
+    FROM user u
+    WHERE u.id = p_student_id;
+    
+    -- Get certificates (completed courses with certificate)
+    SELECT JSON_ARRAYAGG(
+        JSON_OBJECT(
+            'id', c.id,
+            'title', c.name,
+            'issueDate', DATE_FORMAT(sc.finished_datetime, '%d de %M, %Y'),
+            'instructor', CONCAT(t_user.name, ' ', t_user.surname)
+        )
+    ) INTO certificates_data
+    FROM student_course sc
+    JOIN course c ON sc.course_id = c.id
+    JOIN teacher t ON c.teacher_id = t.id
+    JOIN user t_user ON t.id = t_user.id
+    WHERE sc.student_id = p_student_id 
+    AND sc.finished = 1 
+    AND sc.has_certificate = 1;
+    
+    -- Handle NULL certificates
+    IF certificates_data IS NULL THEN
+        SET certificates_data = JSON_ARRAY();
+    END IF;
+    
+    -- Get current courses (not finished)
+    SELECT JSON_ARRAYAGG(
+        JSON_OBJECT(
+            'id', c.id,
+            'title', c.name,
+            'progress', (
+                SELECT 
+                    IFNULL(
+                        (COUNT(ls.id) * 100) / NULLIF(COUNT(l.id), 0),
+                        0
+                    )
+                FROM lesson l
+                LEFT JOIN lesson_student ls ON l.id = ls.lesson_id AND ls.student_id = p_student_id AND ls.finished = 1
+                WHERE l.course_id = c.id
+            ),
+            'instructor', CONCAT(t_user.name, ' ', t_user.surname)
+        )
+    ) INTO current_courses_data
+    FROM student_course sc
+    JOIN course c ON sc.course_id = c.id
+    JOIN teacher t ON c.teacher_id = t.id
+    JOIN user t_user ON t.id = t_user.id
+    WHERE sc.student_id = p_student_id 
+    AND sc.finished = 0;
+    
+    -- Handle NULL current courses
+    IF current_courses_data IS NULL THEN
+        SET current_courses_data = JSON_ARRAY();
+    END IF;
+    
+    -- Combine all data into a single JSON object
+    SET p_result = JSON_OBJECT(
+        'name', JSON_UNQUOTE(JSON_EXTRACT(user_data, '$.name')),
+        'email', JSON_UNQUOTE(JSON_EXTRACT(user_data, '$.email')),
+        'phone', JSON_UNQUOTE(JSON_EXTRACT(user_data, '$.phone')),
+        'coursesEnrolled', JSON_EXTRACT(user_data, '$.coursesEnrolled'),
+        'coursesCompleted', JSON_EXTRACT(user_data, '$.coursesCompleted'),
+        'totalProgress', JSON_EXTRACT(user_data, '$.totalProgress'),
+        'certificates', certificates_data,
+        'currentCourses', current_courses_data
+    );
+END //
+
+
 DELIMITER ;
+

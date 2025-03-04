@@ -6,6 +6,7 @@ import EmailController from "./email.controller";
 import DocumentController from "./document.controller";
 import CoursesController from "./courses.controller";
 import TeachersController from "./teachers.controller";
+import UserController from "./user.controller";
 
 export default class ControllerInitializer {
     private app: Application;
@@ -19,7 +20,8 @@ export default class ControllerInitializer {
             new EmailController(),
             new DocumentController(),
             new CoursesController(),
-            new TeachersController()
+            new TeachersController(),
+            new UserController()
         ];
     }
 

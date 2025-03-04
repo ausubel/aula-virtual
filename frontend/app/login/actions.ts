@@ -24,7 +24,6 @@ export async function login(formData: FormData) {
         message: data.message || 'Error al iniciar sesión',
       };
     }
-
     return {
       success: true,
       data: data.data,

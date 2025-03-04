@@ -51,10 +51,6 @@ export default class DocumentController implements ControllerBase {
       try {
         const { studentId } = req.params;
         const { file } = req.body;
-        
-        console.log(`Recibida solicitud para subir CV del estudiante ID: ${studentId}`);
-        console.log("Contenido del cuerpo de la solicitud:", req.body);
-        
         if (!file) {
           console.error("Error: No se proporcionó ningún archivo");
           return sendResponses(res, 400, "No file provided");
@@ -66,9 +62,7 @@ export default class DocumentController implements ControllerBase {
           return sendResponses(res, 400, "File must be a PDF");
         }
         
-        console.log("Subiendo CV al modelo...");
         await this.certificateService.uploadCV(file, Number(studentId));
-        console.log("CV subido correctamente");
         
         return sendResponses(res, 200, "CV uploaded successfully");
       } catch (error) {

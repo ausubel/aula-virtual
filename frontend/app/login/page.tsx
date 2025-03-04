@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { login } from "./actions"
 import { toast } from "@/components/ui/use-toast"
-import { saveToken, saveUserCVStatus, isAuthenticated } from "@/lib/auth"
+import { saveToken, saveUserCVStatus, isAuthenticated, saveUserRole, saveUserId } from "@/lib/auth"
 import { LoadingSpinner } from "@/components/loading-spinner"
 
 export default function LoginPage() {
@@ -34,16 +34,30 @@ export default function LoginPage() {
       const result = await login(formData)
       
       if (result.success) {
+        console.log('Login successful, user data:', result.data);
+        
         // Guardar el token usando nuestro servicio de autenticación
         saveToken(result.data.token)
         
         // Redireccionar según el rol del usuario y si tiene CV
         const userRole = result.data.user[0].roleId
         const hasCV = result.data.user[0].hasCV
+        const userId = result.data.user[0].id
+        const cvStatus = result.data.user[0].hasCV
+        
+        console.log('User authenticated:', result.data.user);
+        console.log('Token created:', result.data.token);
+        console.log('User ID to save:', userId);
         
         // Guardar el estado del CV en una cookie
-        saveUserCVStatus(hasCV)
-        
+        saveUserCVStatus(cvStatus)
+
+        // Guardar el rol del usuario en una cookie
+        saveUserRole(userRole)
+
+        // Guardar el ID del usuario en una cookie
+        saveUserId(userId)
+
         if (userRole === 1) { // Asumiendo que 1 es admin
           router.push("/admin")
         } else if (!hasCV) {

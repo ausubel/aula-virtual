@@ -8,12 +8,12 @@ class DatabaseParameters {
 	readonly database: string;
 	readonly password: string;
 	constructor() {
-		this.host = "localhost";
-		this.port = 3306;
-		this.user = "root";
-		this.connectionLimit = 10;
-		this.database = "virtual_class";
-		this.password = "Navia1212.";
+		this.host = process.env.DB_HOST;
+		this.port = Number(process.env.DB_PORT);
+		this.user = process.env.DB_USER;
+		this.connectionLimit = Number(process.env.DB_CONNECTION_LIMIT);
+		this.database = process.env.DB_NAME;
+		this.password = process.env.DB_PASSWORD;
 	}
 }
 export default class Database {

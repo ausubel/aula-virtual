@@ -8,11 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { BellIcon, LockIcon, UserIcon, MailIcon, GlobeIcon } from "lucide-react"
+import withCVRequired from "@/components/auth/with-cv-required"
 
-export default function SettingsPage() {
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
-  const [emailNotifications, setEmailNotifications] = useState(true)
-  const [darkMode, setDarkMode] = useState(false)
+function SettingsPage() {
 
   return (
     <div className="space-y-6">
@@ -23,9 +21,6 @@ export default function SettingsPage() {
       <Tabs defaultValue="account" className="space-y-4">
         <TabsList>
           <TabsTrigger value="account">Cuenta</TabsTrigger>
-          <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
-          <TabsTrigger value="appearance">Apariencia</TabsTrigger>
-          <TabsTrigger value="security">Seguridad</TabsTrigger>
         </TabsList>
         
         {/* Pestaña de Cuenta */}
@@ -70,148 +65,9 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        
-        {/* Pestaña de Notificaciones */}
-        <TabsContent value="notifications" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Preferencias de Notificaciones</CardTitle>
-              <CardDescription>
-                Configura cómo y cuándo quieres recibir notificaciones
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <BellIcon className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">Notificaciones</p>
-                    <p className="text-sm text-muted-foreground">Habilitar todas las notificaciones</p>
-                  </div>
-                </div>
-                <Switch
-                  checked={notificationsEnabled}
-                  onCheckedChange={setNotificationsEnabled}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <MailIcon className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">Notificaciones por Correo</p>
-                    <p className="text-sm text-muted-foreground">Recibir notificaciones por correo electrónico</p>
-                  </div>
-                </div>
-                <Switch
-                  checked={emailNotifications}
-                  onCheckedChange={setEmailNotifications}
-                  disabled={!notificationsEnabled}
-                />
-              </div>
-              
-              <div className="pt-4 border-t">
-                <h3 className="font-medium mb-3">Tipos de Notificaciones</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm">Nuevos cursos disponibles</p>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm">Actualizaciones de cursos</p>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm">Recordatorios de tareas</p>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm">Certificados disponibles</p>
-                    <Switch defaultChecked />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex justify-end">
-                <Button>Guardar Preferencias</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        {/* Pestaña de Apariencia */}
-        <TabsContent value="appearance" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Apariencia</CardTitle>
-              <CardDescription>
-                Personaliza la apariencia de la aplicación
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <GlobeIcon className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">Modo Oscuro</p>
-                    <p className="text-sm text-muted-foreground">Cambiar entre modo claro y oscuro</p>
-                  </div>
-                </div>
-                <Switch
-                  checked={darkMode}
-                  onCheckedChange={setDarkMode}
-                />
-              </div>
-              
-              <div className="flex justify-end">
-                <Button>Guardar Preferencias</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        {/* Pestaña de Seguridad */}
-        <TabsContent value="security" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Seguridad de la Cuenta</CardTitle>
-              <CardDescription>
-                Administra la seguridad de tu cuenta
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="current-password">Contraseña Actual</Label>
-                <Input id="current-password" type="password" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="new-password">Nueva Contraseña</Label>
-                <Input id="new-password" type="password" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirmar Contraseña</Label>
-                <Input id="confirm-password" type="password" />
-              </div>
-              <div className="flex justify-end">
-                <Button>Cambiar Contraseña</Button>
-              </div>
-              
-              <div className="pt-6 border-t mt-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <LockIcon className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">Autenticación de Dos Factores</p>
-                      <p className="text-sm text-muted-foreground">Añade una capa extra de seguridad a tu cuenta</p>
-                    </div>
-                  </div>
-                  <Button variant="outline">Configurar</Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   )
-} 
+}
+
+export default withCVRequired(SettingsPage)
