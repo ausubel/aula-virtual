@@ -17,13 +17,8 @@ export default function LoginPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
 
-  // Verificar si el usuario ya está autenticado
-  useEffect(() => {
-    // Si el usuario ya está autenticado, redirigirlo a la página principal
-    if (isAuthenticated()) {
-      router.push("/admin"); // O a la página que corresponda según el rol
-    }
-  }, [router]);
+  // Eliminamos la verificación de autenticación previa para permitir el acceso a la página de login
+  // independientemente del estado de autenticación
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
