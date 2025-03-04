@@ -116,6 +116,28 @@ export default function CoursesPage() {
     return nameLower.startsWith(searchLower);
   });
 
+  // Función auxiliar para determinar el texto del botón según el estado del curso
+  const getButtonText = (course: Course) => {
+    if (course.finished) {
+      return "Ver nuevamente";
+    } else if (course.progress && course.progress > 0) {
+      return "Continuar curso";
+    } else {
+      return "Comenzar curso";
+    }
+  }
+
+  // Función auxiliar para determinar el icono del botón
+  const getButtonIcon = (course: Course) => {
+    if (course.finished) {
+      return <BookOpenIcon className="h-4 w-4 mr-2" />;
+    } else if (course.progress && course.progress > 0) {
+      return <BookOpenIcon className="h-4 w-4 mr-2" />;
+    } else {
+      return <BookOpenIcon className="h-4 w-4 mr-2" />;
+    }
+  }
+
   if (isLoading) {
     return <div className="flex justify-center items-center min-h-screen">Cargando cursos...</div>
   }
@@ -202,8 +224,8 @@ export default function CoursesPage() {
               <CardFooter>
                 <Button className="w-full" asChild>
                   <a href={`/student/courses/${course.id}`}>
-                    <BookOpenIcon className="h-4 w-4 mr-2" />
-                    {course.progress ? "Continuar Curso" : "Comenzar Curso"}
+                    {getButtonIcon(course)}
+                    {getButtonText(course)}
                   </a>
                 </Button>
               </CardFooter>
