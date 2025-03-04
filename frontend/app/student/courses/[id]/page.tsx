@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BookOpen, Clock, FileText, PlayCircle, Download } from "lucide-react"
 import { CoursesService } from "@/services/courses.service"
 import { useToast } from "@/hooks/use-toast"
+import { getToken } from "@/lib/auth"
+import { jwtDecode } from "jwt-decode"
 
 // Interfaces basadas en la respuesta del backend
 interface Lesson {
@@ -21,137 +22,109 @@ interface Lesson {
   }> | string[]
 }
 
-interface CourseDetail {
+interface Course {
   id: number
   name: string
   description: string
   hours: number
-  teacherId: number
-  teacherName: string
-  studentCount: number
   progress?: number
+  hasCertificate?: boolean
+  image?: string
+  teacherName?: string
 }
 
-// Interface simplificada para datos del localStorage
-interface StoredCourse {
-  id: number
-  name: string
-  description: string
-  hours: number
+interface DecodedToken {
+  userId: number;
+  userRoleId: number;
+  iat?: number;
+  exp?: number;
 }
 
 export default function CoursePage({ params }: { params: { id: string } }) {
-  const [courseData, setCourseData] = useState<CourseDetail | null>(null)
+  const [courseData, setCourseData] = useState<Course | null>(null)
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
-  
-  // Datos temporales para desarrollo
-  const tempCourseData = {
-    id: Number(params.id),
-    name: "Programación Avanzada con JavaScript",
-    description: "Aprende a dominar JavaScript con conceptos avanzados como promesas, async/await, programación funcional y patrones de diseño modernos.",
-    hours: 40,
-    teacherId: 1,
-    teacherName: "Juan Pérez",
-    studentCount: 35,
-    progress: 25
-  };
 
   useEffect(() => {
-    // Intenta obtener datos del curso del localStorage (guardados por la página principal)
-    const getStoredCourseData = () => {
+    const token = getToken()
+    if (token) {
       try {
-        const storedCoursesJson = localStorage.getItem('studentCourses');
-        if (storedCoursesJson) {
-          const storedCourses = JSON.parse(storedCoursesJson);
-          const currentCourse = storedCourses.find(
-            (course: StoredCourse) => course.id === Number(params.id)
-          );
-          if (currentCourse) {
-            console.log('Datos del curso encontrados en localStorage:', currentCourse);
-            return currentCourse;
-          }
-        }
-        return null;
-      } catch (err) {
-        console.error('Error al recuperar datos del localStorage:', err);
-        return null;
-      }
-    };
-
-    const loadCourseData = async () => {
-      try {
-        setIsLoading(true);
-        
-        // 1. Intentar cargar desde la API
-        let courseDetails = null;
-        try {
-          courseDetails = await CoursesService.getCourseDetails(Number(params.id));
-          console.log('Datos del curso obtenidos de la API:', courseDetails);
-          
-          // Si los datos de la API están incompletos, usar datos de respaldo
-          if (!courseDetails || !courseDetails.name || !courseDetails.description) {
-            console.log('Datos de API incompletos, usando datos de respaldo');
-            // Usar datos temporales en desarrollo
-            courseDetails = tempCourseData;
-          }
-        } catch (apiError) {
-          console.error('Error al obtener datos del curso desde API:', apiError);
-          
-          // 2. Si falla la API, intentar usar localStorage como respaldo
-          const storedCourse = getStoredCourseData();
-          if (storedCourse) {
-            courseDetails = {
-              ...storedCourse,
-              teacherId: 0,
-              teacherName: 'Profesor',
-              studentCount: 0
-            };
-            toast({
-              title: "Información limitada",
-              description: "Mostrando datos básicos del curso",
-              variant: "destructive"
-            });
-          } else {
-            // 3. Si tampoco hay datos en localStorage, usar datos temporales
-            console.log('Usando datos temporales');
-            courseDetails = tempCourseData;
-          }
-        }
-
-        // Si tenemos datos del curso (de API o localStorage), mostrarlos
-        if (courseDetails) {
-          setCourseData(courseDetails);
-          
-          // Intentar cargar lecciones
-          try {
-            const courseLessons = await CoursesService.getLessonsByCourse(Number(params.id));
-            setLessons(courseLessons);
-            console.log('Lecciones cargadas:', courseLessons.length);
-          } catch (lessonsError) {
-            console.error('Error al cargar lecciones:', lessonsError);
-            setLessons([]);
-          }
+        const decoded = jwtDecode<DecodedToken>(token)
+        if (decoded && decoded.userId) {
+          // Primero cargamos los datos de todos los cursos del estudiante
+          loadStudentCourses(decoded.userId)
         } else {
-          throw new Error('No se pudo obtener información del curso');
+          console.error('El token no contiene userId')
+          setError('No se pudo identificar al usuario')
+          toast({
+            title: "Error",
+            description: "No se pudo identificar al usuario",
+            variant: "destructive"
+          })
         }
-      } catch (err) {
-        console.error('Error loading course data:', err);
-        setError(err instanceof Error ? err.message : 'Error al cargar el curso');
+      } catch (error) {
+        console.error('Error al decodificar el token:', error)
+        setError('Error al verificar la identidad del usuario')
         toast({
           title: "Error",
-          description: "No se pudo cargar la información del curso",
+          description: "Error al verificar la identidad del usuario",
           variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
+        })
       }
-    };
+    } else {
+      console.log('No se encontró el token')
+      setError('No hay sesión activa')
+      toast({
+        title: "Error",
+        description: "No hay sesión activa",
+        variant: "destructive"
+      })
+    }
+  }, [params.id, toast])
 
-    loadCourseData();
-  }, [params.id, toast]);
+  const loadStudentCourses = async (userId: number) => {
+    try {
+      setIsLoading(true)
+      
+      // 1. Obtenemos todos los cursos del estudiante como en la página principal
+      const allCourses = await CoursesService.getCoursesByStudentId(userId)
+      console.log('Todos los cursos obtenidos:', allCourses)
+      
+      // 2. Filtramos para encontrar el curso actual por ID
+      const currentCourseId = Number(params.id)
+      const currentCourse = allCourses.find((course: Course) => course.id === currentCourseId)
+      
+      if (currentCourse) {
+        console.log('Curso actual encontrado:', currentCourse)
+        setCourseData(currentCourse)
+        
+        // 3. Ahora obtenemos las lecciones específicas de este curso
+        const courseLessons = await CoursesService.getLessonsByCourse(currentCourseId)
+        console.log('Lecciones del curso cargadas:', courseLessons.length)
+        setLessons(courseLessons)
+      } else {
+        console.error(`No se encontró el curso con ID ${currentCourseId}`)
+        setError(`El curso con ID ${currentCourseId} no está disponible`)
+        toast({
+          title: "Error",
+          description: "El curso solicitado no está disponible",
+          variant: "destructive"
+        })
+      }
+    } catch (err) {
+      console.error('Error al cargar los datos del curso:', err)
+      setError(err instanceof Error ? err.message : 'Error al cargar el curso')
+      toast({
+        title: "Error",
+        description: "No se pudo cargar la información del curso",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   // Función para formatear minutos a formato "HH:mm"
   const formatTime = (minutes: number) => {
@@ -182,18 +155,20 @@ export default function CoursePage({ params }: { params: { id: string } }) {
 
           {/* Información del curso */}
           <div className="space-y-4">
-            <h1 className="text-3xl font-bold">{courseData.name || 'Curso sin nombre'}</h1>
-            <p className="text-muted-foreground">{courseData.description || 'Sin descripción disponible'}</p>
+            <h1 className="text-3xl font-bold">{courseData.name}</h1>
+            <p className="text-muted-foreground">{courseData.description}</p>
 
             <div className="flex items-center gap-4 text-sm">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
-                <span>{`${courseData.hours || 0} horas`}</span>
+                <span>{`${courseData.hours} horas`}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <BookOpen className="h-4 w-4" />
-                <span>{courseData.teacherName || 'Profesor'}</span>
-              </div>
+              {courseData.teacherName && (
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  <span>{courseData.teacherName}</span>
+                </div>
+              )}
             </div>
           </div>
 
