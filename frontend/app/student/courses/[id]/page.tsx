@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BookOpen, Clock, FileText, PlayCircle, Download, User } from "lucide-react"
+import { BookOpen, Clock, FileText, PlayCircle, Download, User, AlertCircle } from "lucide-react"
 import { CoursesService } from "@/services/courses.service"
 import { useToast } from "@/hooks/use-toast"
 import { getToken } from "@/lib/auth"
@@ -156,18 +156,56 @@ export default function CoursePage({ params }: { params: { id: string } }) {
     return videos[0].videoPath;
   }
 
-  // Función para determinar el botón de acción según estado del curso
+  // Función para determinar el texto del botón según si la lección tiene video
   const getLessonActionText = (lesson: Lesson): string => {
-    return hasVideo(lesson) ? "Ver detalles" : "Ver detalles";
+    return hasVideo(lesson) ? "Ver video" : "No hay video disponible";
   }
   
-  // Función para mostrar detalles de una lección cuando se hace clic
+  // Función para manejar el clic en el botón de lección
   const handleLessonClick = (lesson: Lesson) => {
-    setSelectedLesson(lesson);
-    toast({
-      title: `Lección: ${lesson.title}`,
-      description: "Próximamente podrás acceder al contenido de esta lección",
-    });
+    // Si la lección tiene video, no hacemos nada ya que el enlace se manejará directamente
+    if (!hasVideo(lesson)) {
+      setSelectedLesson(lesson);
+      toast({
+        title: `Lección: ${lesson.title}`,
+        description: "Esta lección no tiene video disponible",
+        variant: "default",
+      });
+    }
+  }
+  
+  // Función para renderizar el botón según si tiene video o no
+  const renderLessonButton = (lesson: Lesson) => {
+    const videoUrl = getFirstVideoUrl(lesson);
+    
+    if (videoUrl) {
+      return (
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="ml-4"
+          asChild
+        >
+          <a href={videoUrl} target="_blank" rel="noopener noreferrer">
+            <PlayCircle className="h-4 w-4 mr-2" />
+            Ver video
+          </a>
+        </Button>
+      );
+    } else {
+      return (
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="ml-4"
+          onClick={() => handleLessonClick(lesson)}
+          disabled
+        >
+          <AlertCircle className="h-4 w-4 mr-2" />
+          No hay video
+        </Button>
+      );
+    }
   }
 
   if (isLoading) {
@@ -250,15 +288,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                                 <span>{formatTime(lesson.time)}</span>
                               </div>
                             </div>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="ml-4"
-                              onClick={() => handleLessonClick(lesson)}
-                            >
-                              <PlayCircle className="h-4 w-4 mr-2" />
-                              {getLessonActionText(lesson)}
-                            </Button>
+                            {renderLessonButton(lesson)}
                           </div>
                         </div>
                       ))}
@@ -284,13 +314,25 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-muted-foreground">{formatTime(lesson.time)}</span>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => handleLessonClick(lesson)}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
+                          {hasVideo(lesson) ? (
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              asChild
+                            >
+                              <a href={getFirstVideoUrl(lesson)!} target="_blank" rel="noopener noreferrer">
+                                <Download className="h-4 w-4" />
+                              </a>
+                            </Button>
+                          ) : (
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              disabled
+                            >
+                              <AlertCircle className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))
