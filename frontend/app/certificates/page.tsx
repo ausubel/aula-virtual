@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { AwardIcon, DownloadIcon, CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import withCVRequired from "@/components/auth/with-cv-required"
 
 // Datos simulados de certificados
 const mockCertificates = [
@@ -33,7 +34,7 @@ const mockCertificates = [
   }
 ]
 
-export default function CertificatesPage() {
+function CertificatesPage() {
   const [certificates, setCertificates] = useState(mockCertificates)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -105,3 +106,5 @@ export default function CertificatesPage() {
     </div>
   )
 } 
+
+export default withCVRequired(CertificatesPage)

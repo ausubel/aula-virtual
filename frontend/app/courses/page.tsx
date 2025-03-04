@@ -7,6 +7,7 @@ import { PlusIcon, SearchIcon, BookOpenIcon, UsersIcon, ClockIcon } from "lucide
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import withCVRequired from "@/components/auth/with-cv-required"
 
 // Datos simulados de cursos
 const mockCourses = [
@@ -60,7 +61,7 @@ const mockCourses = [
   }
 ]
 
-export default function CoursesPage() {
+function CoursesPage() {
   const [courses, setCourses] = useState(mockCourses)
   const [searchTerm, setSearchTerm] = useState("")
 
@@ -150,3 +151,5 @@ export default function CoursesPage() {
     </div>
   )
 } 
+
+export default withCVRequired(CoursesPage)

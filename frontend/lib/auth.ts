@@ -17,6 +17,20 @@ export const saveUserCVStatus = (hasCV: boolean) => {
   }
 };
 
+// Función para guardar el rol del usuario
+export const saveUserRole = (role: number) => {
+  if (typeof window !== 'undefined') {
+    Cookies.set('user_role', role.toString(), { expires: 7 });
+  }
+};
+
+// Función para guardar el ID del usuario
+export const saveUserId = (id: number) => {
+  if (typeof window !== 'undefined') {
+    Cookies.set('user_id', id.toString(), { expires: 7 });
+  }
+};
+
 // Función para obtener el token de localStorage
 export const getToken = (): string | null => {
   if (typeof window !== 'undefined') {
@@ -28,9 +42,19 @@ export const getToken = (): string | null => {
 // Función para eliminar el token (logout)
 export const removeToken = () => {
   if (typeof window !== 'undefined') {
+    // Eliminar del localStorage
     localStorage.removeItem('authToken');
+    localStorage.clear();
+    
     Cookies.remove('auth_token');
     Cookies.remove('has_uploaded_cv');
+    Cookies.remove('user_role');
+    Cookies.remove('user_id');
+    
+    const allCookies = Cookies.get();
+    Object.keys(allCookies).forEach(cookieName => {
+      Cookies.remove(cookieName);
+    });
   }
 };
 
@@ -78,7 +102,18 @@ export const getUserRole = () => {
   if (!token) return null;
   
   const decoded = decodeToken(token);
+  console.log('Decoded token:', decoded);
   return decoded?.userRoleId || null;
+};
+
+// Función para obtener el ID del usuario desde el token
+export const getUserIdFromToken = () => {
+  const token = getToken();
+  if (!token) return null;
+  
+  const decoded = decodeToken(token);
+  console.log('Getting user ID from token:', decoded);
+  return decoded?.userId || null;
 };
 
 // Función para verificar si el usuario ha subido su CV

@@ -31,16 +31,6 @@ const adminNavLinks = [
     label: "Usuarios",
     icon: <UsersIcon className="size-4 mr-2" />,
   },
-  {
-    href: "/admin/profile",
-    label: "Perfil",
-    icon: <UserIcon className="size-4 mr-2" />,
-  },
-  {
-    href: "/admin/settings",
-    label: "Configuración",
-    icon: <SettingsIcon className="size-4 mr-2" />,
-  },
 ]
 
 export function AdminNavBar() {

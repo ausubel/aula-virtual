@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect } from "react";
+import { logout } from "@/lib/auth";
 
 export default function ForceLogout() {
   useEffect(() => {
     // Función para limpiar el token y redirigir
-    const logout = () => {
+    const handleLogout = () => {
       try {
-        // Eliminar todas las claves de localStorage
+        // Usar nuestra función mejorada de logout que limpia todas las cookies
+        logout();
+        
+        // Eliminar todas las claves de localStorage por si acaso
         localStorage.clear();
         
         // Esperar un momento antes de redirigir
@@ -22,7 +26,7 @@ export default function ForceLogout() {
     };
 
     // Ejecutar la función de logout inmediatamente
-    logout();
+    handleLogout();
 
     // También configurar un temporizador de respaldo
     const backupTimer = setTimeout(() => {

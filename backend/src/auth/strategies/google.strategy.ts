@@ -55,7 +55,7 @@ export const setupGoogleStrategy = (app: Router, passport: PassportStatic) => {
         passport.authenticate('google', { failureRedirect: '/login' }),
         async (req: any, res) => {
             try {
-                const user = req.user;
+                const user = req.user[0];
                 console.log("User authenticated:", user);  // Log del usuario autenticado
                 
                 const token = await Tokenizer.create({
@@ -81,11 +81,28 @@ export const setupGoogleStrategy = (app: Router, passport: PassportStatic) => {
                     path: '/',
                     sameSite: 'lax'
                 });
+
+                res.cookie('user_id', user.id, {
+                    httpOnly: false,
+                    secure: process.env.NODE_ENV === 'production',
+                    maxAge: 24 * 60 * 60 * 1000, // 24 horas
+                    path: '/',
+                    sameSite: 'lax'
+                });
+                
+                
+                res.cookie('user_role', user.roleId, {
+                    httpOnly: false,
+                    secure: process.env.NODE_ENV === 'production',
+                    maxAge: 24 * 60 * 60 * 1000, // 24 horas
+                    path: '/',
+                    sameSite: 'lax'
+                });
                 
                 // Redirigir según si el usuario tiene CV o no
                 if (user.hasCV) {
                     // Si el usuario ya tiene CV, redirigir a la página principal
-                    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3001'}/student`);
+                    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3001'}/courses`);
                 } else {
                     // Si el usuario no tiene CV, redirigir a la página de subida de CV
                     res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3001'}/profile/upload-cv`);

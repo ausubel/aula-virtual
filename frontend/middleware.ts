@@ -32,7 +32,7 @@ export function middleware(request: NextRequest) {
       if (!isAdmin) {
         // Si no es admin, redirigir a su dashboard correspondiente
         if (isStudent) {
-          return NextResponse.redirect(new URL('/student', request.url))
+          return NextResponse.redirect(new URL('/courses', request.url))
         } else if (isTeacher) {
           return NextResponse.redirect(new URL('/teacher', request.url))
         }
@@ -41,7 +41,7 @@ export function middleware(request: NextRequest) {
     }
 
     // Rutas de estudiante
-    if (url.pathname.startsWith('/student')) {
+    if (url.pathname.startsWith('/courses')) {
       if (!isStudent) {
         // Si no es estudiante, redirigir a su dashboard correspondiente
         if (isAdmin) {
@@ -60,7 +60,7 @@ export function middleware(request: NextRequest) {
         if (isAdmin) {
           return NextResponse.redirect(new URL('/admin', request.url))
         } else if (isStudent) {
-          return NextResponse.redirect(new URL('/student', request.url))
+          return NextResponse.redirect(new URL('/courses', request.url))
         }
       }
       return NextResponse.next()
@@ -73,7 +73,7 @@ export function middleware(request: NextRequest) {
       } else if (isTeacher) {
         return NextResponse.redirect(new URL('/teacher', request.url))
       } else if (isStudent) {
-        return NextResponse.redirect(new URL('/student', request.url))
+        return NextResponse.redirect(new URL('/courses', request.url))
       }
     }
 

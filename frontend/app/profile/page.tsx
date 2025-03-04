@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -8,57 +8,100 @@ import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { EditIcon, MailIcon, PhoneIcon, MapPinIcon, AwardIcon, BookOpenIcon, GraduationCapIcon } from "lucide-react"
+import withCVRequired from "@/components/auth/with-cv-required"
+import axios from "axios"
+import { useToast } from "@/components/ui/use-toast"
+import Cookies from "js-cookie"
 
-// Datos simulados del usuario
-const mockUser = {
-  id: 1,
-  name: "Juan Pérez",
-  email: "juan@example.com",
-  phone: "+51 987 654 321",
-  location: "Lima, Perú",
-  bio: "Estudiante de ingeniería de software con pasión por el desarrollo web y la inteligencia artificial.",
-  avatar: "https://i.pravatar.cc/150?img=68",
-  role: "Estudiante",
-  joinedDate: "Octubre 2023",
-  coursesEnrolled: 4,
-  coursesCompleted: 2,
-  totalProgress: 65,
-  certificates: [
-    {
-      id: 1,
-      title: "Desarrollo Web Frontend",
-      issueDate: "15 de Diciembre, 2023",
-      instructor: "Carlos López",
-      image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8d2ViJTIwZGV2ZWxvcG1lbnR8ZW58MHx8MHx8fDA%3D"
-    },
-    {
-      id: 2,
-      title: "Bases de Datos SQL",
-      issueDate: "28 de Febrero, 2024",
-      instructor: "María García",
-      image: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8ZGF0YWJhc2V8ZW58MHx8MHx8fDA%3D"
-    }
-  ],
-  currentCourses: [
-    {
-      id: 1,
-      title: "Introducción a la Programación",
-      progress: 85,
-      instructor: "Ana Martínez",
-      image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y29kaW5nfGVufDB8fDB8fHww"
-    },
-    {
-      id: 2,
-      title: "Desarrollo de Aplicaciones Móviles",
-      progress: 45,
-      instructor: "Pedro Rodríguez",
-      image: "https://images.unsplash.com/photo-1551650975-87deedd944c3?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8bW9iaWxlJTIwYXBwfGVufDB8fDB8fHww"
-    }
-  ]
+// Tipo para los datos del perfil
+interface ProfileData {
+  name: string;
+  email: string;
+  phone: string;
+  avatar: string;
+  coursesEnrolled: number;
+  coursesCompleted: number;
+  totalProgress: number;
+  certificates: {
+    id: number;
+    title: string;
+    issueDate: string;
+    instructor: string;
+    image?: string;
+  }[];
+  currentCourses: {
+    id: number;
+    title: string;
+    progress: number;
+    instructor: string;
+    image?: string;
+  }[];
 }
 
-export default function ProfilePage() {
-  const [user, setUser] = useState(mockUser)
+// Datos por defecto para mostrar mientras se cargan los datos reales
+const defaultProfileData: ProfileData = {
+  name: "Cargando...",
+  email: "cargando@ejemplo.com",
+  phone: "...",
+  avatar: "",
+  coursesEnrolled: 0,
+  coursesCompleted: 0,
+  totalProgress: 0,
+  certificates: [],
+  currentCourses: []
+}
+
+function ProfilePage() {
+  const [user, setUser] = useState<ProfileData>(defaultProfileData)
+  const [loading, setLoading] = useState(true)
+  const { toast } = useToast()
+
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const id = Number(Cookies.get('user_id'))
+        console.log('ID del usuario:', id)
+        // Hacer la petición al endpoint
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/user/student/${id}/profile`)
+        console.log(response)
+        // Actualizar el estado con los datos recibidos
+        if (response.data && response.data.data) {
+          // Añadir imágenes temporales para los certificados y cursos
+          const profileData = response.data.data
+          
+          
+          // Añadir imágenes temporales para los certificados
+          if (profileData.certificates) {
+            profileData.certificates = profileData.certificates.map((cert: any) => ({
+              ...cert,
+              image: cert.image || "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8ZGF0YWJhc2V8ZW58MHx8MHx8fDA%3D"
+            }))
+          }
+          
+          // Añadir imágenes temporales para los cursos actuales
+          if (profileData.currentCourses) {
+            profileData.currentCourses = profileData.currentCourses.map((course: any) => ({
+              ...course,
+              image: course.image || "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y29kaW5nfGVufDB8fDB8fHww"
+            }))
+          }
+          
+          setUser(profileData)
+        }
+      } catch (error) {
+        console.error("Error al obtener datos del perfil:", error)
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los datos del perfil",
+          variant: "destructive"
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProfileData()
+  }, [toast])
 
   return (
     <div className="space-y-6">
@@ -80,7 +123,7 @@ export default function ProfilePage() {
             </Avatar>
             <CardTitle>{user.name}</CardTitle>
             <CardDescription>
-              <Badge className="mt-1">{user.role}</Badge>
+              <Badge className="mt-1">Estudiante</Badge>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -92,14 +135,7 @@ export default function ProfilePage() {
               <PhoneIcon className="h-4 w-4 mr-2 text-muted-foreground" />
               <span className="text-sm">{user.phone}</span>
             </div>
-            <div className="flex items-center">
-              <MapPinIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span className="text-sm">{user.location}</span>
-            </div>
-            <div className="pt-4 border-t">
-              <h3 className="font-medium mb-2">Sobre mí</h3>
-              <p className="text-sm text-muted-foreground">{user.bio}</p>
-            </div>
+            
             <div className="pt-4 border-t">
               <h3 className="font-medium mb-2">Estadísticas</h3>
               <div className="grid grid-cols-2 gap-4 text-center">
@@ -168,6 +204,12 @@ export default function ProfilePage() {
                         </Button>
                       </div>
                     ))}
+                    
+                    {user.currentCourses.length === 0 && !loading && (
+                      <div className="text-center py-6">
+                        <p className="text-sm text-muted-foreground">No tienes cursos en progreso</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -216,6 +258,12 @@ export default function ProfilePage() {
                           </CardContent>
                         </Card>
                       ))}
+                      
+                      {user.currentCourses.length === 0 && !loading && (
+                        <div className="col-span-2 text-center py-6">
+                          <p className="text-sm text-muted-foreground">No tienes cursos en progreso</p>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="flex justify-between items-center pt-4 border-t">
@@ -248,6 +296,12 @@ export default function ProfilePage() {
                           </CardContent>
                         </Card>
                       ))}
+                      
+                      {user.certificates.length === 0 && !loading && (
+                        <div className="col-span-2 text-center py-6">
+                          <p className="text-sm text-muted-foreground">No tienes cursos completados</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -292,7 +346,7 @@ export default function ProfilePage() {
                     ))}
                   </div>
                   
-                  {user.certificates.length === 0 && (
+                  {user.certificates.length === 0 && !loading && (
                     <div className="text-center py-12">
                       <AwardIcon className="h-12 w-12 mx-auto text-muted-foreground/50" />
                       <h3 className="mt-4 text-lg font-medium">No tienes certificados aún</h3>
@@ -312,4 +366,6 @@ export default function ProfilePage() {
       </div>
     </div>
   )
-} 
+}
+
+export default withCVRequired(ProfilePage)

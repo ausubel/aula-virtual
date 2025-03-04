@@ -28,13 +28,6 @@ export function NavBar() {
   // Definir los enlaces de navegación según el rol del usuario
   const navLinks = [
     {
-      href: isAdmin ? "/admin" : "/student",
-      label: "Dashboard",
-      icon: <LayoutDashboardIcon className="size-4 mr-2" />,
-      active: (pathname === "/admin" || pathname === "/student"),
-      roles: [1, 2] // Todos los roles
-    },
-    {
       href: "/courses",
       label: "Cursos",
       icon: <BookOpenIcon className="size-4 mr-2" />,

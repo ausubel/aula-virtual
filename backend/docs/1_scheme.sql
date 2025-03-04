@@ -18,6 +18,8 @@ CREATE TABLE user (
     surname VARCHAR(50) NOT NULL,
     email VARCHAR(50) NOT NULL,
     password VARCHAR(60) NULL,
+    phone VARCHAR(20) NULL,
+    degree VARCHAR(50) NULL,
     active BIT NOT NULL DEFAULT 1,
     creation_datetime DATETIME DEFAULT NOW(),
     inactive_datetime DATETIME DEFAULT NULL,
