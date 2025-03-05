@@ -17,13 +17,8 @@ export default function LoginPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
 
-  // Verificar si el usuario ya está autenticado
-  useEffect(() => {
-    // Si el usuario ya está autenticado, redirigirlo a la página principal
-    if (isAuthenticated()) {
-      router.push("/admin"); // O a la página que corresponda según el rol
-    }
-  }, [router]);
+  // Eliminamos la verificación de autenticación previa para permitir el acceso a la página de login
+  // independientemente del estado de autenticación
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -60,12 +55,18 @@ export default function LoginPage() {
 
         if (userRole === 1) { // Asumiendo que 1 es admin
           router.push("/admin")
+        } else if (userRole === 3) { // Profesor
+          router.push("/teacher")
         } else if (!hasCV) {
           // Si el usuario no tiene CV, redirigir a la página de subida de CV
           router.push("/profile/upload-cv")
         } else {
-          // Si el usuario ya tiene CV, redirigir a su perfil o dashboard
-          router.push("/profile")
+          // Si el usuario ya tiene CV, redirigir a su perfil o dashboard según el rol
+          if (userRole === 2) { // Estudiante
+            router.push("/profile")
+          } else {
+            router.push("/profile")
+          }
         }
       } else {
         // Mostrar mensaje de error

@@ -36,6 +36,17 @@ const adminNavLinks = [
 export function AdminNavBar() {
   const pathname = usePathname()
 
+    // Función para determinar si un enlace está activo
+    const isActive = (path: string) => {
+      if (path === '/admin') {
+        // Para la ruta principal, solo debe estar activa si es exactamente igual
+        return pathname === path;
+      }
+      // Para las demás rutas, usar startsWith
+      return pathname.startsWith(path);
+    }
+  
+
   return (
     <header className="border-b sticky top-0 z-50 bg-background">
       <div className="container mx-auto px-4">
@@ -60,7 +71,7 @@ export function AdminNavBar() {
                   href={link.href}
                   className={cn(
                     "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                    pathname.startsWith(link.href)
+                    isActive(link.href)
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent"
                   )}

@@ -9,14 +9,12 @@ import {
   LogOutIcon, 
   UserIcon, 
   SettingsIcon, 
-  LayoutDashboardIcon,
   AwardIcon
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { MobileNav } from "@/components/mobile-nav"
 
 const studentNavLinks = [
-
   {
     href: "/student/courses",
     label: "Mis Cursos",
@@ -28,12 +26,12 @@ const studentNavLinks = [
     icon: <AwardIcon className="size-4 mr-2" />,
   },
   {
-    href: "/student/profile",
+    href: "/profile",
     label: "Perfil",
     icon: <UserIcon className="size-4 mr-2" />,
   },
   {
-    href: "/student/settings",
+    href: "/settings",
     label: "Configuración",
     icon: <SettingsIcon className="size-4 mr-2" />,
   },
@@ -41,6 +39,16 @@ const studentNavLinks = [
 
 export function StudentNavBar() {
   const pathname = usePathname()
+
+  // Función para determinar si un enlace está activo
+  const isActive = (path: string) => {
+    if (path === '/') {
+      // Para la ruta principal, solo debe estar activa si es exactamente igual
+      return pathname === path;
+    }
+    // Para las demás rutas, usar startsWith
+    return pathname.startsWith(path);
+  }
 
   return (
     <header className="border-b sticky top-0 z-50 bg-background">
@@ -53,7 +61,7 @@ export function StudentNavBar() {
               <MobileNav links={studentNavLinks} />
             </div>
             
-            <Link href="/courses" className="flex items-center space-x-2">
+            <Link href="/student" className="flex items-center space-x-2">
               <BookOpenIcon className="size-6" />
               <span className="text-lg font-semibold hidden sm:inline-block">Aula Virtual</span>
             </Link>
@@ -66,11 +74,10 @@ export function StudentNavBar() {
                   href={link.href}
                   className={cn(
                     "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                    pathname.startsWith(link.href)
+                    isActive(link.href)
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                  )}
-                >
+                  )}>
                   {link.icon}
                   {link.label}
                 </Link>
@@ -94,4 +101,4 @@ export function StudentNavBar() {
       </div>
     </header>
   )
-} 
+}
