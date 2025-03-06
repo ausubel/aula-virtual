@@ -1040,6 +1040,15 @@ BEGIN
     );
 END //
 
+DROP PROCEDURE IF EXISTS get_cv_by_student_id//
+
+CREATE PROCEDURE get_cv_by_student_id(
+    IN p_student_id INT
+)
+BEGIN
+    SELECT cv_file FROM student WHERE id = p_student_id;
+END //
+
 
 DELIMITER ;
 

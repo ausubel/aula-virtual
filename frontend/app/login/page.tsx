@@ -9,9 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { login } from "./actions"
-import { toast } from "@/components/ui/use-toast"
 import { saveToken, saveUserCVStatus, isAuthenticated, saveUserRole, saveUserId } from "@/lib/auth"
 import { LoadingSpinner } from "@/components/loading-spinner"
+import { SweetAlert } from "@/utils/SweetAlert"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -28,13 +28,10 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsLoading(true)
-    
     try {
       const formData = new FormData(e.currentTarget)
       const result = await login(formData)
-      
       if (result.success) {
-        console.log('Login successful, user data:', result.data);
         
         // Guardar el token usando nuestro servicio de autenticación
         saveToken(result.data.token)
@@ -68,20 +65,11 @@ export default function LoginPage() {
           router.push("/profile")
         }
       } else {
-        // Mostrar mensaje de error
-        toast({
-          title: "Error de autenticación",
-          description: result.message,
-          variant: "destructive",
-        })
+        SweetAlert.error("Error de autenticación", result.message);
       }
     } catch (error) {
       console.error("Error en el login:", error)
-      toast({
-        title: "Error",
-        description: "Ocurrió un error al intentar iniciar sesión",
-        variant: "destructive",
-      })
+      SweetAlert.error("Error", "Ocurrió un error al intentar iniciar sesión");
     } finally {
       setIsLoading(false)
     }

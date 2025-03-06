@@ -293,7 +293,12 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.readAsDataURL(file)
-      reader.onload = () => resolve(reader.result as string)
+      reader.onload = () => {
+        // Obtener solo la parte base64 sin el prefijo MIME
+        const base64String = reader.result as string
+        const base64Content = base64String.split(',')[1]
+        resolve(base64Content)
+      }
       reader.onerror = error => reject(error)
     })
   }

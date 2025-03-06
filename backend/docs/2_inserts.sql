@@ -19,7 +19,7 @@ VALUES ('Admin', 'Admin', 'admin@admin.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXs
 ('Ana', 'Ruiz', 'ana@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2, '123456789'),
 ('Sergio', 'Sanchez', 'sergio@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2, '123456789'),
 ('Luis', 'Perez', 'luis@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2, '123456789'),
-('Miguel', 'Hernandez', 'miguel@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2, '123456789'),
+('Miguel', 'Hernandez', 'miguel@gmail.com', '$2a$12$UpFrqypEsvCV/ph5eqi8CepwOXsWny1Oo9cAb5s9U2PZJ7JTV.c2K',1,2, '123456789');
 
 INSERT INTO admin_general (id_admin_general)
 VALUES (1);

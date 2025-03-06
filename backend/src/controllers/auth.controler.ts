@@ -95,18 +95,24 @@ export default class AuthController implements ControllerBase {
       const partialUser = await this.authService.getPasswordByEmail(
         username
       );
+      if (!partialUser) {
+        sendResponses(res, 400, "No se encontró un usuario con el correo electrónico proporcionado");
+        return;
+      }
+      if (!partialUser.password && partialUser.username) {
+        sendResponses(res, 400, "Ingresa con la autenticación de Google");
+        return;
+      }
       if (!partialUser.password) {
-        sendResponses(res, 400, "User not found");
+        sendResponses(res, 400, "Contraseña no encontrada");
         return;
       }
       const isCorrect = await Encrypter.compare(password, partialUser.password);
       if (!isCorrect) {
-        sendResponses(res, 400, "Wrong password");
+        sendResponses(res, 400, "Contraseña incorrecta");
         return;
       }
       const user = await this.authService.getUserDataById(partialUser.id);
-      console.log("pepe",user);
-      console.log(user[0].roleId);
       const token = await Tokenizer.create({
         userRoleId: user[0]["roleId"],
         userId: user[0]["id"]

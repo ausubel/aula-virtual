@@ -12,7 +12,9 @@ export default class DocumentService {
   async uploadCV(file: string, studentId: number): Promise<void> {
     await this.documentModel.uploadCV(file, studentId);
   }
-
+  async getCVByStudentId(studentId: number): Promise<string> {
+    return await this.documentModel.getCVByStudentId(studentId);
+  }
   async getAllCertificatesByStudentId(studentId: number): Promise<Certificate[]> {
     return await this.documentModel.getAllCertificatesByStudentId(studentId);
   }
