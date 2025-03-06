@@ -99,6 +99,13 @@ export async function registerBasicInfo(formData: FormData) {
       // Luego intentamos parsear como JSON
       data = await response.json();
       logStep(9, "Datos de la respuesta (JSON)", data);
+      
+      // Verificar específicamente si tenemos un ID de usuario
+      if (data?.data?.user?.[0]?.id) {
+        logStep('9.1', "ID de usuario encontrado:", data.data.user[0].id);
+      } else {
+        logStep('9.2', "No se encontró ID de usuario en la respuesta. Estructura de data:", JSON.stringify(data?.data));
+      }
     } catch (error) {
       logStep(9, "Error al parsear la respuesta JSON", { error, responseText });
       data = { message: "Error al procesar la respuesta del servidor" };
@@ -118,13 +125,30 @@ export async function registerBasicInfo(formData: FormData) {
       // Aquí podrías guardar el token en localStorage o cookies
     }
 
-    logStep(12, "Registro exitoso");
+    // Verificar y asegurar que userData tenga una estructura válida
+    // El usuario viene dentro de un array en data.user
+    const userResult = Array.isArray(data?.data?.user) && data?.data?.user.length > 0 
+      ? data.data.user[0] 
+      : {};
+    
+    // Extraer explícitamente los datos importantes del usuario
+    const processedUserData = {
+      id: userResult.id || null,
+      email: userResult.email || validatedData.email,
+      name: userResult.name || "Usuario",
+      surname: userResult.surname || "Nuevo",
+      // Otros campos relevantes...
+    };
+    
+    logStep(12, "Procesamiento de datos de usuario completado", processedUserData);
+
+    logStep(13, "Registro exitoso");
     return {
       success: true,
       message: 'Registro inicial exitoso. Ahora complete su perfil.',
       email: validatedData.email,
       token: data?.data?.token,
-      userData: data?.data?.user
+      userData: processedUserData
     }
 
   } catch (error) {
@@ -290,4 +314,4 @@ export async function register(formData: FormData) {
       message: 'Error interno del servidor',
     }
   }
-} 
+}

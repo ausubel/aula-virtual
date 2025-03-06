@@ -24,6 +24,7 @@ export const RegistrationContext = createContext({
   isRegistrationFlow: false,
   userId: null as number | null,
   token: null as string | null,
+  email: "", // Añadiendo email al contexto
   onComplete: () => {}
 });
 
@@ -211,11 +212,18 @@ export default function RegisterPage() {
         // Si recibimos datos del usuario, guardarlos en localStorage
         if (result.userData) {
           localStorage.setItem('userData', JSON.stringify(result.userData));
+          
           // Extraer el ID del usuario
           if (result.userData.id) {
             setUserId(result.userData.id);
+            console.log("ID de usuario establecido:", result.userData.id);
+          } else {
+            console.error("Error: No se encontró ID de usuario en la respuesta", result.userData);
           }
-          console.log("Datos del usuario guardados en localStorage");
+          
+          console.log("Datos del usuario guardados en localStorage:", result.userData);
+        } else {
+          console.error("Error: No se recibieron datos del usuario en la respuesta");
         }
         
         // Marcar como registrado y avanzar al siguiente paso
@@ -330,6 +338,7 @@ export default function RegisterPage() {
     isRegistrationFlow: true,
     userId,
     token,
+    email: formData.email, // Pasando el email actual al contexto
     onComplete: handleRegistrationComplete
   };
 

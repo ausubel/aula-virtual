@@ -56,6 +56,16 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
   const isRegistrationFlow = registrationContext.isRegistrationFlow;
 
   useEffect(() => {
+    // Si estamos en el flujo de registro, establecer el correo electrónico desde el contexto
+    if (isRegistrationFlow && registrationContext.email) {
+      console.log('En flujo de registro, email del contexto:', registrationContext.email);
+      console.log('UserId del contexto:', registrationContext.userId);
+      setFormData(prevData => ({
+        ...prevData,
+        email: registrationContext.email
+      }));
+    }
+    
     // Si estamos en el flujo de registro, no necesitamos verificar la autenticación
     if (isRegistrationFlow) {
       return;
@@ -75,7 +85,7 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
       
       if (hasUploadedCV()) {
         console.log('El usuario ya ha subido su CV, redirigiendo a la página de estudiante')
-        router.push('/courses')
+        router.push('/student/courses')
       }
     }
 
@@ -207,15 +217,57 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
       
       let userId = 0
       
-      if (isRegistrationFlow && registrationContext.userId) {
+      // Verificar qué valores tenemos disponibles
+      console.log('Context registration flow:', isRegistrationFlow);
+      console.log('Context userId:', registrationContext.userId);
+      console.log('Cookies user_id:', Cookies.get('user_id'));
+      
+      if (isRegistrationFlow) {
         // Si estamos en el flujo de registro, usar el ID del contexto
-        userId = registrationContext.userId;
-        console.log('ID de usuario obtenido del contexto de registro:', userId)
+        if (registrationContext.userId) {
+          userId = registrationContext.userId;
+          console.log('ID de usuario obtenido del contexto de registro:', userId);
+        } else {
+          console.error('Error: No se pudo obtener el ID del usuario del contexto de registro');
+          setFeedback({
+            status: "error",
+            message: "No se pudo obtener el ID de usuario. Por favor, intente registrarse nuevamente."
+          });
+          setIsLoading(false);
+          return;
+        }
       } else {
-        userId = Number(Cookies.get('user_id'));
-        console.log('ID de usuario obtenido del token:', userId)
+        // Si NO estamos en el flujo de registro (actualización de perfil), obtener ID de las cookies
+        const cookieUserId = Cookies.get('user_id');
+        if (cookieUserId) {
+          userId = Number(cookieUserId);
+          console.log('ID de usuario obtenido de las cookies:', userId);
+        } else {
+          // Intentar obtener el ID del token como último recurso
+          const tokenUserId = getUserIdFromToken();
+          if (tokenUserId) {
+            userId = Number(tokenUserId);
+            console.log('ID de usuario obtenido del token:', userId);
+          } else {
+            console.error('Error: No se pudo obtener el ID del usuario');
+            setFeedback({
+              status: "error",
+              message: "No se pudo obtener el ID de usuario. Por favor, intente iniciar sesión nuevamente."
+            });
+            setIsLoading(false);
+            return;
+          }
+        }
       }
-      const user = JSON.stringify({
+
+      // Validación adicional para asegurarnos de que userId no sea 0, NaN o null
+      if (!userId || isNaN(userId) || userId <= 0) {
+        console.error('ID de usuario inválido:', userId);
+        throw new Error("No se pudo obtener un ID de usuario válido. Por favor, inténtelo de nuevo.");
+      }
+      
+      // Verificación adicional - imprimir el objeto userData para comprobar que el ID es correcto
+      const user = {
         id: userId,
         name: formData.firstName,
         surname: formData.lastName,
@@ -224,25 +276,46 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
         phone: formData.phone,
         degree: formData.degree === "other" ? formData.otherDegree : formData.degree,
         hasCV: true,
-      })
-      console.log(user);
+      };
+      console.log("Datos del usuario a actualizar (objeto):", user);
+      
+      const userJson = JSON.stringify(user);
+      console.log("Datos del usuario a actualizar (JSON):", userJson);
+      
       // Enviar los datos personales al servidor
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/user/update`, {
+      const updateResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/user/update`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: user
-      })
+        body: userJson
+      });
       
-      // Enviar el archivo al servidor
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/document/student/${userId}/cv`, {
+      console.log('Respuesta de actualización de usuario:', updateResponse.status);
+      
+      if (!updateResponse.ok) {
+        let errorMessage = 'Error al actualizar los datos de usuario';
+        try {
+          const errorData = await updateResponse.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          console.error('Error al parsear la respuesta:', e);
+        }
+        throw new Error(errorMessage);
+      }
+      
+      // Enviar el archivo al servidor - usando el ID de usuario correcto
+      console.log(`Enviando CV para el usuario con ID: ${userId}`);
+      const cvEndpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/document/student/${userId}/cv`;
+      console.log('URL para subir CV:', cvEndpoint);
+      
+      const response = await fetch(cvEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ file: base64File })
-      })
+      });
       
       console.log('Respuesta del servidor:', response.status)
       
@@ -274,7 +347,7 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
       } else {
         // Si no, redirigir al dashboard después de 2 segundos
         setTimeout(() => {
-          router.push('/courses')
+          router.push('/student/courses')
         }, 2000)
       }
     } catch (error) {
@@ -293,7 +366,12 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.readAsDataURL(file)
-      reader.onload = () => resolve(reader.result as string)
+      reader.onload = () => {
+        // Obtener solo la parte base64 sin el prefijo MIME
+        const base64String = reader.result as string
+        const base64Content = base64String.split(',')[1]
+        resolve(base64Content)
+      }
       reader.onerror = error => reject(error)
     })
   }
@@ -572,9 +650,8 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
               />
             ) : (
               <div className="w-full h-full min-h-[600px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground bg-gray-50">
-                <FileIcon size={64} className="mb-4 opacity-30" />
-                <p className="text-center mb-2 font-medium">No se ha seleccionado ningún archivo PDF</p>
-                <p className="text-center text-sm max-w-xs">Selecciona un archivo PDF en el formulario para ver una previsualización</p>
+                <FileIcon className="w-12 h-12 mb-4" />
+                <p className="text-lg">No se ha seleccionado ningún archivo</p>
               </div>
             )}
           </CardContent>

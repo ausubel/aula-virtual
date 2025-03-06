@@ -9,7 +9,13 @@ export default class DocumentModel extends ModelBase {
       [file, studentId]
     );
   }
-
+  async getCVByStudentId(studentId: number): Promise<string> {
+    const [[resultset]] = (await this.database.query(
+      StoredProcedures.GetCVByStudentId,
+      [studentId]
+    )) as [[string[]]];
+    return resultset[0];
+  }
   async getAllCertificatesByStudentId(studentId: number): Promise<Certificate[]> {
     try {
       console.log('Consultando certificados para estudiante:', studentId);
