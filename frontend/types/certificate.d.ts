@@ -3,7 +3,7 @@ export interface Certificate {
   name: string;
   description?: string;
   hours: number;
-  date_emission: string;  // Siempre en formato ISO8601
+  date_emission: string;  // Siempre como string en ISO format
   teacher_name?: string;
   teacher_degree?: string;
   teacher_profile?: string;

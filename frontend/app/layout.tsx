@@ -2,7 +2,6 @@ import type React from "react"
 import { Inter } from "next/font/google"
 import { NotificationToaster } from "@/components/ui/notifications"
 import "./globals.css"
-import { NavBar } from "@/components/nav-bar"
 import { ThemeProvider } from "@/components/theme-provider"
 
 const inter = Inter({ subsets: ["latin"] })

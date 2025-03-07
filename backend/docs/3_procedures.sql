@@ -374,17 +374,33 @@ CREATE PROCEDURE get_courses_by_student_id(
 )
 BEGIN
     SELECT
-        sc.id,
-        sc.course_id,
+        c.id,
+        c.id as course_id,
         c.name,
         c.description,
         c.hours,
+        c.teacher_id,
+        u.name as teacher_name,
+        sc.has_certificate,
         sc.finished,
-        sc.has_certificate
+        IFNULL(
+            (
+                SELECT CAST(
+                    (COUNT(CASE WHEN ls.finished = 1 THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0)) 
+                    AS DECIMAL(5,2)
+                )
+                FROM lesson_student ls
+                JOIN lesson l ON ls.lesson_id = l.id
+                WHERE l.course_id = c.id 
+                AND ls.student_id = p_student_id
+            ),
+            0
+        ) as progress
     FROM student_course sc
     INNER JOIN course c ON sc.course_id = c.id
+    LEFT JOIN user u ON c.teacher_id = u.id
     WHERE sc.student_id = p_student_id;
-END //
+END//
 
 DROP PROCEDURE IF EXISTS create_lesson_for_course//
 
@@ -886,6 +902,64 @@ BEGIN
     END IF;
 END//
 
+-- Procedimiento para obtener todos los certificados de un estudiante
+DROP PROCEDURE IF EXISTS get_all_certificates_by_student_id//
+
+CREATE PROCEDURE get_all_certificates_by_student_id(IN p_student_id INT)
+BEGIN
+    -- Selecciona los datos del curso para estudiantes que tienen certificado
+    SELECT DISTINCT
+        c.id,
+        c.name,
+        c.hours,
+        CONVERT_TZ(IFNULL(sc.finished_datetime, sc.creation_datetime), 'UTC', 'UTC') as date_emission,
+        NULL as file
+    FROM student_course sc
+    INNER JOIN course c ON sc.course_id = c.id
+    WHERE sc.student_id = p_student_id
+        AND sc.has_certificate = 1
+        AND sc.finished = 1;
+END//
+
+-- Procedimiento actualizado para obtener certificado por curso con más detalles
+DROP PROCEDURE IF EXISTS get_certificate_by_course_id//
+
+CREATE PROCEDURE get_certificate_by_course_id(
+    IN p_course_id INT,
+    IN p_student_id INT
+)
+BEGIN
+    SELECT 
+        c.id,
+        c.name,
+        c.description,
+        c.hours,
+        CONVERT_TZ(c.creation_datetime, 'UTC', 'UTC') as date_emission,
+        CONCAT(u.name, ' ', u.surname) as teacher_name,
+        t.degree as teacher_degree,
+        t.profile as teacher_profile,
+        CONCAT(us.name, ' ', us.surname) as student_name,
+        NULL as file
+    FROM course c
+    INNER JOIN user u ON c.teacher_id = u.id
+    INNER JOIN teacher t ON u.id = t.id
+    LEFT JOIN user us ON p_student_id = us.id
+    WHERE c.id = p_course_id;
+END//
+
+-- Procedimiento para contar certificados de un estudiante
+DROP PROCEDURE IF EXISTS get_certificates_count_by_student//
+
+CREATE PROCEDURE get_certificates_count_by_student(IN p_student_id INT)
+BEGIN
+    SELECT COUNT(*) as certificates_count
+    FROM student_course sc
+    WHERE sc.student_id = p_student_id
+        AND sc.has_certificate = 1
+        AND sc.finished = 1;
+END//
+
+
 DROP PROCEDURE IF EXISTS update_user_data_by_id//
 
 /* Prueba
@@ -1040,6 +1114,100 @@ BEGIN
     );
 END //
 
+DROP PROCEDURE IF EXISTS get_cv_by_student_id//
+
+CREATE PROCEDURE get_cv_by_student_id(
+    IN p_student_id INT
+)
+BEGIN
+    SELECT cv_file FROM student WHERE id = p_student_id;
+END //
+
 
 DELIMITER ;
 
+-- Procedimiento para obtener todos los certificados de un estudiante
+DROP PROCEDURE IF EXISTS get_all_certificates_by_student_id//
+
+CREATE PROCEDURE get_all_certificates_by_student_id(IN p_student_id INT)
+BEGIN
+    -- Selecciona los datos del curso para estudiantes que tienen certificado
+    SELECT DISTINCT
+        c.id,
+        c.name,
+        c.hours,
+        CONVERT_TZ(IFNULL(sc.finished_datetime, sc.creation_datetime), 'UTC', 'UTC') as date_emission,
+        NULL as file
+    FROM student_course sc
+    INNER JOIN course c ON sc.course_id = c.id
+    WHERE sc.student_id = p_student_id
+        AND sc.has_certificate = 1
+        AND sc.finished = 1;
+END//
+
+-- Procedimiento actualizado para obtener certificado por curso con más detalles
+DROP PROCEDURE IF EXISTS get_certificate_by_course_id//
+
+CREATE PROCEDURE get_certificate_by_course_id(
+    IN p_course_id INT,
+    IN p_student_id INT
+)
+BEGIN
+    SELECT 
+        c.id,
+        c.name,
+        c.description,
+        c.hours,
+        CONVERT_TZ(c.creation_datetime, 'UTC', 'UTC') as date_emission,
+        CONCAT(u.name, ' ', u.surname) as teacher_name,
+        t.degree as teacher_degree,
+        t.profile as teacher_profile,
+        CONCAT(us.name, ' ', us.surname) as student_name,
+        NULL as file
+    FROM course c
+    INNER JOIN user u ON c.teacher_id = u.id
+    INNER JOIN teacher t ON u.id = t.id
+    LEFT JOIN user us ON p_student_id = us.id
+    WHERE c.id = p_course_id;
+END//
+
+-- Procedimiento para contar certificados de un estudiante
+DROP PROCEDURE IF EXISTS get_certificates_count_by_student//
+
+CREATE PROCEDURE get_certificates_count_by_student(IN p_student_id INT)
+BEGIN
+    SELECT COUNT(*) as certificates_count
+    FROM student_course sc
+    WHERE sc.student_id = p_student_id
+        AND sc.has_certificate = 1
+        AND sc.finished = 1;
+END//
+
+DELIMITER ;
+
+-- Actualizamos los datos de prueba
+UPDATE teacher 
+SET degree = 'Doctor en Ciencias de la Computación',
+    profile = 'Profesor con más de 10 años de experiencia en desarrollo de software y educación en tecnología.'
+WHERE id IN (
+    SELECT teacher_id 
+    FROM course 
+    WHERE id IN (1, 2)
+);
+
+UPDATE course
+SET description = CASE id 
+    WHEN 1 THEN 'Curso completo de desarrollo web, abarcando front-end y back-end con las últimas tecnologías.'
+    WHEN 2 THEN 'Curso intensivo de bases de datos SQL, desde conceptos básicos hasta administración avanzada.'
+    ELSE description
+END,
+creation_datetime = NOW()
+WHERE id IN (1, 2);
+
+UPDATE student_course 
+SET has_certificate = 1,
+    finished = 1,
+    finished_datetime = NOW(),
+    creation_datetime = NOW()
+WHERE student_id IN (5, 6)
+AND course_id IN (1, 2);

@@ -101,8 +101,16 @@ export const setupGoogleStrategy = (app: Router, passport: PassportStatic) => {
                 
                 // Redirigir según si el usuario tiene CV o no
                 if (user.hasCV) {
-                    // Si el usuario ya tiene CV, redirigir a la página principal
-                    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3001'}/courses`);
+                    // Si el usuario ya tiene CV, redirigir a la página según el rol
+                    if (user.roleId === 2) { // Si es estudiante
+                        res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3001'}/profile`);
+                    } else if (user.roleId === 3) { // Si es profesor
+                        res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3001'}/teacher`);
+                    } else if (user.roleId === 1) { // Si es admin
+                        res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3001'}/admin`);
+                    } else {
+                        res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3001'}/profile`);
+                    }
                 } else {
                     // Si el usuario no tiene CV, redirigir a la página de subida de CV
                     res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3001'}/profile/upload-cv`);

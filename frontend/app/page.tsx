@@ -74,13 +74,13 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" asChild>
-              <Link href="/courses">
-                Explorar Cursos <ArrowRightIcon className="ml-2 h-4 w-4" />
+              <Link href="/register">
+                Registrarse <ArrowRightIcon className="ml-2 h-4 w-4" />
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <Link href="/profile">
-                Mi Perfil
+              <Link href="/login">
+                Iniciar Sesión
               </Link>
             </Button>
           </div>
