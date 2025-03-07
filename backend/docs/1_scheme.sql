@@ -37,6 +37,9 @@ CREATE TABLE admin_general (
 CREATE TABLE student (
     id INT AUTO_INCREMENT PRIMARY KEY,
     cv_file LONGTEXT,
+    photo_file LONGTEXT,
+    location VARCHAR(255),
+    bio TEXT,
     id_role INT NOT NULL,
     FOREIGN KEY (id_role) REFERENCES role(id)
 );

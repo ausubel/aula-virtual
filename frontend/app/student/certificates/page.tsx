@@ -12,6 +12,7 @@ import { jwtDecode } from "jwt-decode"
 import { useToast } from "@/hooks/use-toast"
 import { DocumentService } from "@/services/document.service"
 import Link from "next/link"
+import withCVRequired from "@/components/auth/with-cv-required"
 
 interface Certificate {
   id: number;
@@ -28,7 +29,7 @@ interface DecodedToken {
   exp?: number;
 }
 
-export default function CertificatesPage() {
+function CertificatesPage() {
   const [certificates, setCertificates] = useState<Certificate[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
@@ -157,3 +158,5 @@ export default function CertificatesPage() {
     </div>
   )
 }
+
+export default withCVRequired(CertificatesPage)

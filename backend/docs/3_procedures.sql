@@ -821,8 +821,8 @@ BEGIN
         DROP TEMPORARY TABLE IF EXISTS valid_student_ids;
         CREATE TEMPORARY TABLE valid_student_ids AS
         SELECT s.id
-        FROM student_ids s
-        INNER JOIN user u ON s.id = u.id
+        FROM student_ids si
+        INNER JOIN user u ON si.id = u.id
         WHERE u.id_role = 2
         AND s.id NOT IN (SELECT student_id FROM student_course WHERE course_id = p_course_id);
         
@@ -903,9 +903,11 @@ BEGIN
 END//
 
 -- Procedimiento para obtener todos los certificados de un estudiante
-DROP PROCEDURE IF EXISTS get_all_certificates_by_student_id//
+DROP PROCEDURE IF EXISTS get_all_certificates_by_student_id //
 
-CREATE PROCEDURE get_all_certificates_by_student_id(IN p_student_id INT)
+CREATE PROCEDURE get_all_certificates_by_student_id(
+	IN p_student_id INT
+)
 BEGIN
     -- Selecciona los datos del curso para estudiantes que tienen certificado
     SELECT DISTINCT
@@ -1039,14 +1041,19 @@ BEGIN
     
     -- Get user basic information
     SELECT JSON_OBJECT(
-        'name', CONCAT(u.name, ' ', u.surname),
+        'id', u.id,
+        'name', u.name,
+        'surname', u.surname,
         'email', u.email,
         'phone', u.phone,
+        'location', IFNULL(s.location, ''),
+        'bio', IFNULL(s.bio, ''),
         'coursesEnrolled', total_courses,
         'coursesCompleted', completed_courses,
         'totalProgress', total_progress
     ) INTO user_data
     FROM user u
+    LEFT JOIN student s ON u.id = s.id
     WHERE u.id = p_student_id;
     
     -- Get certificates (completed courses with certificate)
@@ -1103,9 +1110,13 @@ BEGIN
     
     -- Combine all data into a single JSON object
     SET p_result = JSON_OBJECT(
+        'id', JSON_UNQUOTE(JSON_EXTRACT(user_data, '$.id')),
         'name', JSON_UNQUOTE(JSON_EXTRACT(user_data, '$.name')),
+        'surname', JSON_UNQUOTE(JSON_EXTRACT(user_data, '$.surname')),
         'email', JSON_UNQUOTE(JSON_EXTRACT(user_data, '$.email')),
         'phone', JSON_UNQUOTE(JSON_EXTRACT(user_data, '$.phone')),
+        'location', JSON_UNQUOTE(JSON_EXTRACT(user_data, '$.location')),
+        'bio', JSON_UNQUOTE(JSON_EXTRACT(user_data, '$.bio')),
         'coursesEnrolled', JSON_EXTRACT(user_data, '$.coursesEnrolled'),
         'coursesCompleted', JSON_EXTRACT(user_data, '$.coursesCompleted'),
         'totalProgress', JSON_EXTRACT(user_data, '$.totalProgress'),
@@ -1123,8 +1134,77 @@ BEGIN
     SELECT cv_file FROM student WHERE id = p_student_id;
 END //
 
+DROP PROCEDURE IF EXISTS upload_photo//
 
-DELIMITER ;
+CREATE PROCEDURE upload_photo(
+    IN p_file LONGTEXT,
+    IN p_student_id INT
+)
+BEGIN
+    IF p_file IS NULL OR p_student_id IS NULL THEN
+        SELECT 'file or student_id is null' AS message;
+    ELSE
+        UPDATE student SET photo_file = p_file WHERE id = p_student_id;
+    END IF;
+END //
+
+DROP PROCEDURE IF EXISTS update_student_profile_info//
+
+/*
+Prueba:
+CALL update_student_profile_info(1, 'Lima, Perú', 'Estudiante de ingeniería de software apasionado por la tecnología.');
+*/
+
+CREATE PROCEDURE update_student_profile_info(
+    IN p_student_id INT,
+    IN p_name VARCHAR(100),
+    IN p_surname VARCHAR(100),
+    IN p_phone VARCHAR(20),
+    IN p_location VARCHAR(255),
+    IN p_bio TEXT
+)
+BEGIN
+    DECLARE v_bio_truncated TEXT;
+    DECLARE v_student_exists INT;
+    
+    -- Verificar que el usuario exista
+    IF NOT EXISTS (SELECT 1 FROM user WHERE id = p_student_id AND id_role = 2) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'El usuario estudiante no existe';
+    END IF;
+    
+    -- Verificar si el estudiante existe en la tabla student
+    SELECT COUNT(1) INTO v_student_exists FROM student WHERE id = p_student_id;
+    
+    -- Si no existe, crearlo
+    IF v_student_exists = 0 THEN
+        INSERT INTO student (id, id_role) VALUES (p_student_id, 2);
+    END IF;
+    
+    -- Limitar la biografía a 500 caracteres
+    IF LENGTH(p_bio) > 500 THEN
+        SET v_bio_truncated = LEFT(p_bio, 500);
+    ELSE
+        SET v_bio_truncated = p_bio;
+    END IF;
+    
+    -- Actualizar la información del perfil en la tabla user
+    UPDATE user
+    SET 
+        name = CASE WHEN p_name IS NOT NULL AND p_name != '' THEN p_name ELSE name END,
+        surname = CASE WHEN p_surname IS NOT NULL AND p_surname != '' THEN p_surname ELSE surname END,
+        phone = CASE WHEN p_phone IS NOT NULL AND p_phone != '' THEN p_phone ELSE phone END
+    WHERE id = p_student_id AND id_role = 2;
+    
+    -- Actualizar la información del perfil en la tabla student
+    UPDATE student
+    SET 
+        location = p_location,
+        bio = v_bio_truncated
+    WHERE id = p_student_id;
+    
+    SELECT 'Perfil actualizado correctamente' AS message;
+END//
 
 -- Procedimiento para obtener todos los certificados de un estudiante
 DROP PROCEDURE IF EXISTS get_all_certificates_by_student_id//
@@ -1184,30 +1264,3 @@ BEGIN
 END//
 
 DELIMITER ;
-
--- Actualizamos los datos de prueba
-UPDATE teacher 
-SET degree = 'Doctor en Ciencias de la Computación',
-    profile = 'Profesor con más de 10 años de experiencia en desarrollo de software y educación en tecnología.'
-WHERE id IN (
-    SELECT teacher_id 
-    FROM course 
-    WHERE id IN (1, 2)
-);
-
-UPDATE course
-SET description = CASE id 
-    WHEN 1 THEN 'Curso completo de desarrollo web, abarcando front-end y back-end con las últimas tecnologías.'
-    WHEN 2 THEN 'Curso intensivo de bases de datos SQL, desde conceptos básicos hasta administración avanzada.'
-    ELSE description
-END,
-creation_datetime = NOW()
-WHERE id IN (1, 2);
-
-UPDATE student_course 
-SET has_certificate = 1,
-    finished = 1,
-    finished_datetime = NOW(),
-    creation_datetime = NOW()
-WHERE student_id IN (5, 6)
-AND course_id IN (1, 2);

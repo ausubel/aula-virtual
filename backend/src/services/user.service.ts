@@ -21,4 +21,22 @@ export default class UserService {
 	async getStudentProfileData(studentId: number): Promise<any> {
 		return await this.UserModel.getStudentProfileData(studentId);
 	}
+
+	async updateStudentProfileInfo(
+		studentId: number, 
+		name: string, 
+		surname: string, 
+		phone: string, 
+		location: string, 
+		bio: string
+	): Promise<any> {
+		return await this.UserModel.updateStudentProfileInfo(
+			studentId, 
+			name, 
+			surname, 
+			phone, 
+			location, 
+			bio
+		);
+	}
 }
