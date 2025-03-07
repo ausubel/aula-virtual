@@ -220,18 +220,40 @@ export default class CoursesController implements ControllerBase {
                     let videos = [];
                     if (lesson.videos) {
                         try {
-                            // Parse videos if it's a string
                             if (typeof lesson.videos === 'string') {
                                 videos = JSON.parse(lesson.videos);
                             } else {
-                                videos = lesson.videos;
+                                videos = Array.isArray(lesson.videos) ? lesson.videos : [];
                             }
-                            // Filter out null values and ensure array
-                            videos = Array.isArray(videos) ? videos.filter(v => v !== null) : [];
-                            console.log('Videos procesados para lección', lesson.id, ':', videos);
+                            
+                            // Filtrar elementos null si los hay
+                            videos = videos.filter((v: any) => v !== null);
+                            console.log(`Videos procesados para lección ${lesson.id} :`, videos);
                         } catch (e) {
-                            console.error('Error parsing videos for lesson', lesson.id, ':', e);
-                            videos = [];
+                            console.error('Error al procesar videos:', e);
+                        }
+                    }
+                    
+                    // Correcta conversión de 'finished' a booleano
+                    // Manejar tanto string '1' como número 1, así como Buffer
+                    let finishedValue = false;
+                    
+                    if (lesson.finished !== undefined && lesson.finished !== null) {
+                        // Si es un string
+                        if (typeof lesson.finished === 'string') {
+                            finishedValue = lesson.finished === '1' || lesson.finished.toLowerCase() === 'true';
+                        } 
+                        // Si es un número
+                        else if (typeof lesson.finished === 'number') {
+                            finishedValue = lesson.finished !== 0;
+                        }
+                        // Si es un Buffer (típico de MySQL para campos BIT)
+                        else if (typeof lesson.finished === 'object' && Buffer.isBuffer(lesson.finished)) {
+                            finishedValue = lesson.finished[0] !== 0;
+                        }
+                        // Si es un booleano
+                        else if (typeof lesson.finished === 'boolean') {
+                            finishedValue = lesson.finished;
                         }
                     }
                     
@@ -241,8 +263,7 @@ export default class CoursesController implements ControllerBase {
                         description: lesson.description,
                         time: lesson.time,
                         videos: videos,
-                        // Incluir el campo finished cuando está disponible
-                        finished: lesson.finished === 1 
+                        finished: finishedValue
                     };
                     console.log('Lección procesada:', processedLesson);
                     return processedLesson;
