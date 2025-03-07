@@ -436,16 +436,24 @@ END //
 DROP PROCEDURE IF EXISTS get_lessons_by_course_id//
 
 /* Prueba
-CALL get_lessons_by_course_id(7);
+CALL get_lessons_by_course_id(7, 5);
 */
 
-CREATE PROCEDURE get_lessons_by_course_id(IN p_course_id INT)
+CREATE PROCEDURE get_lessons_by_course_id(
+    IN p_course_id INT,
+    IN p_student_id INT
+)
 BEGIN
     SELECT 
         l.id,
         l.title,
         l.description,
         l.time,
+        -- Si p_student_id es NULL, devuelve 0 para finished, de lo contrario, obtiene el valor real
+        IF(p_student_id IS NULL, 0, 
+            IFNULL((SELECT finished FROM lesson_student 
+                    WHERE lesson_id = l.id AND student_id = p_student_id), 0)
+        ) as finished,
         COALESCE(
             JSON_ARRAYAGG(
                 IF(v.id IS NOT NULL,
@@ -522,12 +530,24 @@ CREATE PROCEDURE update_lesson_student_finish(
     IN p_finished BIT
 )
 BEGIN
-    UPDATE lesson_student
-    SET finished = p_finished
+    -- Verificar si ya existe un registro para esta lección y estudiante
+    DECLARE v_exists INT;
+    SELECT COUNT(*) INTO v_exists FROM lesson_student 
     WHERE lesson_id = p_lesson_id AND student_id = p_student_id;
+
+    -- Si no existe, insertamos un nuevo registro
+    IF v_exists = 0 THEN
+        INSERT INTO lesson_student (lesson_id, student_id, finished)
+        VALUES (p_lesson_id, p_student_id, p_finished);
+    ELSE
+        -- Si existe, actualizamos el valor de finished
+        UPDATE lesson_student
+        SET finished = p_finished
+        WHERE lesson_id = p_lesson_id AND student_id = p_student_id;
+    END IF;
     
     SELECT 'SUCCESS' as message;
-END //
+END//
 
 DROP PROCEDURE IF EXISTS get_course_details_for_certificate_by_id//
 

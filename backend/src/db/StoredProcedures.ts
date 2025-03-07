@@ -21,12 +21,13 @@ export const StoredProcedures = {
     RemoveStudentFromCourse: 'CALL remove_student_from_course(?, ?)',
     
     // Lesson procedures
-    GetLessonsByCourseId: 'CALL get_lessons_by_course_id(?)',
+    GetLessonsByCourseId: 'CALL get_lessons_by_course_id(?, ?)',  // Actualizado para incluir el ID del estudiante
     CreateLessonForCourse: 'CALL create_lesson_for_course(?, ?, ?, ?)',
     UpdateLesson: 'CALL update_lesson(?, ?, ?, ?)',
     DeleteLesson: 'CALL delete_lesson(?)',
     CreateLessonVideo: 'CALL create_lesson_video_by_lesson_id(?, ?)',
     DeleteVideo: 'CALL delete_video(?)',
+    UpdateLessonStudentFinish: 'CALL update_lesson_student_finish(?, ?, ?)', // Nuevo procedimiento para actualizar el estado de finalización
     
     // Document procedures
     UploadCV: 'CALL upload_cv(?, ?)',

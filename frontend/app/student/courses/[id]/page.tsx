@@ -26,6 +26,7 @@ interface Lesson {
   time: number
   videos: Video[] | string[]
   completed?: boolean // Nuevo campo para rastrear si la lección está completada
+  finished?: boolean // Campo para el estado de finalización desde la API
 }
 
 interface Course {
@@ -56,7 +57,9 @@ export default function CoursePage({ params }: { params: { id: string } }) {
   const [error, setError] = useState<string | null>(null)
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null)
   const [completedLessons, setCompletedLessons] = useState<Record<number, boolean>>({}) // Estado para rastrear lecciones completadas
+  const [isUpdatingLesson, setIsUpdatingLesson] = useState<number | null>(null) // Para seguir qué lección está siendo actualizada
   const { toast } = useToast()
+  const [userId, setUserId] = useState<number | null>(null)
 
   useEffect(() => {
     const token = getToken()
@@ -64,6 +67,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
       try {
         const decoded = jwtDecode<DecodedToken>(token)
         if (decoded && decoded.userId) {
+          setUserId(decoded.userId)
           // Primero cargamos los datos de todos los cursos del estudiante
           loadStudentCourses(decoded.userId)
         } else {
@@ -111,15 +115,14 @@ export default function CoursePage({ params }: { params: { id: string } }) {
         console.log('Curso actual encontrado:', currentCourse)
         setCourseData(currentCourse)
         
-        // 3. Ahora obtenemos las lecciones específicas de este curso
-        const courseLessons = await CoursesService.getLessonsByCourse(currentCourseId)
+        // 3. Ahora obtenemos las lecciones específicas de este curso con el ID del estudiante
+        const courseLessons = await CoursesService.getLessonsByCourse(currentCourseId, userId)
         console.log('Lecciones del curso cargadas:', courseLessons.length)
         
-        // Por ahora, inicializamos todas las lecciones como no completadas
-        // En el futuro, esto vendrá del backend
+        // Inicializamos el estado de completedLessons basado en los datos del backend
         const initialLessonsState: Record<number, boolean> = {};
         courseLessons.forEach((lesson: Lesson) => {
-          initialLessonsState[lesson.id] = false; // O recuperar del backend
+          initialLessonsState[lesson.id] = !!lesson.finished;
         });
         
         setCompletedLessons(initialLessonsState);
@@ -190,7 +193,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
   }
   
   // Función para marcar una lección como completada o no completada
-  const toggleLessonCompletion = (lessonId: number, isVideoAvailable: boolean) => {
+  const toggleLessonCompletion = async (lessonId: number, isVideoAvailable: boolean) => {
     // Si no hay video disponible, no permitimos marcar como completada
     if (!isVideoAvailable) {
       toast({
@@ -200,23 +203,55 @@ export default function CoursePage({ params }: { params: { id: string } }) {
       });
       return;
     }
-    
-    setCompletedLessons(prev => {
-      const newState = { ...prev };
-      newState[lessonId] = !prev[lessonId];
-      
-      // Aquí eventualmente se enviará una actualización al backend
-      console.log(`Lección ${lessonId} marcada como ${newState[lessonId] ? 'completada' : 'pendiente'}`);
-      
-      // Mostrar notificación
+
+    if (!userId) {
       toast({
-        title: newState[lessonId] ? "Lección completada" : "Lección marcada como pendiente",
-        description: `Has ${newState[lessonId] ? 'completado' : 'desmarcado'} esta lección`,
-        variant: newState[lessonId] ? "default" : "destructive",
+        title: "Error",
+        description: "No se pudo identificar al usuario",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsUpdatingLesson(lessonId);
+      
+      // El nuevo estado será lo contrario del actual
+      const newStatus = !completedLessons[lessonId];
+      
+      // Actualizar UI primero para dar feedback inmediato
+      setCompletedLessons(prev => ({
+        ...prev,
+        [lessonId]: newStatus
+      }));
+      
+      // Llamar a la API para guardar el cambio en el backend
+      await CoursesService.toggleLessonCompletion(lessonId, userId, newStatus);
+      
+      // Mostrar notificación de éxito
+      toast({
+        title: newStatus ? "Lección completada" : "Lección marcada como pendiente",
+        description: `Has ${newStatus ? 'completado' : 'desmarcado'} esta lección`,
+        variant: newStatus ? "default" : "destructive",
       });
       
-      return newState;
-    });
+    } catch (error) {
+      console.error('Error al actualizar el estado de la lección:', error);
+      
+      // Revertir el estado en caso de error
+      setCompletedLessons(prev => ({
+        ...prev,
+        [lessonId]: !prev[lessonId]
+      }));
+      
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el estado de la lección",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingLesson(null);
+    }
   }
   
   // Función para renderizar el botón según si tiene video o no
@@ -348,8 +383,11 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                                   )}
                                   role="button"
                                   onClick={() => toggleLessonCompletion(lesson.id, isVideoAvailable)}
+                                  aria-busy={isUpdatingLesson === lesson.id}
                                 >
-                                  {completedLessons[lesson.id] ? (
+                                  {isUpdatingLesson === lesson.id ? (
+                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-white" />
+                                  ) : completedLessons[lesson.id] ? (
                                     <Check className="h-4 w-4" />
                                   ) : (
                                     <Circle className={cn("h-4 w-4", isVideoAvailable ? "" : "text-gray-400")} />
@@ -409,8 +447,11 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                             )}
                             role={isVideoAvailable ? "button" : "presentation"}
                             onClick={() => isVideoAvailable && toggleLessonCompletion(lesson.id, isVideoAvailable)}
+                            aria-busy={isUpdatingLesson === lesson.id}
                           >
-                            {completedLessons[lesson.id] ? (
+                            {isUpdatingLesson === lesson.id ? (
+                              <div className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-white" />
+                            ) : completedLessons[lesson.id] ? (
                               <Check className="h-3 w-3" />
                             ) : (
                               <Circle className={cn("h-3 w-3", isVideoAvailable ? "" : "text-gray-400")} />

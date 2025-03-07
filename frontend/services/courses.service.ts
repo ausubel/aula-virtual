@@ -37,6 +37,7 @@ interface Lesson {
   description: string;
   time: number;
   videos: Video[];
+  finished?: boolean; // Añadimos el campo finished
 }
 
 interface Video {
@@ -170,10 +171,17 @@ export class CoursesService {
     }
   }
 
-  static async getLessonsByCourse(courseId: number): Promise<Lesson[]> {
+  static async getLessonsByCourse(courseId: number, studentId?: number): Promise<Lesson[]> {
     try {
-      console.log('Obteniendo lecciones para el curso:', courseId);
-      const response = await fetch(`${this.BASE_URL}/courses/${courseId}/lessons`, {
+      console.log('Obteniendo lecciones para el curso:', courseId, 'para el estudiante:', studentId);
+      
+      // Construir la URL con el parámetro studentId si está presente
+      let url = `${this.BASE_URL}/courses/${courseId}/lessons`;
+      if (studentId) {
+        url += `?studentId=${studentId}`;
+      }
+      
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${AuthService.getToken()}`
         }
@@ -194,6 +202,7 @@ export class CoursesService {
         data.forEach((lesson, index) => {
           console.log(`\nLección ${index + 1}:`, lesson);
           console.log('Videos de la lección:', lesson.videos);
+          console.log('Estado finished:', lesson.finished);
         });
       }
       console.log('========================');
@@ -237,7 +246,8 @@ export class CoursesService {
           title: lesson.title,
           description: lesson.description,
           time: lesson.time,
-          videos
+          videos,
+          finished: !!lesson.finished // Convertir a boolean
         };
         console.log('Lección procesada:', processedLesson);
         return processedLesson;
@@ -651,6 +661,38 @@ export class CoursesService {
       });
     } catch (error) {
       console.error('Error en getCoursesByStudentId:', error);
+      throw error;
+    }
+  }
+
+  // Nuevo método para marcar una lección como completada/no completada
+  static async toggleLessonCompletion(lessonId: number, studentId: number, finished: boolean): Promise<void> {
+    try {
+      console.log(`${finished ? 'Marcando' : 'Desmarcando'} lección ${lessonId} como completada para el estudiante ${studentId}`);
+      
+      const response = await fetch(`${this.BASE_URL}/lessons/${lessonId}/progress`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${AuthService.getToken()}`
+        },
+        body: JSON.stringify({
+          studentId,
+          finished: finished ? 1 : 0  // Convertir a 1/0 para el backend
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Error al ${finished ? 'marcar' : 'desmarcar'} la lección como completada`);
+      }
+
+      const data = await response.json();
+      console.log('Respuesta del servidor:', data);
+      return data;
+    } catch (error) {
+      console.error('Error en toggleLessonCompletion:', error);
       throw error;
     }
   }
