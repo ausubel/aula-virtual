@@ -24,6 +24,7 @@ export default class UserController implements ControllerBase {
     this.onGetUserDataById();
     this.onUpdateUserDataById();
     this.onGetStudentProfileData();
+    this.onUpdateStudentProfileInfo();
   }
 
   private onGetUserDataById() {
@@ -51,6 +52,27 @@ export default class UserController implements ControllerBase {
       }
       
       sendResponses(res, 200, "Success", profileData);
+    });
+  }
+
+  private onUpdateStudentProfileInfo() {
+    this.router.put("/student/:id/profile", async (req, res) => {
+      try {
+        const studentId: number = Number(req.params.id);
+        const { name, surname, phone, location, bio } = req.body;
+        
+        // Validar que la biografía no exceda los 500 caracteres (validación adicional en el backend)
+        if (bio && bio.length > 500) {
+          sendResponses(res, 400, "La biografía no debe exceder los 500 caracteres", null);
+          return;
+        }
+        
+        const result = await this.userService.updateStudentProfileInfo(studentId, name, surname, phone, location, bio);
+        sendResponses(res, 200, "Perfil actualizado correctamente", result);
+      } catch (error) {
+        console.error("Error updating student profile:", error);
+        sendResponses(res, 500, "Error al actualizar el perfil", null);
+      }
     });
   }
 }

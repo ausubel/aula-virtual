@@ -30,7 +30,10 @@ export const StoredProcedures = {
     
     // Document procedures
     UploadCV: 'CALL upload_cv(?, ?)',
+    UploadPhoto: 'CALL upload_photo(?, ?)',
     GetCVByStudentId: 'CALL get_cv_by_student_id(?)',
+    GetPhotoByStudentId: 'CALL get_photo_by_student_id(?)',
+    UpdateStudentProfileInfo: 'CALL update_student_profile_info(?, ?, ?, ?, ?, ?)',
     GetAllCertificatesByStudentId: 'CALL get_all_certificates_by_student_id(?)',
     GetCertificateByCourseId: 'CALL get_certificate_by_course_id(?, ?)',
     

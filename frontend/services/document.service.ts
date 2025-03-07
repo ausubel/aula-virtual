@@ -36,4 +36,40 @@ export class DocumentService {
       throw error;
     }
   }
+
+  static async uploadProfilePhoto(file: string, studentId: number): Promise<void> {
+    try {
+      const response = await fetch(`${this.BASE_URL}/document/student/${studentId}/photo`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ file }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al subir la foto de perfil');
+      }
+    } catch (error) {
+      console.error('Error subiendo foto de perfil:', error);
+      throw error;
+    }
+  }
+
+  static async getProfilePhoto(studentId: number): Promise<string> {
+    try {
+      const response = await fetch(`${this.BASE_URL}/document/student/${studentId}/photo`);
+      
+      if (!response.ok) {
+        throw new Error('Error al obtener la foto de perfil');
+      }
+      
+      const data = await response.json();
+      return data.data?.photo || '';
+    } catch (error) {
+      console.error('Error obteniendo foto de perfil:', error);
+      return '';
+    }
+  }
 }

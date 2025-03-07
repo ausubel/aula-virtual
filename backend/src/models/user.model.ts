@@ -47,4 +47,25 @@ export default class UserModel extends ModelBase {
       return null;
     }
   }
+
+  async updateStudentProfileInfo(
+    studentId: number, 
+    name: string, 
+    surname: string, 
+    phone: string, 
+    location: string, 
+    bio: string
+  ): Promise<any> {
+    try {
+      const [result] = await this.database.query(
+        StoredProcedures.UpdateStudentProfileInfo,
+        [studentId, name, surname, phone, location, bio]
+      );
+      
+      return result[0];
+    } catch (error) {
+      console.error("Error updating student profile info:", error);
+      throw error;
+    }
+  }
 }

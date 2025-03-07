@@ -9,6 +9,14 @@ export default class DocumentModel extends ModelBase {
       [file, studentId]
     );
   }
+
+  async uploadPhoto(file: string, studentId: number): Promise<void> {
+    await this.database.query(
+      StoredProcedures.UploadPhoto,
+      [file, studentId]
+    );
+  }
+
   async getCVByStudentId(studentId: number): Promise<string> {
     const [[resultset]] = (await this.database.query(
       StoredProcedures.GetCVByStudentId,
@@ -16,6 +24,21 @@ export default class DocumentModel extends ModelBase {
     )) as [[string[]]];
     return resultset[0];
   }
+
+  async getPhotoByStudentId(studentId: number): Promise<string> {
+    const [rows] = await this.database.query(
+      'SELECT photo_file FROM student WHERE id = ?',
+      [studentId]
+    );
+    
+    // Check if we have results and return the photo_file
+    if (Array.isArray(rows) && rows.length > 0) {
+      return rows[0].photo_file || '';
+    }
+    
+    return '';
+  }
+
   async getAllCertificatesByStudentId(studentId: number): Promise<Certificate[]> {
     try {
       console.log('Consultando certificados para estudiante:', studentId);

@@ -18,9 +18,11 @@ export default class DocumentController implements ControllerBase {
 
   private initializeRoutes() {
     this.onUploadCV();
+    this.onUploadPhoto();
     this.onGetAllCertificatesByStudentId();
     this.onGetCertificateByCourseId();
     this.onGetCVByStudentId();
+    this.onGetPhotoByStudentId();
   }
 
   private onGetAllCertificatesByStudentId() {
@@ -66,6 +68,27 @@ export default class DocumentController implements ControllerBase {
       }
     });
   }
+
+  private onUploadPhoto() {
+    this.router.post("/student/:studentId/photo", async (req, res) => {
+      try {
+        const { studentId } = req.params;
+        const { file } = req.body;
+        if (!file) {
+          console.error("Error: No se proporcionó ninguna foto");
+          return sendResponses(res, 400, "No photo provided");
+        }
+        
+        await this.certificateService.uploadPhoto(file, Number(studentId));
+        
+        return sendResponses(res, 200, "Photo uploaded successfully");
+      } catch (error) {
+        console.error("Error uploading photo:", error);
+        return sendResponses(res, 500, "Internal Server Error");
+      }
+    });
+  }
+
   private onGetCVByStudentId() {
     this.router.get("/student/:studentId/cv", async (req, res) => {
       try {
@@ -73,6 +96,19 @@ export default class DocumentController implements ControllerBase {
         const cv: string = await this.certificateService.getCVByStudentId(Number(studentId));
         return sendResponses(res, 200, "Success", { cv });
       } catch (error) {
+        return sendResponses(res, 500, "Internal Server Error");
+      }
+    });
+  }
+
+  private onGetPhotoByStudentId() {
+    this.router.get("/student/:studentId/photo", async (req, res) => {
+      try {
+        const { studentId } = req.params;
+        const photo = await this.certificateService.getPhotoByStudentId(Number(studentId));
+        return sendResponses(res, 200, "Success", { photo });
+      } catch (error) {
+        console.error("Error getting photo:", error);
         return sendResponses(res, 500, "Internal Server Error");
       }
     });

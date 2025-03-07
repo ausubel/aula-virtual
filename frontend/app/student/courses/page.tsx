@@ -10,6 +10,7 @@ import { getToken } from "@/lib/auth"
 import { jwtDecode } from "jwt-decode"
 import { useToast } from "@/hooks/use-toast"
 import { CoursesService } from "@/services/courses.service"
+import withCVRequired from "@/components/auth/with-cv-required"
 
 // Definición del tipo de curso basado en la respuesta completa del backend
 interface Course {
@@ -31,7 +32,7 @@ interface DecodedToken {
   exp?: number;
 }
 
-export default function CoursesPage() {
+function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isLoading, setIsLoading] = useState(true)
@@ -236,3 +237,5 @@ export default function CoursesPage() {
     </div>
   )
 }
+
+export default withCVRequired(CoursesPage)
