@@ -665,12 +665,13 @@ export class CoursesService {
     }
   }
 
-  // Nuevo método para marcar una lección como completada/no completada
+  // Método para marcar una lección como completada/no completada
   static async toggleLessonCompletion(lessonId: number, studentId: number, finished: boolean): Promise<void> {
     try {
       console.log(`${finished ? 'Marcando' : 'Desmarcando'} lección ${lessonId} como completada para el estudiante ${studentId}`);
       
-      const response = await fetch(`${this.BASE_URL}/lessons/${lessonId}/progress`, {
+      // Corregir la ruta para que coincida con la definida en el backend
+      const response = await fetch(`${this.BASE_URL}/courses/lessons/${lessonId}/progress`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
