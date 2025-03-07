@@ -529,9 +529,27 @@ CREATE PROCEDURE update_lesson_student_finish(
     IN p_student_id INT,
     IN p_finished BIT
 )
-BEGIN
-    -- Verificar si ya existe un registro para esta lección y estudiante
+update_proc: BEGIN
+    -- Declarar todas las variables al inicio del procedimiento
+    DECLARE v_exists_lesson INT;
+    DECLARE v_exists_student INT;
     DECLARE v_exists INT;
+    
+    -- Verificar que la lección existe
+    SELECT COUNT(*) INTO v_exists_lesson FROM lesson WHERE id = p_lesson_id;
+    IF v_exists_lesson = 0 THEN
+        SELECT 'LESSON_NOT_FOUND' as message;
+        LEAVE update_proc;
+    END IF;
+    
+    -- Verificar que el estudiante existe
+    SELECT COUNT(*) INTO v_exists_student FROM student WHERE id = p_student_id;
+    IF v_exists_student = 0 THEN
+        SELECT 'STUDENT_NOT_FOUND' as message;
+        LEAVE update_proc;
+    END IF;
+    
+    -- Verificar si ya existe un registro para esta lección y estudiante
     SELECT COUNT(*) INTO v_exists FROM lesson_student 
     WHERE lesson_id = p_lesson_id AND student_id = p_student_id;
 
@@ -546,7 +564,12 @@ BEGIN
         WHERE lesson_id = p_lesson_id AND student_id = p_student_id;
     END IF;
     
-    SELECT 'SUCCESS' as message;
+    -- Verificar si se realizó la operación correctamente
+    IF ROW_COUNT() > 0 THEN
+        SELECT 'SUCCESS' as message, p_lesson_id as lesson_id, p_student_id as student_id, p_finished as finished;
+    ELSE
+        SELECT 'ERROR_UPDATING' as message;
+    END IF;
 END//
 
 DROP PROCEDURE IF EXISTS get_course_details_for_certificate_by_id//
