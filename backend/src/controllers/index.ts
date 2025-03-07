@@ -7,6 +7,7 @@ import DocumentController from "./document.controller";
 import CoursesController from "./courses.controller";
 import TeachersController from "./teachers.controller";
 import UserController from "./user.controller";
+import AdminController from "./admin.controller";
 
 export default class ControllerInitializer {
     private app: Application;
@@ -21,7 +22,8 @@ export default class ControllerInitializer {
             new DocumentController(),
             new CoursesController(),
             new TeachersController(),
-            new UserController()
+            new UserController(),
+            new AdminController() // Agregamos el nuevo controlador
         ];
     }
 
