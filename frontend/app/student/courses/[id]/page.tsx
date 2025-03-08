@@ -288,6 +288,57 @@ export default function CoursePage({ params }: { params: { id: string } }) {
     }
   }
 
+  // Actualizar la función para obtener todos los videos de una lección
+  const getAllVideos = (lesson: Lesson): Video[] => {
+    if (!lesson.videos || !Array.isArray(lesson.videos)) return [];
+    return lesson.videos.filter((video): video is Video => 
+      typeof video === 'object' && video !== null && 'videoPath' in video && !!video.videoPath
+    );
+  }
+
+  // Función para determinar si una lección tiene videos
+  const hasVideos = (lesson: Lesson): boolean => {
+    const videos = getAllVideos(lesson);
+    return videos.length > 0;
+  }
+
+  // Función para renderizar los botones de video
+  const renderVideoButtons = (lesson: Lesson) => {
+    const videos = getAllVideos(lesson);
+    
+    if (videos.length === 0) {
+      return (
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="ml-2"
+          disabled
+        >
+          <AlertCircle className="h-4 w-4 mr-2" />
+          No hay videos
+        </Button>
+      );
+    }
+
+    return (
+      <div className="flex flex-wrap gap-2">
+        {videos.map((video, index) => (
+          <Button 
+            key={video.id || index}
+            variant="outline" 
+            size="sm"
+            asChild
+          >
+            <a href={video.videoPath} target="_blank" rel="noopener noreferrer">
+              <PlayCircle className="h-4 w-4 mr-2" />
+              Ver video {videos.length > 1 ? (index + 1) : ''}
+            </a>
+          </Button>
+        ))}
+      </div>
+    );
+  }
+
   if (isLoading) {
     return <div className="flex justify-center items-center min-h-screen">Cargando...</div>
   }
@@ -365,7 +416,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                 {lessons.length > 0 ? (
                   <div className="space-y-2">
                     {lessons.map((lesson) => {
-                      const isVideoAvailable = hasVideo(lesson);
+                      const hasAvailableVideos = hasVideos(lesson);
                       
                       return (
                         <div key={lesson.id} className="border rounded-lg p-4 hover:border-primary/50 transition-colors">
@@ -377,12 +428,12 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                                     "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border mr-2 transition-colors",
                                     completedLessons[lesson.id] 
                                       ? "border-green-500 bg-green-500 text-white" 
-                                      : isVideoAvailable
+                                      : hasAvailableVideos
                                         ? "border-gray-300 bg-transparent hover:border-primary/60 cursor-pointer"
                                         : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
                                   )}
                                   role="button"
-                                  onClick={() => toggleLessonCompletion(lesson.id, isVideoAvailable)}
+                                  onClick={() => toggleLessonCompletion(lesson.id, hasAvailableVideos)}
                                   aria-busy={isUpdatingLesson === lesson.id}
                                 >
                                   {isUpdatingLesson === lesson.id ? (
@@ -390,7 +441,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                                   ) : completedLessons[lesson.id] ? (
                                     <Check className="h-4 w-4" />
                                   ) : (
-                                    <Circle className={cn("h-4 w-4", isVideoAvailable ? "" : "text-gray-400")} />
+                                    <Circle className={cn("h-4 w-4", hasAvailableVideos ? "" : "text-gray-400")} />
                                   )}
                                 </div>
                                 <div>
@@ -399,10 +450,16 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                                   <div className="flex items-center text-xs text-muted-foreground mt-1">
                                     <Clock className="h-3 w-3 mr-1" />
                                     <span>{formatTime(lesson.time)}</span>
-                                    {!isVideoAvailable && (
+                                    {!hasAvailableVideos && (
                                       <span className="ml-2 text-xs text-amber-600 flex items-center">
                                         <AlertCircle className="h-3 w-3 mr-1" />
-                                        Sin video disponible
+                                        Sin videos disponibles
+                                      </span>
+                                    )}
+                                    {hasAvailableVideos && (
+                                      <span className="ml-2 text-xs text-blue-600 flex items-center">
+                                        <PlayCircle className="h-3 w-3 mr-1" />
+                                        {getAllVideos(lesson).length} {getAllVideos(lesson).length === 1 ? 'video' : 'videos'} disponibles
                                       </span>
                                     )}
                                   </div>
@@ -410,7 +467,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                               </div>
                             </div>
                             <div>
-                              {renderLessonButton(lesson)}
+                              {renderVideoButtons(lesson)}
                             </div>
                           </div>
                         </div>
@@ -431,7 +488,8 @@ export default function CoursePage({ params }: { params: { id: string } }) {
               <CardContent className="space-y-4 pt-6">
                 {lessons.length > 0 ? (
                   lessons.map((lesson) => {
-                    const isVideoAvailable = hasVideo(lesson);
+                    const videos = getAllVideos(lesson);
+                    const hasAvailableVideos = videos.length > 0;
                     
                     return (
                       <div key={lesson.id} className="flex items-center justify-between p-3 border rounded-lg hover:border-primary/50 transition-colors">
@@ -441,12 +499,12 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                               "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-colors",
                               completedLessons[lesson.id] 
                                 ? "border-green-500 bg-green-500 text-white" 
-                                : isVideoAvailable
+                                : hasAvailableVideos
                                   ? "border-gray-300 bg-transparent hover:border-primary/60 cursor-pointer"
                                   : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
                             )}
-                            role={isVideoAvailable ? "button" : "presentation"}
-                            onClick={() => isVideoAvailable && toggleLessonCompletion(lesson.id, isVideoAvailable)}
+                            role={hasAvailableVideos ? "button" : "presentation"}
+                            onClick={() => hasAvailableVideos && toggleLessonCompletion(lesson.id, hasAvailableVideos)}
                             aria-busy={isUpdatingLesson === lesson.id}
                           >
                             {isUpdatingLesson === lesson.id ? (
@@ -454,30 +512,40 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                             ) : completedLessons[lesson.id] ? (
                               <Check className="h-3 w-3" />
                             ) : (
-                              <Circle className={cn("h-3 w-3", isVideoAvailable ? "" : "text-gray-400")} />
+                              <Circle className={cn("h-3 w-3", hasAvailableVideos ? "" : "text-gray-400")} />
                             )}
                           </div>
                           <FileText className="h-4 w-4" />
                           <span className="font-medium">{lesson.title}</span>
-                          {!isVideoAvailable && (
+                          {!hasAvailableVideos ? (
                             <span className="ml-1 text-xs text-amber-600 inline-flex items-center">
                               <AlertCircle className="h-3 w-3 mr-1" />
-                              Sin video
+                              Sin videos
+                            </span>
+                          ) : videos.length > 1 && (
+                            <span className="ml-1 text-xs text-blue-600 inline-flex items-center">
+                              <PlayCircle className="h-3 w-3 mr-1" />
+                              {videos.length} videos
                             </span>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-muted-foreground">{formatTime(lesson.time)}</span>
-                          {isVideoAvailable ? (
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              asChild
-                            >
-                              <a href={getFirstVideoUrl(lesson)!} target="_blank" rel="noopener noreferrer">
-                                <Download className="h-4 w-4" />
-                              </a>
-                            </Button>
+                          {videos.length > 0 ? (
+                            <div className="flex gap-2">
+                              {videos.map((video, index) => (
+                                <Button 
+                                  key={video.id || index}
+                                  variant="ghost" 
+                                  size="icon"
+                                  asChild
+                                >
+                                  <a href={video.videoPath} target="_blank" rel="noopener noreferrer">
+                                    <PlayCircle className="h-4 w-4" />
+                                  </a>
+                                </Button>
+                              ))}
+                            </div>
                           ) : (
                             <Button 
                               variant="ghost" 
