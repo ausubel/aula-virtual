@@ -234,6 +234,9 @@ export default function CoursePage({ params }: { params: { id: string } }) {
         description: `Has ${newStatus ? 'completado' : 'desmarcado'} esta lección`,
         variant: newStatus ? "default" : "destructive",
       });
+
+      // Recargar los datos del curso para actualizar el progreso
+      await loadStudentCourses(userId);
       
     } catch (error) {
       console.error('Error al actualizar el estado de la lección:', error);
