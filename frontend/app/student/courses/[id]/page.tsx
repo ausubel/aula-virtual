@@ -327,6 +327,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
         <Button 
           variant="outline" 
           size="sm"
+          className="whitespace-nowrap"
           asChild
         >
           <a href={videos[0].videoPath} target="_blank" rel="noopener noreferrer">
@@ -339,45 +340,33 @@ export default function CoursePage({ params }: { params: { id: string } }) {
 
     // Si hay múltiples videos, mostrar un dropdown
     return (
-      <div className="flex items-center gap-2">
-        <Button 
-          variant="outline" 
-          size="sm"
-          asChild
-        >
-          <a href={videos[0].videoPath} target="_blank" rel="noopener noreferrer">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="whitespace-nowrap"
+          >
             <PlayCircle className="h-4 w-4 mr-2" />
-            Ver video 1
-          </a>
-        </Button>
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="sm"
-            >
-              <PlayCircle className="h-4 w-4 mr-2" />
-              Más videos
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {videos.slice(1).map((video, index) => (
-              <DropdownMenuItem key={video.id || index + 1} asChild>
-                <a 
-                  href={video.videoPath} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center"
-                >
-                  <PlayCircle className="h-4 w-4 mr-2" />
-                  Video {index + 2}
-                </a>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+            Videos ({videos.length})
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-20">
+          {videos.map((video, index) => (
+            <DropdownMenuItem key={video.id || index} asChild>
+              <a 
+                href={video.videoPath} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center w-full"
+              >
+                <PlayCircle className="h-4 w-4 mr-2" />
+                Video {index + 1}
+              </a>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
     );
   }
 
@@ -462,7 +451,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                       
                       return (
                         <div key={lesson.id} className="border rounded-lg p-4 hover:border-primary/50 transition-colors">
-                          <div className="flex items-start justify-between">
+                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                             <div className="flex-grow">
                               <div className="flex items-center">
                                 <div 
@@ -500,7 +489,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                                 </div>
                               </div>
                             </div>
-                            <div>
+                            <div className="mt-2 sm:mt-0">
                               {renderVideoButtons(lesson)}
                             </div>
                           </div>
