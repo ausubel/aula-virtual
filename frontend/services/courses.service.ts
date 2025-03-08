@@ -37,6 +37,7 @@ interface Lesson {
   description: string;
   time: number;
   videos: Video[];
+  finished?: boolean; // Añadimos el campo finished
 }
 
 interface Video {
@@ -170,10 +171,17 @@ export class CoursesService {
     }
   }
 
-  static async getLessonsByCourse(courseId: number): Promise<Lesson[]> {
+  static async getLessonsByCourse(courseId: number, studentId?: number): Promise<Lesson[]> {
     try {
-      console.log('Obteniendo lecciones para el curso:', courseId);
-      const response = await fetch(`${this.BASE_URL}/courses/${courseId}/lessons`, {
+      console.log('Obteniendo lecciones para el curso:', courseId, 'para el estudiante:', studentId);
+      
+      // Construir la URL con el parámetro studentId si está presente
+      let url = `${this.BASE_URL}/courses/${courseId}/lessons`;
+      if (studentId) {
+        url += `?studentId=${studentId}`;
+      }
+      
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${AuthService.getToken()}`
         }
@@ -194,6 +202,7 @@ export class CoursesService {
         data.forEach((lesson, index) => {
           console.log(`\nLección ${index + 1}:`, lesson);
           console.log('Videos de la lección:', lesson.videos);
+          console.log('Estado finished (valor real):', lesson.finished, 'tipo:', typeof lesson.finished);
         });
       }
       console.log('========================');
@@ -232,12 +241,53 @@ export class CoursesService {
           ];
         }
 
+        // Correctamente convertir el valor 'finished' a booleano
+        // Esto maneja varios casos: string '1', número 1, Buffer, boolean true, etc.
+        let finishedValue = false;
+        if (lesson.finished !== undefined && lesson.finished !== null) {
+          // Si es un string, comprobar su valor
+          if (typeof lesson.finished === 'string') {
+            finishedValue = lesson.finished === '1' || lesson.finished.toLowerCase() === 'true';
+          } 
+          // Si es un número, comprobar si es distinto de cero
+          else if (typeof lesson.finished === 'number') {
+            finishedValue = lesson.finished !== 0;
+          }
+          // Si es un Buffer (aparece como objeto), convertirlo a string y verificarlo
+          else if (typeof lesson.finished === 'object' && lesson.finished !== null) {
+            // En el caso específico de Buffer
+            if (Buffer.isBuffer(lesson.finished) || 
+                (lesson.finished.type === 'Buffer' && Array.isArray(lesson.finished.data))) {
+              // Convertir Buffer a valor numérico (asumiendo primer byte)
+              const bufferValue = Buffer.isBuffer(lesson.finished) 
+                ? lesson.finished[0] 
+                : lesson.finished.data[0];
+              finishedValue = bufferValue !== 0;
+            } 
+            // Para otros tipos de objetos, comprobar si tienen una propiedad 'data'
+            else if (lesson.finished.data !== undefined) {
+              finishedValue = !!lesson.finished.data;
+            }
+            // Para objetos genéricos, comprobar su valor booleano
+            else {
+              finishedValue = !!lesson.finished;
+            }
+          }
+          // Para booleanos, usarlos directamente
+          else if (typeof lesson.finished === 'boolean') {
+            finishedValue = lesson.finished;
+          }
+        }
+
+        console.log('Valor finished procesado:', finishedValue);
+        
         const processedLesson = {
           id: lesson.id,
           title: lesson.title,
           description: lesson.description,
           time: lesson.time,
-          videos
+          videos,
+          finished: finishedValue
         };
         console.log('Lección procesada:', processedLesson);
         return processedLesson;
@@ -651,6 +701,39 @@ export class CoursesService {
       });
     } catch (error) {
       console.error('Error en getCoursesByStudentId:', error);
+      throw error;
+    }
+  }
+
+  // Método para marcar una lección como completada/no completada
+  static async toggleLessonCompletion(lessonId: number, studentId: number, finished: boolean): Promise<void> {
+    try {
+      console.log(`${finished ? 'Marcando' : 'Desmarcando'} lección ${lessonId} como completada para el estudiante ${studentId}`);
+      
+      // Corregir la ruta para que coincida con la definida en el backend
+      const response = await fetch(`${this.BASE_URL}/courses/lessons/${lessonId}/progress`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${AuthService.getToken()}`
+        },
+        body: JSON.stringify({
+          studentId,
+          finished: finished ? 1 : 0  // Convertir a 1/0 para el backend
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Error al ${finished ? 'marcar' : 'desmarcar'} la lección como completada`);
+      }
+
+      const data = await response.json();
+      console.log('Respuesta del servidor:', data);
+      return data;
+    } catch (error) {
+      console.error('Error en toggleLessonCompletion:', error);
       throw error;
     }
   }

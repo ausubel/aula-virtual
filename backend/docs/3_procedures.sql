@@ -436,16 +436,24 @@ END //
 DROP PROCEDURE IF EXISTS get_lessons_by_course_id//
 
 /* Prueba
-CALL get_lessons_by_course_id(7);
+CALL get_lessons_by_course_id(7, 5);
 */
 
-CREATE PROCEDURE get_lessons_by_course_id(IN p_course_id INT)
+CREATE PROCEDURE get_lessons_by_course_id(
+    IN p_course_id INT,
+    IN p_student_id INT
+)
 BEGIN
     SELECT 
         l.id,
         l.title,
         l.description,
         l.time,
+        -- Si p_student_id es NULL, devuelve 0 para finished, de lo contrario, obtiene el valor real
+        IF(p_student_id IS NULL, 0, 
+            IFNULL((SELECT finished FROM lesson_student 
+                    WHERE lesson_id = l.id AND student_id = p_student_id), 0)
+        ) as finished,
         COALESCE(
             JSON_ARRAYAGG(
                 IF(v.id IS NOT NULL,
@@ -521,13 +529,48 @@ CREATE PROCEDURE update_lesson_student_finish(
     IN p_student_id INT,
     IN p_finished BIT
 )
-BEGIN
-    UPDATE lesson_student
-    SET finished = p_finished
-    WHERE lesson_id = p_lesson_id AND student_id = p_student_id;
+update_proc: BEGIN
+    -- Declarar todas las variables al inicio del procedimiento
+    DECLARE v_exists_lesson INT;
+    DECLARE v_exists_student INT;
+    DECLARE v_exists INT;
     
-    SELECT 'SUCCESS' as message;
-END //
+    -- Verificar que la lección existe
+    SELECT COUNT(*) INTO v_exists_lesson FROM lesson WHERE id = p_lesson_id;
+    IF v_exists_lesson = 0 THEN
+        SELECT 'LESSON_NOT_FOUND' as message;
+        LEAVE update_proc;
+    END IF;
+    
+    -- Verificar que el estudiante existe
+    SELECT COUNT(*) INTO v_exists_student FROM student WHERE id = p_student_id;
+    IF v_exists_student = 0 THEN
+        SELECT 'STUDENT_NOT_FOUND' as message;
+        LEAVE update_proc;
+    END IF;
+    
+    -- Verificar si ya existe un registro para esta lección y estudiante
+    SELECT COUNT(*) INTO v_exists FROM lesson_student 
+    WHERE lesson_id = p_lesson_id AND student_id = p_student_id;
+
+    -- Si no existe, insertamos un nuevo registro
+    IF v_exists = 0 THEN
+        INSERT INTO lesson_student (lesson_id, student_id, finished)
+        VALUES (p_lesson_id, p_student_id, p_finished);
+    ELSE
+        -- Si existe, actualizamos el valor de finished
+        UPDATE lesson_student
+        SET finished = p_finished
+        WHERE lesson_id = p_lesson_id AND student_id = p_student_id;
+    END IF;
+    
+    -- Verificar si se realizó la operación correctamente
+    IF ROW_COUNT() > 0 THEN
+        SELECT 'SUCCESS' as message, p_lesson_id as lesson_id, p_student_id as student_id, p_finished as finished;
+    ELSE
+        SELECT 'ERROR_UPDATING' as message;
+    END IF;
+END//
 
 DROP PROCEDURE IF EXISTS get_course_details_for_certificate_by_id//
 

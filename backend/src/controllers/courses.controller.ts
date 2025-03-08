@@ -33,6 +33,8 @@ export default class CoursesController implements ControllerBase {
         this.router.delete('/lessons/:lessonId', this.deleteLesson.bind(this));
         this.router.post('/lessons/:id/videos', this.addVideoToLesson.bind(this));
         this.router.delete('/videos/:id', this.deleteVideo.bind(this));
+        // Nueva ruta para actualizar el estado de finalización de una lección
+        this.router.put('/lessons/:lessonId/progress', this.updateLessonProgress.bind(this));
     }
 
     private async createCourse(req: Request, res: Response) {
@@ -206,9 +208,11 @@ export default class CoursesController implements ControllerBase {
     private async getLessonsByCourse(req: Request, res: Response) {
         try {
             const { id } = req.params;
-            console.log('Obteniendo lecciones del curso:', id);
+            const studentId = req.query.studentId ? parseInt(req.query.studentId as string) : null;
             
-            const [rows] = await this.db.query(StoredProcedures.GetLessonsByCourseId, [id]);
+            console.log('Obteniendo lecciones del curso:', id, 'para el estudiante:', studentId);
+            
+            const [rows] = await this.db.query(StoredProcedures.GetLessonsByCourseId, [id, studentId]);
             console.log('Resultado de la consulta:', rows);
             
             if (Array.isArray(rows) && rows.length > 0) {
@@ -216,18 +220,40 @@ export default class CoursesController implements ControllerBase {
                     let videos = [];
                     if (lesson.videos) {
                         try {
-                            // Parse videos if it's a string
                             if (typeof lesson.videos === 'string') {
                                 videos = JSON.parse(lesson.videos);
                             } else {
-                                videos = lesson.videos;
+                                videos = Array.isArray(lesson.videos) ? lesson.videos : [];
                             }
-                            // Filter out null values and ensure array
-                            videos = Array.isArray(videos) ? videos.filter(v => v !== null) : [];
-                            console.log('Videos procesados para lección', lesson.id, ':', videos);
+                            
+                            // Filtrar elementos null si los hay
+                            videos = videos.filter((v: any) => v !== null);
+                            console.log(`Videos procesados para lección ${lesson.id} :`, videos);
                         } catch (e) {
-                            console.error('Error parsing videos for lesson', lesson.id, ':', e);
-                            videos = [];
+                            console.error('Error al procesar videos:', e);
+                        }
+                    }
+                    
+                    // Correcta conversión de 'finished' a booleano
+                    // Manejar tanto string '1' como número 1, así como Buffer
+                    let finishedValue = false;
+                    
+                    if (lesson.finished !== undefined && lesson.finished !== null) {
+                        // Si es un string
+                        if (typeof lesson.finished === 'string') {
+                            finishedValue = lesson.finished === '1' || lesson.finished.toLowerCase() === 'true';
+                        } 
+                        // Si es un número
+                        else if (typeof lesson.finished === 'number') {
+                            finishedValue = lesson.finished !== 0;
+                        }
+                        // Si es un Buffer (típico de MySQL para campos BIT)
+                        else if (typeof lesson.finished === 'object' && Buffer.isBuffer(lesson.finished)) {
+                            finishedValue = lesson.finished[0] !== 0;
+                        }
+                        // Si es un booleano
+                        else if (typeof lesson.finished === 'boolean') {
+                            finishedValue = lesson.finished;
                         }
                     }
                     
@@ -236,7 +262,8 @@ export default class CoursesController implements ControllerBase {
                         title: lesson.title,
                         description: lesson.description,
                         time: lesson.time,
-                        videos: videos
+                        videos: videos,
+                        finished: finishedValue
                     };
                     console.log('Lección procesada:', processedLesson);
                     return processedLesson;
@@ -614,6 +641,63 @@ export default class CoursesController implements ControllerBase {
         } catch (error) {
             console.error('Error en getCoursesByStudentId:', error);
             res.status(500).json({ message: 'Error al obtener los cursos del estudiante' });
+        }
+    }
+
+    // Nuevo método para actualizar el estado de finalización de una lección
+    private async updateLessonProgress(req: Request, res: Response) {
+        try {
+            const { lessonId } = req.params;
+            const { studentId, finished } = req.body;
+            
+            console.log(`Actualizando estado de lección ${lessonId} para estudiante ${studentId} a ${finished ? 'completada' : 'pendiente'}`);
+            
+            // Verificar que los datos necesarios estén presentes
+            if (!lessonId || !studentId) {
+                return res.status(400).json({ message: 'Se requiere lessonId y studentId' });
+            }
+            
+            // Verificar que lessonId y studentId sean números
+            if (isNaN(parseInt(lessonId)) || isNaN(parseInt(studentId))) {
+                return res.status(400).json({ message: 'lessonId y studentId deben ser números' });
+            }
+
+            // Verificar que finished sea un valor booleano o numérico (0/1)
+            const finishedValue = typeof finished === 'boolean' ? (finished ? 1 : 0) : parseInt(finished);
+            if (isNaN(finishedValue) || (finishedValue !== 0 && finishedValue !== 1)) {
+                return res.status(400).json({ message: 'finished debe ser un valor booleano o numérico (0/1)' });
+            }
+            
+            const [result] = await this.db.query(
+                StoredProcedures.UpdateLessonStudentFinish, 
+                [lessonId, studentId, finishedValue]
+            );
+            
+            console.log('Resultado de actualizar estado de lección:', result);
+            
+            if (Array.isArray(result) && result.length > 0) {
+                const response = result[0];
+                
+                if (response.message === 'SUCCESS') {
+                    return res.json({ 
+                        message: `Lección ${finishedValue === 1 ? 'completada' : 'marcada como pendiente'} exitosamente`,
+                        lessonId,
+                        studentId,
+                        finished: finishedValue === 1
+                    });
+                }
+            }
+            
+            res.json({ 
+                message: 'Operación completada, pero sin confirmación del servidor', 
+                lessonId,
+                studentId,
+                finished: finishedValue === 1
+            });
+            
+        } catch (error) {
+            console.error('Error en updateLessonProgress:', error);
+            res.status(500).json({ message: 'Error al actualizar el estado de la lección' });
         }
     }
 }
