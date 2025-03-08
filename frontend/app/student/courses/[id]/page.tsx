@@ -433,10 +433,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
 
         {/* Pestañas de contenido */}
         <Tabs defaultValue="content">
-          <TabsList>
-            <TabsTrigger value="content">Contenido</TabsTrigger>
-            <TabsTrigger value="resources">Recursos</TabsTrigger>
-          </TabsList>
+          <h2 className="text-2xl font-bold mb-4">Contenido</h2>
 
           <TabsContent value="content" className="space-y-4">
             <Card>
@@ -506,85 +503,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
             </Card>
           </TabsContent>
 
-          <TabsContent value="resources">
-            <Card>
-              <CardContent className="space-y-4 pt-6">
-                {lessons.length > 0 ? (
-                  lessons.map((lesson) => {
-                    const videos = getAllVideos(lesson);
-                    
-                    return (
-                      <div key={lesson.id} className="flex items-center justify-between p-3 border rounded-lg hover:border-primary/50 transition-colors">
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className={cn(
-                              "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-colors",
-                              completedLessons[lesson.id] 
-                                ? "border-green-500 bg-green-500 text-white" 
-                                : "border-gray-300 bg-transparent hover:border-primary/60 cursor-pointer"
-                            )}
-                            role="button"
-                            onClick={() => toggleLessonCompletion(lesson.id)}
-                            aria-busy={isUpdatingLesson === lesson.id}
-                          >
-                            {isUpdatingLesson === lesson.id ? (
-                              <div className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-white" />
-                            ) : completedLessons[lesson.id] ? (
-                              <Check className="h-3 w-3" />
-                            ) : (
-                              <Circle className="h-3 w-3" />
-                            )}
-                          </div>
-                          <FileText className="h-4 w-4" />
-                          <span className="font-medium">{lesson.title}</span>
-                          {videos.length > 0 && (
-                            <span className="ml-1 text-xs text-blue-600 inline-flex items-center">
-                              <PlayCircle className="h-3 w-3 mr-1" />
-                              {videos.length} {videos.length === 1 ? 'video' : 'videos'}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">{formatTime(lesson.time)}</span>
-                          {videos.length > 0 && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon"
-                                >
-                                  <PlayCircle className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                {videos.map((video, index) => (
-                                  <DropdownMenuItem key={video.id || index} asChild>
-                                    <a 
-                                      href={video.videoPath} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="flex items-center"
-                                    >
-                                      <PlayCircle className="h-4 w-4 mr-2" />
-                                      Video {index + 1}
-                                    </a>
-                                  </DropdownMenuItem>
-                                ))}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="text-center py-4 text-muted-foreground">
-                    No hay recursos disponibles
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+          
         </Tabs>
       </div>
     </div>
