@@ -13,6 +13,14 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
+// Importar los componentes necesarios para el dropdown
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu"
+
 // Interfaces basadas en la respuesta del backend
 interface Video {
   id: number
@@ -193,17 +201,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
   }
   
   // Función para marcar una lección como completada o no completada
-  const toggleLessonCompletion = async (lessonId: number, isVideoAvailable: boolean) => {
-    // Si no hay video disponible, no permitimos marcar como completada
-    if (!isVideoAvailable) {
-      toast({
-        title: "Video no disponible",
-        description: "No puedes marcar como completada una lección sin video",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const toggleLessonCompletion = async (lessonId: number) => {
     if (!userId) {
       toast({
         title: "Error",
@@ -256,7 +254,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
       setIsUpdatingLesson(null);
     }
   }
-  
+
   // Función para renderizar el botón según si tiene video o no
   const renderLessonButton = (lesson: Lesson) => {
     const videoUrl = getFirstVideoUrl(lesson);
@@ -305,7 +303,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
     return videos.length > 0;
   }
 
-  // Función para renderizar los botones de video
+  // Función para renderizar los botones de video con dropdown
   const renderVideoButtons = (lesson: Lesson) => {
     const videos = getAllVideos(lesson);
     
@@ -323,21 +321,62 @@ export default function CoursePage({ params }: { params: { id: string } }) {
       );
     }
 
+    // Si solo hay un video, mostrar un botón simple
+    if (videos.length === 1) {
+      return (
+        <Button 
+          variant="outline" 
+          size="sm"
+          asChild
+        >
+          <a href={videos[0].videoPath} target="_blank" rel="noopener noreferrer">
+            <PlayCircle className="h-4 w-4 mr-2" />
+            Ver video
+          </a>
+        </Button>
+      );
+    }
+
+    // Si hay múltiples videos, mostrar un dropdown
     return (
-      <div className="flex flex-wrap gap-2">
-        {videos.map((video, index) => (
-          <Button 
-            key={video.id || index}
-            variant="outline" 
-            size="sm"
-            asChild
-          >
-            <a href={video.videoPath} target="_blank" rel="noopener noreferrer">
+      <div className="flex items-center gap-2">
+        <Button 
+          variant="outline" 
+          size="sm"
+          asChild
+        >
+          <a href={videos[0].videoPath} target="_blank" rel="noopener noreferrer">
+            <PlayCircle className="h-4 w-4 mr-2" />
+            Ver video 1
+          </a>
+        </Button>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm"
+            >
               <PlayCircle className="h-4 w-4 mr-2" />
-              Ver video {videos.length > 1 ? (index + 1) : ''}
-            </a>
-          </Button>
-        ))}
+              Más videos
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {videos.slice(1).map((video, index) => (
+              <DropdownMenuItem key={video.id || index + 1} asChild>
+                <a 
+                  href={video.videoPath} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center"
+                >
+                  <PlayCircle className="h-4 w-4 mr-2" />
+                  Video {index + 2}
+                </a>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     );
   }
@@ -355,7 +394,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
       <div className="space-y-4">
         {/* Botón para regresar - Ajustado el espaciado */}
         <Link 
-          href="/student/certificates"
+          href="/student/courses"
           className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
         >
           <ChevronLeft className="mr-2 h-4 w-4" />
@@ -431,12 +470,10 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                                     "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border mr-2 transition-colors",
                                     completedLessons[lesson.id] 
                                       ? "border-green-500 bg-green-500 text-white" 
-                                      : hasAvailableVideos
-                                        ? "border-gray-300 bg-transparent hover:border-primary/60 cursor-pointer"
-                                        : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+                                      : "border-gray-300 bg-transparent hover:border-primary/60 cursor-pointer"
                                   )}
                                   role="button"
-                                  onClick={() => toggleLessonCompletion(lesson.id, hasAvailableVideos)}
+                                  onClick={() => toggleLessonCompletion(lesson.id)}
                                   aria-busy={isUpdatingLesson === lesson.id}
                                 >
                                   {isUpdatingLesson === lesson.id ? (
@@ -444,7 +481,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                                   ) : completedLessons[lesson.id] ? (
                                     <Check className="h-4 w-4" />
                                   ) : (
-                                    <Circle className={cn("h-4 w-4", hasAvailableVideos ? "" : "text-gray-400")} />
+                                    <Circle className="h-4 w-4" />
                                   )}
                                 </div>
                                 <div>
@@ -453,13 +490,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                                   <div className="flex items-center text-xs text-muted-foreground mt-1">
                                     <Clock className="h-3 w-3 mr-1" />
                                     <span>{formatTime(lesson.time)}</span>
-                                    {!hasAvailableVideos && (
-                                      <span className="ml-2 text-xs text-amber-600 flex items-center">
-                                        <AlertCircle className="h-3 w-3 mr-1" />
-                                        Sin videos disponibles
-                                      </span>
-                                    )}
-                                    {hasAvailableVideos && (
+                                    {getAllVideos(lesson).length > 0 && (
                                       <span className="ml-2 text-xs text-blue-600 flex items-center">
                                         <PlayCircle className="h-3 w-3 mr-1" />
                                         {getAllVideos(lesson).length} {getAllVideos(lesson).length === 1 ? 'video' : 'videos'} disponibles
@@ -492,7 +523,6 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                 {lessons.length > 0 ? (
                   lessons.map((lesson) => {
                     const videos = getAllVideos(lesson);
-                    const hasAvailableVideos = videos.length > 0;
                     
                     return (
                       <div key={lesson.id} className="flex items-center justify-between p-3 border rounded-lg hover:border-primary/50 transition-colors">
@@ -502,12 +532,10 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                               "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-colors",
                               completedLessons[lesson.id] 
                                 ? "border-green-500 bg-green-500 text-white" 
-                                : hasAvailableVideos
-                                  ? "border-gray-300 bg-transparent hover:border-primary/60 cursor-pointer"
-                                  : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+                                : "border-gray-300 bg-transparent hover:border-primary/60 cursor-pointer"
                             )}
-                            role={hasAvailableVideos ? "button" : "presentation"}
-                            onClick={() => hasAvailableVideos && toggleLessonCompletion(lesson.id, hasAvailableVideos)}
+                            role="button"
+                            onClick={() => toggleLessonCompletion(lesson.id)}
                             aria-busy={isUpdatingLesson === lesson.id}
                           >
                             {isUpdatingLesson === lesson.id ? (
@@ -515,48 +543,46 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                             ) : completedLessons[lesson.id] ? (
                               <Check className="h-3 w-3" />
                             ) : (
-                              <Circle className={cn("h-3 w-3", hasAvailableVideos ? "" : "text-gray-400")} />
+                              <Circle className="h-3 w-3" />
                             )}
                           </div>
                           <FileText className="h-4 w-4" />
                           <span className="font-medium">{lesson.title}</span>
-                          {!hasAvailableVideos ? (
-                            <span className="ml-1 text-xs text-amber-600 inline-flex items-center">
-                              <AlertCircle className="h-3 w-3 mr-1" />
-                              Sin videos
-                            </span>
-                          ) : videos.length > 1 && (
+                          {videos.length > 0 && (
                             <span className="ml-1 text-xs text-blue-600 inline-flex items-center">
                               <PlayCircle className="h-3 w-3 mr-1" />
-                              {videos.length} videos
+                              {videos.length} {videos.length === 1 ? 'video' : 'videos'}
                             </span>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-muted-foreground">{formatTime(lesson.time)}</span>
-                          {videos.length > 0 ? (
-                            <div className="flex gap-2">
-                              {videos.map((video, index) => (
+                          {videos.length > 0 && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
                                 <Button 
-                                  key={video.id || index}
                                   variant="ghost" 
                                   size="icon"
-                                  asChild
                                 >
-                                  <a href={video.videoPath} target="_blank" rel="noopener noreferrer">
-                                    <PlayCircle className="h-4 w-4" />
-                                  </a>
+                                  <PlayCircle className="h-4 w-4" />
                                 </Button>
-                              ))}
-                            </div>
-                          ) : (
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              disabled
-                            >
-                              <AlertCircle className="h-4 w-4" />
-                            </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                {videos.map((video, index) => (
+                                  <DropdownMenuItem key={video.id || index} asChild>
+                                    <a 
+                                      href={video.videoPath} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="flex items-center"
+                                    >
+                                      <PlayCircle className="h-4 w-4 mr-2" />
+                                      Video {index + 1}
+                                    </a>
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           )}
                         </div>
                       </div>
