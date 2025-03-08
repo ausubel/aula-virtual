@@ -39,7 +39,18 @@ export const StoredProcedures = {
     
     // Teacher procedures
     GetAllTeachers: 'CALL get_all_teachers()',
-    EnsureDefaultTeacher: 'CALL ensure_default_teacher()'
+    EnsureDefaultTeacher: 'CALL ensure_default_teacher()',
+    
+    // Dashboard Metrics procedures
+    GetDashboardMetrics: 'CALL GetDashboardMetrics()',
+    GetTotalStudents: 'CALL GetTotalStudents()',
+    GetActiveCourses: 'CALL GetActiveCourses()',
+    GetCertificatesIssued: 'CALL GetCertificatesIssued()',
+    GetCompletionRate: 'CALL GetCompletionRate()',
+    GetAverageHours: 'CALL GetAverageHours()',
+    GetActiveStudents: 'CALL GetActiveStudents()',
+    GetPassRate: 'CALL GetPassRate()',
+    GetGraduatesThisYear: 'CALL GetGraduatesThisYear()'
 };
 
 export default StoredProcedures;

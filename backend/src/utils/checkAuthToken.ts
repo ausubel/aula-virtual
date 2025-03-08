@@ -8,14 +8,21 @@ function sendAuthResponse(res: any, statusCode: number, message: string) {
 
 export function checkAuthToken(userRoleId: number) {
   return async (req, res, next) => {
+    let token;
+    
+    // Intentar obtener el token del header de autorización
     const { authorization } = req.headers;
-    if (!authorization) {
-      return sendAuthResponse(res, 401, "Authorization token is missing.");
+    if (authorization && authorization.startsWith('Bearer ')) {
+      token = authorization.split("Bearer ")[1];
+    }
+    
+    // Si no hay token en el header, intentar obtenerlo de las cookies
+    if (!token && req.cookies && req.cookies.auth_token) {
+      token = req.cookies.auth_token;
     }
 
-    const token = authorization.split("Bearer ")[1];
     if (!token) {
-      return sendAuthResponse(res, 401, "Token is missing in the authorization header.");
+      return sendAuthResponse(res, 401, "Authorization token is missing.");
     }
 
     try {
