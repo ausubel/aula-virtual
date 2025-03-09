@@ -13,6 +13,14 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
+// Importar los componentes necesarios para el dropdown
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu"
+
 // Interfaces basadas en la respuesta del backend
 interface Video {
   id: number
@@ -193,17 +201,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
   }
   
   // Función para marcar una lección como completada o no completada
-  const toggleLessonCompletion = async (lessonId: number, isVideoAvailable: boolean) => {
-    // Si no hay video disponible, no permitimos marcar como completada
-    if (!isVideoAvailable) {
-      toast({
-        title: "Video no disponible",
-        description: "No puedes marcar como completada una lección sin video",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const toggleLessonCompletion = async (lessonId: number) => {
     if (!userId) {
       toast({
         title: "Error",
@@ -234,6 +232,9 @@ export default function CoursePage({ params }: { params: { id: string } }) {
         description: `Has ${newStatus ? 'completado' : 'desmarcado'} esta lección`,
         variant: newStatus ? "default" : "destructive",
       });
+
+      // Recargar los datos del curso para actualizar el progreso
+      await loadStudentCourses(userId);
       
     } catch (error) {
       console.error('Error al actualizar el estado de la lección:', error);
@@ -253,7 +254,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
       setIsUpdatingLesson(null);
     }
   }
-  
+
   // Función para renderizar el botón según si tiene video o no
   const renderLessonButton = (lesson: Lesson) => {
     const videoUrl = getFirstVideoUrl(lesson);
@@ -288,6 +289,87 @@ export default function CoursePage({ params }: { params: { id: string } }) {
     }
   }
 
+  // Actualizar la función para obtener todos los videos de una lección
+  const getAllVideos = (lesson: Lesson): Video[] => {
+    if (!lesson.videos || !Array.isArray(lesson.videos)) return [];
+    return lesson.videos.filter((video): video is Video => 
+      typeof video === 'object' && video !== null && 'videoPath' in video && !!video.videoPath
+    );
+  }
+
+  // Función para determinar si una lección tiene videos
+  const hasVideos = (lesson: Lesson): boolean => {
+    const videos = getAllVideos(lesson);
+    return videos.length > 0;
+  }
+
+  // Función para renderizar los botones de video con dropdown
+  const renderVideoButtons = (lesson: Lesson) => {
+    const videos = getAllVideos(lesson);
+    
+    if (videos.length === 0) {
+      return (
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="ml-2"
+          disabled
+        >
+          <AlertCircle className="h-4 w-4 mr-2" />
+          No hay videos
+        </Button>
+      );
+    }
+
+    // Si solo hay un video, mostrar un botón simple
+    if (videos.length === 1) {
+      return (
+        <Button 
+          variant="outline" 
+          size="sm"
+          className="whitespace-nowrap"
+          asChild
+        >
+          <a href={videos[0].videoPath} target="_blank" rel="noopener noreferrer">
+            <PlayCircle className="h-4 w-4 mr-2" />
+            Ver video
+          </a>
+        </Button>
+      );
+    }
+
+    // Si hay múltiples videos, mostrar un dropdown
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="whitespace-nowrap"
+          >
+            <PlayCircle className="h-4 w-4 mr-2" />
+            Videos ({videos.length})
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-20">
+          {videos.map((video, index) => (
+            <DropdownMenuItem key={video.id || index} asChild>
+              <a 
+                href={video.videoPath} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center w-full"
+              >
+                <PlayCircle className="h-4 w-4 mr-2" />
+                Video {index + 1}
+              </a>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
   if (isLoading) {
     return <div className="flex justify-center items-center min-h-screen">Cargando...</div>
   }
@@ -301,7 +383,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
       <div className="space-y-4">
         {/* Botón para regresar - Ajustado el espaciado */}
         <Link 
-          href="/student/certificates"
+          href="/student/courses"
           className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
         >
           <ChevronLeft className="mr-2 h-4 w-4" />
@@ -351,10 +433,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
 
         {/* Pestañas de contenido */}
         <Tabs defaultValue="content">
-          <TabsList>
-            <TabsTrigger value="content">Contenido</TabsTrigger>
-            <TabsTrigger value="resources">Recursos</TabsTrigger>
-          </TabsList>
+          <h2 className="text-2xl font-bold mb-4">Contenido</h2>
 
           <TabsContent value="content" className="space-y-4">
             <Card>
@@ -365,11 +444,11 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                 {lessons.length > 0 ? (
                   <div className="space-y-2">
                     {lessons.map((lesson) => {
-                      const isVideoAvailable = hasVideo(lesson);
+                      const hasAvailableVideos = hasVideos(lesson);
                       
                       return (
                         <div key={lesson.id} className="border rounded-lg p-4 hover:border-primary/50 transition-colors">
-                          <div className="flex items-start justify-between">
+                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                             <div className="flex-grow">
                               <div className="flex items-center">
                                 <div 
@@ -377,12 +456,10 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                                     "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border mr-2 transition-colors",
                                     completedLessons[lesson.id] 
                                       ? "border-green-500 bg-green-500 text-white" 
-                                      : isVideoAvailable
-                                        ? "border-gray-300 bg-transparent hover:border-primary/60 cursor-pointer"
-                                        : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+                                      : "border-gray-300 bg-transparent hover:border-primary/60 cursor-pointer"
                                   )}
                                   role="button"
-                                  onClick={() => toggleLessonCompletion(lesson.id, isVideoAvailable)}
+                                  onClick={() => toggleLessonCompletion(lesson.id)}
                                   aria-busy={isUpdatingLesson === lesson.id}
                                 >
                                   {isUpdatingLesson === lesson.id ? (
@@ -390,7 +467,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                                   ) : completedLessons[lesson.id] ? (
                                     <Check className="h-4 w-4" />
                                   ) : (
-                                    <Circle className={cn("h-4 w-4", isVideoAvailable ? "" : "text-gray-400")} />
+                                    <Circle className="h-4 w-4" />
                                   )}
                                 </div>
                                 <div>
@@ -399,18 +476,18 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                                   <div className="flex items-center text-xs text-muted-foreground mt-1">
                                     <Clock className="h-3 w-3 mr-1" />
                                     <span>{formatTime(lesson.time)}</span>
-                                    {!isVideoAvailable && (
-                                      <span className="ml-2 text-xs text-amber-600 flex items-center">
-                                        <AlertCircle className="h-3 w-3 mr-1" />
-                                        Sin video disponible
+                                    {getAllVideos(lesson).length > 0 && (
+                                      <span className="ml-2 text-xs text-blue-600 flex items-center">
+                                        <PlayCircle className="h-3 w-3 mr-1" />
+                                        {getAllVideos(lesson).length} {getAllVideos(lesson).length === 1 ? 'video' : 'videos'} disponibles
                                       </span>
                                     )}
                                   </div>
                                 </div>
                               </div>
                             </div>
-                            <div>
-                              {renderLessonButton(lesson)}
+                            <div className="mt-2 sm:mt-0">
+                              {renderVideoButtons(lesson)}
                             </div>
                           </div>
                         </div>
@@ -426,79 +503,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
             </Card>
           </TabsContent>
 
-          <TabsContent value="resources">
-            <Card>
-              <CardContent className="space-y-4 pt-6">
-                {lessons.length > 0 ? (
-                  lessons.map((lesson) => {
-                    const isVideoAvailable = hasVideo(lesson);
-                    
-                    return (
-                      <div key={lesson.id} className="flex items-center justify-between p-3 border rounded-lg hover:border-primary/50 transition-colors">
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className={cn(
-                              "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-colors",
-                              completedLessons[lesson.id] 
-                                ? "border-green-500 bg-green-500 text-white" 
-                                : isVideoAvailable
-                                  ? "border-gray-300 bg-transparent hover:border-primary/60 cursor-pointer"
-                                  : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
-                            )}
-                            role={isVideoAvailable ? "button" : "presentation"}
-                            onClick={() => isVideoAvailable && toggleLessonCompletion(lesson.id, isVideoAvailable)}
-                            aria-busy={isUpdatingLesson === lesson.id}
-                          >
-                            {isUpdatingLesson === lesson.id ? (
-                              <div className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-white" />
-                            ) : completedLessons[lesson.id] ? (
-                              <Check className="h-3 w-3" />
-                            ) : (
-                              <Circle className={cn("h-3 w-3", isVideoAvailable ? "" : "text-gray-400")} />
-                            )}
-                          </div>
-                          <FileText className="h-4 w-4" />
-                          <span className="font-medium">{lesson.title}</span>
-                          {!isVideoAvailable && (
-                            <span className="ml-1 text-xs text-amber-600 inline-flex items-center">
-                              <AlertCircle className="h-3 w-3 mr-1" />
-                              Sin video
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">{formatTime(lesson.time)}</span>
-                          {isVideoAvailable ? (
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              asChild
-                            >
-                              <a href={getFirstVideoUrl(lesson)!} target="_blank" rel="noopener noreferrer">
-                                <Download className="h-4 w-4" />
-                              </a>
-                            </Button>
-                          ) : (
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              disabled
-                            >
-                              <AlertCircle className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="text-center py-4 text-muted-foreground">
-                    No hay recursos disponibles
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+          
         </Tabs>
       </div>
     </div>
