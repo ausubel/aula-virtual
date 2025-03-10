@@ -146,27 +146,25 @@ export default function StudentProfilePage() {
       console.log("Respuesta completa del CV:", documentResponse)
       
       // Extract CV data
-      let cvData = null
+      let cvData = null;
       
       if (documentResponse.data?.data?.cv_file) {
         cvData = documentResponse.data.data.cv_file
-        console.log("CV data found in cv_file property")
       } else if (documentResponse.data?.data?.cv) {
         cvData = documentResponse.data.data.cv
-        console.log("CV data found in cv property")
       }
-      
-      if (cvData) {
+      console.log("cvData", cvData)
+      if (cvData.cv_file) {
         console.log("CV data type:", typeof cvData)
         console.log("CV data starts with:", cvData.substring ? cvData.substring(0, 50) : "Cannot get substring")
         
         // Store original CV data
-        setCV(cvData)
+        setCV(cvData.cv_file)
         
         // Try to create a blob from the base64 data
         try {
           // Remove prefix if exists
-          let base64Content = cvData
+          let base64Content = cvData.cv_file
           if (typeof base64Content === 'string' && base64Content.includes('base64,')) {
             base64Content = base64Content.split('base64,')[1]
           }
@@ -441,12 +439,27 @@ export default function StudentProfilePage() {
               </div>
             ) : cvObjectUrl ? (
               <div className="h-[calc(100vh-250px)] border rounded-md overflow-hidden">
-                <iframe
-                  src={cvObjectUrl}
+                <object
+                  data={cvObjectUrl}
+                  type="application/pdf"
                   className="w-full h-full"
-                  title="PDF del CV"
-                  sandbox="allow-scripts allow-same-origin"
-                />
+                >
+                  <embed 
+                    src={cvObjectUrl} 
+                    type="application/pdf"
+                    className="w-full h-full"
+                  />
+                  <p className="text-center p-4">
+                    Si no puedes ver el PDF, puedes 
+                    <Button 
+                      variant="link" 
+                      onClick={downloadCV}
+                      className="px-1"
+                    >
+                      descargarlo aquí
+                    </Button>
+                  </p>
+                </object>
               </div>
             ) : cv ? (
               <ScrollArea className="h-[calc(100vh-250px)] border rounded-md p-4">

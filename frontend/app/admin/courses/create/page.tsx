@@ -92,7 +92,6 @@ export default function CreateCoursePage() {
             </Button>
             <div>
               <CardTitle>Crear Nuevo Curso</CardTitle>
-              <CardDescription>Ingresa los detalles del nuevo curso</CardDescription>
             </div>
           </div>
         </CardHeader>

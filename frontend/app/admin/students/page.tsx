@@ -32,9 +32,9 @@ export default function StudentsPage() {
       setLoading(true)
       const data = await AdminService.getAllStudents()
       console.log("data", data)
-      // Accediendo al array de estudiantes dentro de data[0]
-      setStudents(data[0] || [])
-    } catch (error) {
+      // Aseguramos que data sea un array
+      setStudents(Array.isArray(data[0]) ? data[0] : [])
+        } catch (error) {
       toast({
         title: "Error",
         description: "No se pudieron cargar los estudiantes",
@@ -76,7 +76,6 @@ export default function StudentsPage() {
       
       <div className="flex items-center space-x-2 mb-6">
         <div className="relative flex-1">
-          <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
             placeholder="Buscar estudiantes..."

@@ -195,7 +195,6 @@ export default function CourseLessonsPage({ params }: Props) {
               </Button>
               <div>
                 <CardTitle>Lecciones del Curso</CardTitle>
-                <CardDescription>Gestiona las lecciones del curso</CardDescription>
               </div>
             </div>
             <Button onClick={openCreateDialog}>

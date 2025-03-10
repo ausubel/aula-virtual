@@ -72,7 +72,6 @@ export default function CoursesPage() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Gestión de Cursos</CardTitle>
-            <CardDescription>Administra los cursos y sus contenidos</CardDescription>
           </div>
           <div className="flex gap-4">
             <div className="flex items-center gap-2">
