@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Plus, Search, Pencil, UserPlus, Video, Trash2, BookOpen } from "lucide-react"
+import { Plus, Search, Pencil, UserPlus, Video, Trash2, BookOpen, Check } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,6 +10,7 @@ import { useState, useEffect } from "react"
 import { CoursesService } from "@/services/courses.service"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
+import { SweetAlert } from "@/utils/SweetAlert";
 
 interface Course {
   id: number
@@ -19,6 +20,7 @@ interface Course {
   teacherId: number
   teacherName?: string
   studentCount?: number
+  finished: { data: number[] }
 }
 
 export default function CoursesPage() {
@@ -61,6 +63,36 @@ export default function CoursesPage() {
       toast({
         title: "Error",
         description: "No se pudo eliminar el curso",
+        variant: "destructive"
+      })
+    }
+  }
+  const handleFinishCourse = async (id: number) => {
+    try {
+      if (courses.find(course => course.id === id)?.finished.data[0] === 1) {
+        SweetAlert.info(
+          "Curso finalizado",
+          "El curso ya ha sido finalizado"
+        )
+        return
+      }
+      SweetAlert.confirm(
+        {
+          title: "Finalizar curso",
+          text: "¿Estás seguro de finalizar el curso?",
+          confirmButtonText: "Finalizar",
+          cancelButtonText: "Cancelar"
+        }
+      ).then(async (result) => {
+        if (result.isConfirmed) {
+          await CoursesService.finishCourseById(id)
+          loadCourses()
+        }
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo finalizar el curso",
         variant: "destructive"
       })
     }
@@ -151,6 +183,14 @@ export default function CoursesPage() {
                             onClick={() => handleDeleteCourse(course.id)}
                           >
                             <Trash2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleFinishCourse(course.id)}
+                            className={course.finished.data[0] === 0 ? "bg-green-100" : "bg-gray-200"}
+                          >
+                            <Check className={`h-4 w-4 ${course.finished.data[0] === 0 ? "text-green-600" : "text-gray-500"}`} />
                           </Button>
                         </div>
                       </td>

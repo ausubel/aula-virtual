@@ -61,9 +61,9 @@ VALUES
 INSERT INTO student_course (student_id, course_id, has_certificate, creation_datetime)
 VALUES 
   (5, 1, 1, '2024-05-01'),
-  (6, 1, 0, NULL),
-  (5, 2, 1, '2024-05-02'),
-  (6, 2, 0, NULL);
+  (6, 1, 0, '2024-05-01'),
+  (5, 2, 1, '2024-05-03'),
+  (6, 2, 0, '2024-05-01');
 
 -- Lecciones
 INSERT INTO lesson (course_id, title, description, time, order_)
@@ -94,4 +94,8 @@ VALUES
   (2, 5),
   (2, 6),
   (3, 5),
-  (3, 6);
+  (3, 6),
+  (4, 5),
+  (4, 6),
+  (5, 5),
+  (5, 6);
