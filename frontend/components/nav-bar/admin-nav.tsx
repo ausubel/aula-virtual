@@ -27,8 +27,8 @@ const adminNavLinks = [
     icon: <BookOpenIcon className="size-4 mr-2" />,
   },
   {
-    href: "/admin/users",
-    label: "Usuarios",
+    href: "/admin/students",
+    label: "Estudiantes",
     icon: <UsersIcon className="size-4 mr-2" />,
   },
 ]
@@ -36,16 +36,15 @@ const adminNavLinks = [
 export function AdminNavBar() {
   const pathname = usePathname()
 
-    // Función para determinar si un enlace está activo
-    const isActive = (path: string) => {
-      if (path === '/admin') {
-        // Para la ruta principal, solo debe estar activa si es exactamente igual
-        return pathname === path;
-      }
-      // Para las demás rutas, usar startsWith
-      return pathname.startsWith(path);
+  // Función para determinar si un enlace está activo
+  const isActive = (path: string) => {
+    if (path === '/admin') {
+      // Para la ruta principal, solo debe estar activa si es exactamente igual
+      return pathname === path;
     }
-  
+    // Para las demás rutas, usar startsWith
+    return pathname.startsWith(path);
+  }
 
   return (
     <header className="border-b sticky top-0 z-50 bg-background">
@@ -99,4 +98,4 @@ export function AdminNavBar() {
       </div>
     </header>
   )
-} 
+}

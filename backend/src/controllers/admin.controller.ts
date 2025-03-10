@@ -22,6 +22,11 @@ export default class AdminController implements ControllerBase {
     protected initializeRoutes(): void {
         // Aseguramos que solo los administradores pueden acceder a estas rutas
         this.router.get('/metrics', checkAuthToken(USER_ROLE_IDS.ADMIN), this.getDashboardMetrics.bind(this));
+        
+        // Rutas de gestión de estudiantes
+        this.router.get('/students', checkAuthToken(USER_ROLE_IDS.ADMIN), this.getAllStudents.bind(this));
+        this.router.get('/students/:id', checkAuthToken(USER_ROLE_IDS.ADMIN), this.getStudentProfile.bind(this));
+        this.router.get('/students/:id/certificates', checkAuthToken(USER_ROLE_IDS.ADMIN), this.getStudentCertificates.bind(this));
     }
 
     /**
@@ -122,5 +127,51 @@ export default class AdminController implements ControllerBase {
             passRate,
             graduatesThisYear
         };
+    }
+
+    /**
+     * Obtiene todos los estudiantes registrados
+     */
+    private async getAllStudents(_req: Request, res: Response) {
+        try {
+            const [rows] = await this.db.query(StoredProcedures.GetAllStudents, []);
+            return sendResponses(res, 200, "Estudiantes obtenidos correctamente", rows);
+        } catch (error) {
+            console.error('Error obteniendo estudiantes:', error);
+            return sendResponses(res, 500, "Error al obtener los estudiantes");
+        }
+    }
+
+    /**
+     * Obtiene el perfil detallado de un estudiante
+     */
+    private async getStudentProfile(req: Request, res: Response) {
+        try {
+            const studentId = Number(req.params.id);
+            const [result] = await this.db.query(StoredProcedures.GetStudentProfileData, [studentId]);
+            
+            if (!result || !result[0]?.profileData) {
+                return sendResponses(res, 404, "Perfil de estudiante no encontrado");
+            }
+
+            return sendResponses(res, 200, "Perfil obtenido correctamente", JSON.parse(result[0].profileData));
+        } catch (error) {
+            console.error('Error obteniendo perfil del estudiante:', error);
+            return sendResponses(res, 500, "Error al obtener el perfil del estudiante");
+        }
+    }
+
+    /**
+     * Obtiene los certificados de un estudiante
+     */
+    private async getStudentCertificates(req: Request, res: Response) {
+        try {
+            const studentId = Number(req.params.id);
+            const [certificates] = await this.db.query(StoredProcedures.GetAllCertificatesByStudentId, [studentId]);
+            return sendResponses(res, 200, "Certificados obtenidos correctamente", certificates);
+        } catch (error) {
+            console.error('Error obteniendo certificados:', error);
+            return sendResponses(res, 500, "Error al obtener los certificados");
+        }
     }
 }
