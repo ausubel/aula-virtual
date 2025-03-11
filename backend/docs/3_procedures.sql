@@ -643,12 +643,12 @@ BEGIN
         c.hours,
         c.teacher_id,
         CONCAT(u.name, ' ', u.surname) as teacher_name,
-        (SELECT COUNT(*) FROM student_course sc WHERE sc.course_id = c.id) as student_count
+        (SELECT COUNT(1) FROM student_course sc WHERE sc.course_id = c.id) as student_count,
+        finished
     FROM course c
     LEFT JOIN user u ON c.teacher_id = u.id
     ORDER BY c.id DESC;
 END //
-
 DROP PROCEDURE IF EXISTS update_lesson//
 
 CREATE PROCEDURE update_lesson(
@@ -957,7 +957,7 @@ BEGIN
         c.id,
         c.name,
         c.hours,
-        CONVERT_TZ(IFNULL(sc.finished_datetime, sc.creation_datetime), 'UTC', 'UTC') as date_emission,
+        CONVERT_TZ(IFNULL(c.finished_datetime, sc.creation_datetime), 'UTC', 'UTC') as date_emission,
         NULL as file
     FROM student_course sc
     INNER JOIN course c ON sc.course_id = c.id
@@ -1046,7 +1046,7 @@ set phone = '123123123'
 where id = 5;
 
 update student_course 
-set finished = 1, has_certificate = 1, finished_datetime = now()
+set finished = 1, has_certificate = 1
 where uuid in ('4ca8fd69-f8bd-11ef-80e9-3c7c3fb98339','5e7802e2-f7ca-11ef-9ea0-3c7c3fb98339');
 
 Prueba
@@ -1104,7 +1104,7 @@ BEGIN
         JSON_OBJECT(
             'id', c.id,
             'title', c.name,
-            'issueDate', DATE_FORMAT(sc.finished_datetime, '%d de %M, %Y'),
+            'issueDate', DATE_FORMAT(c.finished_datetime, '%d de %M, %Y'),
             'instructor', CONCAT(t_user.name, ' ', t_user.surname)
         )
     ) INTO certificates_data
@@ -1259,7 +1259,7 @@ BEGIN
         c.id,
         c.name,
         c.hours,
-        CONVERT_TZ(IFNULL(sc.finished_datetime, sc.creation_datetime), 'UTC', 'UTC') as date_emission,
+        CONVERT_TZ(IFNULL(c.finished_datetime, sc.creation_datetime), 'UTC', 'UTC') as date_emission,
         NULL as file
     FROM student_course sc
     INNER JOIN course c ON sc.course_id = c.id
@@ -1306,29 +1306,29 @@ BEGIN
         AND sc.finished = 1;
 END//
 
-DELIMITER ;
 
 
 -- Procedimiento para obtener el total de cursos activos
-DELIMITER //
+DROP PROCEDURE IF EXISTS GetActiveCourses//
+
 CREATE PROCEDURE GetActiveCourses()
 BEGIN
-    SELECT COUNT(*) as total FROM course;
+    SELECT COUNT(1) as total FROM course WHERE finished = 0;
 END //
-DELIMITER ;
 
 -- Procedimiento para obtener el total de certificados emitidos
-DELIMITER //
+DROP PROCEDURE IF EXISTS GetCertificatesIssued//
+
 CREATE PROCEDURE GetCertificatesIssued()
 BEGIN
     SELECT COUNT(*) as total 
     FROM student_course 
     WHERE has_certificate = 1;
 END //
-DELIMITER ;
+
 
 -- Procedimiento para calcular la tasa de finalización de cursos
-DELIMITER //
+DROP PROCEDURE IF EXISTS GetCompletionRate//
 CREATE PROCEDURE GetCompletionRate()
 BEGIN
     SELECT 
@@ -1339,20 +1339,20 @@ BEGIN
         ) as completion_rate
     FROM student_course;
 END //
-DELIMITER ;
+
 
 -- Procedimiento para calcular el promedio de horas por curso
-DELIMITER //
+DROP PROCEDURE IF EXISTS GetAverageHours//
 CREATE PROCEDURE GetAverageHours()
 BEGIN
     SELECT COALESCE(ROUND(AVG(hours), 0), 0) as average_hours 
     FROM course
     WHERE hours > 0;
 END //
-DELIMITER ;
+
 
 -- Procedimiento para obtener los estudiantes activos en la última semana
-DELIMITER //
+DROP PROCEDURE IF EXISTS GetActiveStudents//
 CREATE PROCEDURE GetActiveStudents()
 BEGIN
     -- Estudiantes con actividad reciente en lecciones o cursos
@@ -1362,20 +1362,17 @@ BEGIN
         SELECT student_id
         FROM student_course
         WHERE creation_datetime >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-        OR finished_datetime >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-        
         UNION
-        
         -- Estudiantes que han completado lecciones recientemente
         SELECT ls.student_id
         FROM lesson_student ls
         WHERE ls.finished = 1
     ) active_users;
 END //
-DELIMITER ;
+
 
 -- Procedimiento para calcular la tasa de aprobación (basada en lecciones completadas)
-DELIMITER //
+DROP PROCEDURE IF EXISTS GetPassRate//
 CREATE PROCEDURE GetPassRate()
 BEGIN
     SELECT 
@@ -1386,10 +1383,10 @@ BEGIN
         ) as pass_rate
     FROM lesson_student ls;
 END //
-DELIMITER ;
+
 
 -- Procedimiento para obtener los graduados de este año
-DELIMITER //
+DROP PROCEDURE IF EXISTS GetGraduatesThisYear//
 CREATE PROCEDURE GetGraduatesThisYear()
 BEGIN
     SELECT COUNT(DISTINCT student_id) as total
@@ -1397,10 +1394,10 @@ BEGIN
     WHERE finished = 1 
     AND YEAR(finished_datetime) = YEAR(CURRENT_DATE());
 END //
-DELIMITER ;
+
 
 -- Procedimiento principal que obtiene todas las métricas del dashboard
-DELIMITER //
+DROP PROCEDURE IF EXISTS GetDashboardMetrics//
 CREATE PROCEDURE GetDashboardMetrics()
 BEGIN
     -- Total de estudiantes activos
@@ -1437,10 +1434,7 @@ BEGIN
         SELECT student_id
         FROM student_course
         WHERE creation_datetime >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-        OR finished_datetime >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-        
         UNION
-        
         SELECT ls.student_id
         FROM lesson_student ls
         WHERE ls.finished = 1
@@ -1456,9 +1450,24 @@ BEGIN
     FROM lesson_student ls;
     
     -- Graduados este año
-    SELECT COUNT(DISTINCT student_id) as graduates_this_year
-    FROM student_course
-    WHERE finished = 1 
-    AND YEAR(finished_datetime) = YEAR(CURRENT_DATE());
+    SELECT COUNT(DISTINCT a.student_id) as graduates_this_year
+    FROM student_course a
+    INNER JOIN course c ON a.course_id = c.id
+    WHERE a.finished = 1 
+    AND YEAR(c.finished_datetime) = YEAR(CURRENT_DATE());
 END //
-DELIMITER ;
+
+DROP PROCEDURE IF EXISTS finish_course_by_id;
+
+CREATE PROCEDURE finish_course_by_id(
+    IN p_course_id INT
+)
+BEGIN
+    UPDATE course
+    SET finished = 1, finished_datetime = NOW()
+    WHERE id = p_course_id;
+
+    UPDATE student_course
+    SET finished = 1  
+    WHERE course_id = p_course_id;
+END //

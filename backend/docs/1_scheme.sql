@@ -58,7 +58,9 @@ CREATE TABLE course (
     name VARCHAR(255),
     description TEXT,
     hours INT,
+    finished BIT NOT NULL DEFAULT 0,
     creation_datetime DATETIME DEFAULT NOW(),
+    finished_datetime DATETIME DEFAULT NULL,
     FOREIGN KEY (teacher_id) REFERENCES teacher(id)
 );
 
@@ -69,7 +71,6 @@ CREATE TABLE student_course (
     finished BIT NOT NULL DEFAULT 0,
     has_certificate BIT NOT NULL DEFAULT 0,
     creation_datetime DATETIME DEFAULT NOW(),
-    finished_datetime DATETIME DEFAULT NULL,
     FOREIGN KEY (student_id) REFERENCES student(id) ON DELETE CASCADE,
     FOREIGN KEY (course_id) REFERENCES course(id) ON DELETE CASCADE
 );

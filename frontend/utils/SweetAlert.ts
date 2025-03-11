@@ -77,10 +77,17 @@ export class SweetAlert {
    * @returns Promesa con el resultado de la alerta
    */
   static confirm(
-    title: string,
-    text: string,
-    confirmButtonText: string = 'Sí',
-    cancelButtonText: string = 'No'
+    {
+      title,
+      text,
+      confirmButtonText,
+      cancelButtonText
+    }: {
+      title: string;
+      text: string;
+      confirmButtonText: string;
+      cancelButtonText: string;
+    }
   ): Promise<SweetAlertResult> {
     return Swal.fire({
       title,

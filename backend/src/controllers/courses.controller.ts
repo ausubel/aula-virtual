@@ -35,6 +35,8 @@ export default class CoursesController implements ControllerBase {
         this.router.delete('/videos/:id', this.deleteVideo.bind(this));
         // Nueva ruta para actualizar el estado de finalización de una lección
         this.router.put('/lessons/:lessonId/progress', this.updateLessonProgress.bind(this));
+        // Nueva ruta para finalizar un curso
+        this.router.put('/:courseId/finish', this.finishCourseById.bind(this));
     }
 
     private async createCourse(req: Request, res: Response) {
@@ -64,7 +66,8 @@ export default class CoursesController implements ControllerBase {
                     hours: course.hours || 0,
                     teacherId: course.teacher_id || 0,
                     teacherName: course.teacher_name || 'No asignado',
-                    studentCount: course.student_count || 0
+                    studentCount: course.student_count || 0,
+                    finished: course.finished || 0
                 }));
                 console.log('Cursos procesados:', courses);
                 res.json(courses);
@@ -698,6 +701,22 @@ export default class CoursesController implements ControllerBase {
         } catch (error) {
             console.error('Error en updateLessonProgress:', error);
             res.status(500).json({ message: 'Error al actualizar el estado de la lección' });
+        }
+    }
+
+    private async finishCourseById(req: Request, res: Response) {
+        try {
+            console.log('Ejecutando finishCourseById...');
+            const { courseId } = req.params;
+            console.log('Finalizando curso:', courseId);
+            
+            const result = await this.db.query(StoredProcedures.FinishCourseById, [courseId]);
+            console.log('Resultado:', result);
+            
+            res.json({ message: 'Curso finalizado exitosamente' });
+        } catch (error) {
+            console.error('Error en finishCourseById:', error);
+            res.status(500).json({ message: 'Error al finalizar el curso' });
         }
     }
 }

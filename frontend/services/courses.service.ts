@@ -737,4 +737,29 @@ export class CoursesService {
       throw error;
     }
   }
+
+  static async finishCourseById(id: number): Promise<void> {
+    try {
+      const response = await fetch(`${this.BASE_URL}/courses/${id}/finish`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${AuthService.getToken()}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error('Error al finalizar el curso');
+      }
+
+      const data = await response.json();
+      console.log('Respuesta del servidor:', data);
+      return data;
+    } catch (error) {
+      console.error('Error en finishCourseById:', error);
+      throw error;
+    }
+  }
 }
