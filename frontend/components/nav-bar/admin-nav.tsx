@@ -3,100 +3,94 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { NotificationDropdown } from "@/components/ui/notifications"
-import { 
-  BookOpenIcon, 
-  LogOutIcon, 
-  UserIcon, 
-  SettingsIcon, 
-  LayoutDashboardIcon,
-  UsersIcon
-} from "lucide-react"
+import { LogoutButton } from "../logout-button"
+import { GraduationCap, Users, BookOpen, Medal, Home } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { MobileNav } from "@/components/mobile-nav"
-
-const adminNavLinks = [
-  {
-    href: "/admin",
-    label: "Dashboard",
-    icon: <LayoutDashboardIcon className="size-4 mr-2" />,
-  },
-  {
-    href: "/admin/courses",
-    label: "Cursos",
-    icon: <BookOpenIcon className="size-4 mr-2" />,
-  },
-  {
-    href: "/admin/users",
-    label: "Usuarios",
-    icon: <UsersIcon className="size-4 mr-2" />,
-  },
-]
 
 export function AdminNavBar() {
   const pathname = usePathname()
 
-    // Función para determinar si un enlace está activo
-    const isActive = (path: string) => {
-      if (path === '/admin') {
-        // Para la ruta principal, solo debe estar activa si es exactamente igual
-        return pathname === path;
-      }
-      // Para las demás rutas, usar startsWith
-      return pathname.startsWith(path);
+  // Función para determinar si un enlace está activo
+  const isActive = (path: string) => {
+    if (path === '/admin') {
+      // Para la ruta principal, solo debe estar activa si es exactamente igual
+      return pathname === path;
     }
+    // Para las demás rutas, usar startsWith
+    return pathname.startsWith(path);
+  }
+
+  // Estilo común para todos los botones de navegación
+  const navButtonStyle = "px-3 h-10 font-medium transition-all duration-200 ease-in-out";
   
+  // Estilo para botones inactivos
+  const inactiveStyle = "text-[var(--admin-accent)] hover:text-white";
+  
+  // Estilo para botones activos
+  const activeStyle = "bg-[var(--admin-secondary)] text-white before:content-[''] before:absolute before:bottom-0 before:left-1/2 before:-translate-x-1/2 before:w-2/3 before:h-[3px] before:bg-[var(--admin-primary)] before:rounded-t-md relative";
 
   return (
-    <header className="border-b sticky top-0 z-50 bg-background">
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo y navegación principal */}
-          <div className="flex items-center space-x-4">
-            {/* Menú móvil */}
-            <div className="md:hidden">
-              <MobileNav links={adminNavLinks} />
+    <nav className="bg-[var(--admin-dark)] border-b-[3px] border-[var(--admin-primary)] shadow-lg">
+      <div className="flex h-16 items-center px-6">
+        <Link href="/admin" className="mr-4">
+          <div className="flex items-center">
+            <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-[var(--admin-primary)] to-[#f04e5c] flex items-center justify-center mr-2 shadow-md">
+              <span className="text-white font-bold text-lg">A</span>
             </div>
-            
-            <Link href="/admin" className="flex items-center space-x-2">
-              <BookOpenIcon className="size-6" />
-              <span className="text-lg font-semibold hidden sm:inline-block">Panel Administrativo</span>
-            </Link>
-            
-            {/* Enlaces de navegación para escritorio */}
-            <nav className="hidden md:flex ml-6 space-x-1">
-              {adminNavLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                    isActive(link.href)
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                  )}
-                >
-                  {link.icon}
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
+            <span className="hidden md:inline text-[var(--admin-background)] font-semibold">
+              Aula Virtual
+            </span>
           </div>
-          
-          {/* Acciones del usuario */}
-          <div className="flex items-center space-x-3">
-            <NotificationDropdown />
-            
-            {/* Botón de cierre de sesión */}
-            <Button variant="destructive" size="sm" asChild>
-              <Link href="/cookie-logout" className="flex items-center">
-                <LogOutIcon className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Cerrar Sesión</span>
-              </Link>
+        </Link>
+        
+        <div className="flex items-center space-x-1 md:space-x-2 ml-2">
+          <Link href="/admin">
+            <Button 
+              variant="ghost" 
+              className={cn(
+                navButtonStyle,
+                inactiveStyle,
+                isActive("/admin") && activeStyle
+              )}
+            >
+              <Home className="h-4 w-4 mr-2 icon-white" />
+              <span>Dashboard</span>
             </Button>
-          </div>
+          </Link>
+          <Link href="/admin/students">
+            <Button 
+              variant="ghost" 
+              className={cn(
+                navButtonStyle,
+                inactiveStyle,
+                isActive("/admin/students") && activeStyle
+              )}
+            >
+              <Users className="h-4 w-4 mr-2 icon-white" />
+              <span>Estudiantes</span>
+            </Button>
+          </Link>
+          <Link href="/admin/courses">
+            <Button 
+              variant="ghost" 
+              className={cn(
+                navButtonStyle,
+                inactiveStyle,
+                isActive("/admin/courses") && activeStyle
+              )}
+            >
+              <BookOpen className="h-4 w-4 mr-2 icon-white" />
+              <span>Cursos</span>
+            </Button>
+          </Link>
+        </div>
+        <div className="ml-auto flex items-center space-x-4">
+          <LogoutButton 
+            className="bg-gradient-to-r from-[var(--admin-primary)] to-[#f04e5c] text-white hover:shadow-md transition-all hover:scale-105" 
+            variant="default" 
+          />
         </div>
       </div>
-    </header>
+    </nav>
   )
-} 
+}

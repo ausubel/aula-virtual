@@ -159,7 +159,7 @@ export default function LessonVideosPage({ params }: Props) {
                 </Link>
               </Button>
               <div>
-                <CardTitle>Videos de la Lección</CardTitle>
+                <CardTitle className="mb-5">Videos de la Lección</CardTitle>
                 <CardDescription>
                   {lesson?.title || 'Cargando...'}
                 </CardDescription>

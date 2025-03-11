@@ -1,43 +1,34 @@
-"use client";
+"use client"
 
-export function LogoutButton() {
-  // Función simple para cerrar sesión
-  const handleLogout = () => {
-    // En lugar de intentar hacer todo aquí, simplemente redirigimos a la página especializada
-    window.location.href = "/force-logout";
-  };
+import { Button } from "@/components/ui/button"
+import { LogOut } from "lucide-react"
+import { cn } from "@/lib/utils"
+
+interface LogoutButtonProps {
+  className?: string
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
+}
+
+export function LogoutButton({ 
+  className,
+  variant = "outline"
+}: LogoutButtonProps) {
+  const handleLogout = async () => {
+    // Eliminar la cookie directamente
+    document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
+    
+    // Redirigir a la página de login
+    window.location.href = "/login";
+  }
 
   return (
-    <button 
+    <Button 
       onClick={handleLogout}
-      style={{
-        backgroundColor: '#e11d48', // Rojo
-        color: 'white',
-        padding: '8px 16px',
-        borderRadius: '4px',
-        border: 'none',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        cursor: 'pointer',
-        fontWeight: 'bold'
-      }}
+      variant={variant}
+      className={cn("gap-1", className)}
     >
-      <svg 
-        width="16" 
-        height="16" 
-        viewBox="0 0 24 24" 
-        fill="none" 
-        stroke="currentColor" 
-        strokeWidth="2" 
-        strokeLinecap="round" 
-        strokeLinejoin="round"
-      >
-        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-        <polyline points="16 17 21 12 16 7"></polyline>
-        <line x1="21" y1="12" x2="9" y2="12"></line>
-      </svg>
-      <span>Cerrar Sesión</span>
-    </button>
-  );
+      <LogOut className="h-4 w-4" />
+      <span className="hidden sm:inline">Cerrar Sesión</span>
+    </Button>
+  )
 }
