@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Plus, Search, Pencil, UserPlus, Video, Trash2, BookOpen, Check } from "lucide-react"
+import { Plus, Search, Pencil, UserPlus, Video, Trash2, BookOpen, Check, Award } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,6 +11,8 @@ import { CoursesService } from "@/services/courses.service"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
 import { SweetAlert } from "@/utils/SweetAlert";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
 
 interface Course {
   id: number
@@ -23,10 +25,23 @@ interface Course {
   finished: { data: number[] }
 }
 
+interface Student {
+  id: number;
+  name: string;
+  email: string;
+  progress?: number;
+  hasCertificate?: boolean | { data: number[] };
+}
+
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
+  const [showCertificateDialog, setShowCertificateDialog] = useState(false)
+  const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null)
+  const [students, setStudents] = useState<Student[]>([])
+  const [selectedStudents, setSelectedStudents] = useState<number[]>([])
+  const [isLoadingStudents, setIsLoadingStudents] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
 
@@ -67,6 +82,7 @@ export default function CoursesPage() {
       })
     }
   }
+
   const handleFinishCourse = async (id: number) => {
     try {
       if (courses.find(course => course.id === id)?.finished.data[0] === 1) {
@@ -96,6 +112,81 @@ export default function CoursesPage() {
         variant: "destructive"
       })
     }
+  }
+
+  const openCertificateDialog = async (courseId: number) => {
+    try {
+      setSelectedCourseId(courseId)
+      setIsLoadingStudents(true)
+      setSelectedStudents([])
+      
+      // Cargar estudiantes del curso
+      const courseStudents = await CoursesService.getStudentsByCourse(courseId)
+      
+      console.log("Estudiantes cargados:", courseStudents)
+      
+      // Pre-seleccionar estudiantes que ya tienen certificado
+      const certifiedStudentIds = courseStudents
+        .filter(student => {
+          // Manejar diferentes formatos de hasCertificate
+          if (typeof student.hasCertificate === 'object' && student.hasCertificate !== null) {
+            // Si es un objeto Buffer o similar con propiedad data
+            return (student.hasCertificate as { data: number[] }).data && 
+                   (student.hasCertificate as { data: number[] }).data[0] === 1
+          }
+          return !!student.hasCertificate
+        })
+        .map(student => student.id)
+      
+      console.log("Estudiantes certificados:", certifiedStudentIds)
+      
+      setStudents(courseStudents)
+      setSelectedStudents(certifiedStudentIds)
+      setShowCertificateDialog(true)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los estudiantes del curso",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoadingStudents(false)
+    }
+  }
+
+  const handleAssignCertificates = async () => {
+    if (!selectedCourseId || selectedStudents.length === 0) {
+      toast({
+        title: "Advertencia",
+        description: "Debes seleccionar al menos un estudiante",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      await CoursesService.assignCertificates(selectedCourseId, selectedStudents)
+      
+      setShowCertificateDialog(false)
+      
+      SweetAlert.success(
+        "Certificados asignados",
+        "Los certificados han sido asignados correctamente"
+      )
+    } catch (error) {
+      SweetAlert.error(
+        "Error",
+        "No se pudieron asignar los certificados"
+      )
+    }
+  }
+
+  const toggleStudentSelection = (studentId: number) => {
+    setSelectedStudents(prev => 
+      prev.includes(studentId)
+        ? prev.filter(id => id !== studentId)
+        : [...prev, studentId]
+    )
   }
 
   return (
@@ -143,7 +234,10 @@ export default function CoursesPage() {
                 </thead>
                 <tbody>
                   {filteredCourses.map((course) => (
-                    <tr key={`course-${course.id}`} className="border-b">
+                    <tr 
+                      key={`course-${course.id}`} 
+                      className={`border-b ${course.finished.data[0] === 1 ? "bg-red-100" : ""}`}
+                    >
                       <td className="p-2">{course.name || 'Sin nombre'}</td>
                       <td className="p-2 max-w-xs truncate">{course.description || 'Sin descripción'}</td>
                       <td className="p-2">{course.hours || 0}</td>
@@ -183,14 +277,26 @@ export default function CoursesPage() {
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleFinishCourse(course.id)}
-                            className={course.finished.data[0] === 0 ? "bg-green-100" : "bg-gray-200"}
-                          >
-                            <Check className={`h-4 w-4 ${course.finished.data[0] === 0 ? "text-green-600" : "text-gray-500"}`} />
-                          </Button>
+                          
+                          {course.finished.data[0] === 0 ? (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleFinishCourse(course.id)}
+                              className="bg-green-100"
+                            >
+                              <Check className="h-4 w-4 text-green-600" />
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => openCertificateDialog(course.id)}
+                              className="bg-blue-100"
+                            >
+                              <Award className="h-4 w-4 text-blue-600" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -201,6 +307,68 @@ export default function CoursesPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal para asignar certificados */}
+      <Dialog open={showCertificateDialog} onOpenChange={setShowCertificateDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Asignar Certificados</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <h3 className="mb-4 text-sm font-medium">Selecciona los estudiantes que deseas certificar</h3>
+            {isLoadingStudents ? (
+              <div className="flex justify-center items-center h-32">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              </div>
+            ) : students.length === 0 ? (
+              <p className="text-sm text-gray-500">No hay estudiantes asignados a este curso</p>
+            ) : (
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {students.map((student) => {
+                  // Determinar si el estudiante tiene certificado
+                  const hasCertificate = typeof student.hasCertificate === 'object' && student.hasCertificate !== null
+                    ? (student.hasCertificate as { data: number[] }).data && (student.hasCertificate as { data: number[] }).data[0] === 1
+                    : !!student.hasCertificate;
+                  
+                  return (
+                    <div key={student.id} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`student-${student.id}`} 
+                        checked={selectedStudents.includes(student.id)}
+                        onCheckedChange={() => toggleStudentSelection(student.id)}
+                        disabled={hasCertificate}
+                      />
+                      <label 
+                        htmlFor={`student-${student.id}`}
+                        className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${hasCertificate ? 'text-green-600' : ''}`}
+                      >
+                        {student.name} ({student.email})
+                        {hasCertificate && (
+                          <span className="ml-2 text-xs text-green-600 font-semibold">(Certificado)</span>
+                        )}
+                      </label>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowCertificateDialog(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleAssignCertificates}
+              disabled={selectedStudents.length === 0 || isLoadingStudents}
+            >
+              Asignar Seleccionados
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
-} 
+}
