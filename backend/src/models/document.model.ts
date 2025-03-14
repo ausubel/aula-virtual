@@ -60,7 +60,8 @@ export default class DocumentModel extends ModelBase {
         name: row.name,
         hours: row.hours,
         date_emission: row.date_emission?.toISOString(),
-        file: row.file
+        file: row.file,
+        uuid: row.uuid
       }));
 
       console.log('Certificados procesados:', certificates);
@@ -111,13 +112,74 @@ export default class DocumentModel extends ModelBase {
         teacher_degree: row.teacher_degree,
         teacher_profile: row.teacher_profile,
         student_name: row.student_name,
-        file: row.file
+        file: row.file,
+        uuid: row.uuid
       };
 
       console.log('Certificado procesado:', certificate);
       return certificate;
     } catch (error) {
       console.error('Error en getCertificateByCourseId:', error);
+      throw error;
+    }
+  }
+
+  async getCertificateByUUID(uuid: string): Promise<Certificate | null> {
+    try {
+      console.log('Consultando certificado con UUID:', uuid);
+      
+      // Asegurarse de que el UUID sea válido
+      if (!uuid || typeof uuid !== 'string' || uuid.trim() === '') {
+        console.error('UUID inválido:', uuid);
+        return null;
+      }
+      
+      const [resultRows] = await this.database.query(
+        StoredProcedures.GetCertificateByUUID,
+        [uuid]
+      );
+      
+      console.log('Resultado raw de la consulta:', resultRows);
+      
+      // Extraemos los resultados
+      const results = Array.isArray(resultRows) && resultRows.length > 0 ? resultRows[0] : resultRows;
+      console.log('Resultados extraídos:', results);
+
+      // Si no hay resultados o el array está vacío, retornar null
+      if (!Array.isArray(results) || results.length === 0) {
+        console.log('No se encontraron resultados para UUID:', uuid);
+        return null;
+      }
+
+      // Extraemos el primer registro
+      const row = results[0];
+      console.log('Datos del certificado encontrado:', row);
+
+      // Verificamos que tengamos datos válidos
+      if (!row || !row.id) {
+        console.log('Datos del certificado inválidos para UUID:', uuid);
+        return null;
+      }
+
+      // Mapear los campos del certificado asegurando formato de fecha ISO
+      const certificate: Certificate = {
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        hours: row.hours,
+        date_emission: row.date_emission?.toISOString() || new Date().toISOString(),
+        teacher_name: row.teacher_name,
+        teacher_degree: row.teacher_degree,
+        teacher_profile: row.teacher_profile,
+        student_name: row.student_name,
+        file: row.file,
+        uuid: row.uuid
+      };
+
+      console.log('Certificado procesado:', certificate);
+      return certificate;
+    } catch (error) {
+      console.error('Error en getCertificateByUUID:', error);
       throw error;
     }
   }

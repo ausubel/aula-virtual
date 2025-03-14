@@ -6,11 +6,11 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
-import { CalendarIcon, AwardIcon, DownloadIcon, ArrowLeftIcon, GraduationCapIcon, UserIcon, BookmarkIcon } from "lucide-react"
+import { CalendarIcon, AwardIcon, DownloadIcon, ArrowLeftIcon, GraduationCapIcon, UserIcon, BookmarkIcon, Share2Icon } from "lucide-react"
 import { format, parseISO } from "date-fns"
 import { es } from "date-fns/locale"
 import { DocumentService } from "@/services/document.service"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { getToken } from "@/lib/auth"
 import { jwtDecode } from "jwt-decode"
 import Link from "next/link"
@@ -29,7 +29,6 @@ export default function CertificateDetailsPage({ params }: { params: { id: strin
   const [certificate, setCertificate] = useState<Certificate | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [userId, setUserId] = useState<number | null>(null)
-  const { toast } = useToast()
 
   // Obtener el ID del usuario del token
   useEffect(() => {
@@ -64,11 +63,7 @@ export default function CertificateDetailsPage({ params }: { params: { id: strin
         setCertificate(certificateData);
       } catch (error) {
         console.error('Error al cargar el certificado:', error)
-        toast({
-          title: "Error",
-          description: "No se pudo cargar el certificado",
-          variant: "destructive"
-        })
+        toast.error("No se pudo cargar el certificado")
       } finally {
         setIsLoading(false)
       }
@@ -89,6 +84,23 @@ export default function CertificateDetailsPage({ params }: { params: { id: strin
       return "Fecha no disponible";
     }
   };
+
+  // Función para compartir el certificado
+  const handleShareCertificate = async () => {
+    const certificateUrl = `${window.location.origin}/certificates/${certificate?.uuid || 'sample-uuid'}`;
+    try {
+      await navigator.clipboard.writeText(certificateUrl);
+      toast.success("¡Enlace copiado!", {
+        description: "El enlace del certificado ha sido copiado al portapapeles",
+        duration: 3000,
+      });
+    } catch (error) {
+      toast.error("Error al copiar", {
+        description: "No se pudo copiar el enlace al portapapeles",
+        duration: 3000,
+      });
+    }
+  }
 
   if (isLoading) {
     return (
@@ -229,25 +241,25 @@ export default function CertificateDetailsPage({ params }: { params: { id: strin
               </>
             )}
 
-            <Button 
-              className="w-full mt-6" 
-              size="lg"
-              onClick={async () => {
-                try {
-                  await downloadCertificate(certificate);
-                } catch (error) {
-                  console.error('Error al descargar el certificado:', error);
-                  toast({
-                    title: "Error",
-                    description: "No se pudo descargar el certificado",
-                    variant: "destructive"
-                  });
-                }
-              }}
-            >
-              <DownloadIcon className="mr-2 h-5 w-5" />
-              Descargar Certificado
-            </Button>
+            <div className="pt-4 flex flex-col md:flex-row gap-4 justify-center">
+              <Button 
+                className="w-full md:w-auto" 
+                disabled={isLoading}
+                onClick={() => downloadCertificate(certificate)}
+              >
+                <DownloadIcon className="h-4 w-4 mr-2" />
+                Descargar Certificado
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="w-full md:w-auto"
+                onClick={handleShareCertificate}
+              >
+                <Share2Icon className="h-4 w-4 mr-2" />
+                Compartir Certificado
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

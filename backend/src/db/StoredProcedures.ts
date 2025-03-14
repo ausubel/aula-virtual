@@ -39,6 +39,7 @@ export const StoredProcedures = {
     UpdateStudentProfileInfo: 'CALL update_student_profile_info(?, ?, ?, ?, ?, ?)',
     GetAllCertificatesByStudentId: 'CALL get_all_certificates_by_student_id(?)',
     GetCertificateByCourseId: 'CALL get_certificate_by_course_id(?, ?)',
+    GetCertificateByUUID: 'CALL get_certificate_by_uuid(?)',
     
     // Teacher procedures
     GetAllTeachers: 'CALL get_all_teachers()',

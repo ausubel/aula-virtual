@@ -7,32 +7,58 @@ export class DocumentService {
   static async getAllCertificatesByStudentId(studentId: number): Promise<Certificate[]> {
     try {
       const response = await fetch(`${this.BASE_URL}/document/student/${studentId}/certificates`);
+      
       if (!response.ok) throw new Error('Error al obtener certificados');
-
+      
       const data: ApiResponse<{certificates: Certificate[]}> = await response.json();
       return data.data.certificates || [];
     } catch (error) {
-      console.error('Error obteniendo certificados:', error);
-      throw error;
+      console.error('Error en getAllCertificatesByStudentId:', error);
+      return [];
     }
   }
 
   static async getCertificateByCourseId(courseId: number, studentId?: number): Promise<Certificate> {
     try {
-      const url = new URL(`${this.BASE_URL}/document/course/${courseId}`);
+      let url = `${this.BASE_URL}/document/course/${courseId}/certificate`;
       
-      // Añadir el studentId como parámetro de consulta si está definido
       if (studentId) {
-        url.searchParams.append('studentId', studentId.toString());
+        url += `?studentId=${studentId}`;
       }
       
-      const response = await fetch(url.toString());
+      const response = await fetch(url);
+      
       if (!response.ok) throw new Error('Error al obtener certificado');
-
+      
       const data: ApiResponse<CertificateResponse> = await response.json();
       return data.data.certificate;
     } catch (error) {
-      console.error('Error obteniendo certificado:', error);
+      console.error('Error en getCertificateByCourseId:', error);
+      throw error;
+    }
+  }
+
+  static async getCertificateByUUID(uuid: string): Promise<Certificate> {
+    try {
+      console.log('Solicitando certificado con UUID:', uuid);
+      
+      // Usar directamente la URL del backend
+      const response = await fetch(`${this.BASE_URL}/document/certificate/public/${uuid}`);
+      
+      console.log('Respuesta del servidor:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Certificado no encontrado');
+        }
+        throw new Error(`Error al obtener certificado: ${response.status} ${response.statusText}`);
+      }
+      
+      const data: ApiResponse<CertificateResponse> = await response.json();
+      console.log('Datos del certificado recibidos:', data);
+      return data.data.certificate;
+    } catch (error) {
+      console.error('Error en getCertificateByUUID:', error);
       throw error;
     }
   }

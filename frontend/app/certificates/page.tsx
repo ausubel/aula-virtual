@@ -34,77 +34,13 @@ const mockCertificates = [
   }
 ]
 
-function CertificatesPage() {
-  const [certificates, setCertificates] = useState(mockCertificates)
-  const [isLoading, setIsLoading] = useState(false)
-
-  // Función simulada para descargar un certificado
-  const handleDownload = (certificate: typeof certificates[0]) => {
-    setIsLoading(true)
-    
-    // Simulamos una descarga
-    setTimeout(() => {
-      console.log(`Descargando certificado: ${certificate.name}`)
-      setIsLoading(false)
-      
-      // En una implementación real, aquí se descargaría el archivo
-      alert(`El certificado de ${certificate.name} se ha descargado correctamente.`)
-    }, 1500)
-  }
-
+export default function CertificatesPage() {
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Mis Certificados</h1>
-      </div>
-      
-      {certificates.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-10">
-            <AwardIcon className="h-16 w-16 text-muted-foreground mb-4" />
-            <p className="text-lg font-medium text-center">No tienes certificados disponibles</p>
-            <p className="text-sm text-muted-foreground text-center mt-1">
-              Completa tus cursos para obtener certificados
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {certificates.map((certificate) => (
-            <Card key={certificate.id} className="overflow-hidden">
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">{certificate.name}</CardTitle>
-                  <Badge variant="outline" className="ml-2">
-                    {certificate.hours} horas
-                  </Badge>
-                </div>
-                <CardDescription className="flex items-center mt-2">
-                  <CalendarIcon className="h-4 w-4 mr-1" />
-                  {format(certificate.date_emission, "dd 'de' MMMM 'de' yyyy", { locale: es })}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="aspect-[1.4/1] bg-gradient-to-br from-blue-50 to-indigo-50 rounded-md flex items-center justify-center">
-                  <AwardIcon className="h-16 w-16 text-blue-500" />
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  className="w-full" 
-                  onClick={() => handleDownload(certificate)}
-                  disabled={isLoading}
-                >
-                  <DownloadIcon className="h-4 w-4 mr-2" />
-                  Descargar Certificado
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      )}
+    <div className="p-4 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">Certificados</h1>
+      <p className="text-lg">
+        Por favor, utiliza un enlace específico para ver un certificado.
+      </p>
     </div>
   )
-} 
-
-export default withCVRequired(CertificatesPage)
+}

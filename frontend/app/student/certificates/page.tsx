@@ -4,12 +4,12 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { AwardIcon, DownloadIcon, CalendarIcon, EyeIcon } from "lucide-react"
+import { AwardIcon, DownloadIcon, CalendarIcon, EyeIcon, Share2Icon } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { getToken } from "@/lib/auth"
 import { jwtDecode } from "jwt-decode"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { DocumentService } from "@/services/document.service"
 import Link from "next/link"
 import withCVRequired from "@/components/auth/with-cv-required"
@@ -20,6 +20,7 @@ interface Certificate {
   hours: number;
   date_emission: Date;
   file?: string;
+  uuid?: string;
 }
 
 interface DecodedToken {
@@ -32,7 +33,6 @@ interface DecodedToken {
 function CertificatesPage() {
   const [certificates, setCertificates] = useState<Certificate[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const { toast } = useToast()
 
   const loadStudentCertificates = async (userId: number) => {
     try {
@@ -47,11 +47,7 @@ function CertificatesPage() {
       setCertificates(transformedData)
     } catch (error) {
       console.error('Error al cargar los certificados:', error)
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los certificados",
-        variant: "destructive"
-      })
+      toast.error("No se pudieron cargar los certificados")
       setCertificates([])
     } finally {
       setIsLoading(false)
@@ -68,29 +64,17 @@ function CertificatesPage() {
           loadStudentCertificates(decoded.userId)
         } else {
           console.error('El token no contiene userId')
-          toast({
-            title: "Error",
-            description: "No se pudo identificar al usuario",
-            variant: "destructive"
-          })
+          toast.error("No se pudo identificar al usuario")
           setIsLoading(false)
         }
       } catch (error) {
         console.error('Error al decodificar el token:', error)
-        toast({
-          title: "Error",
-          description: "Error al verificar la identidad del usuario",
-          variant: "destructive"
-        })
+        toast.error("Error al verificar la identidad del usuario")
         setIsLoading(false)
       }
     } else {
       console.log('No se encontró el token')
-      toast({
-        title: "Error",
-        description: "No hay sesión activa",
-        variant: "destructive"
-      })
+      toast.error("No hay sesión activa")
       setIsLoading(false)
     }
   }, [])
@@ -141,7 +125,7 @@ function CertificatesPage() {
                   </div>
                 </Link>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex flex-col gap-2">
                 <Button 
                   className="w-full"
                   disabled={isLoading}
@@ -149,6 +133,28 @@ function CertificatesPage() {
                 >
                   <DownloadIcon className="h-4 w-4 mr-2" />
                   Descargar Certificado
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={async () => {
+                    const certificateUrl = `${window.location.origin}/certificates/${certificate.uuid || 'sample-uuid'}`;
+                    try {
+                      await navigator.clipboard.writeText(certificateUrl);
+                      toast.success("¡Enlace copiado!", {
+                        description: "El enlace del certificado ha sido copiado al portapapeles",
+                        duration: 3000,
+                      });
+                    } catch (error) {
+                      toast.error("Error al copiar", {
+                        description: "No se pudo copiar el enlace al portapapeles",
+                        duration: 3000,
+                      });
+                    }
+                  }}
+                >
+                  <Share2Icon className="h-4 w-4 mr-2" />
+                  Compartir Certificado
                 </Button>
               </CardFooter>
             </Card>

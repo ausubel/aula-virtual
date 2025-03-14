@@ -59,7 +59,8 @@ export default class DocumentService {
         teacher_degree: certificate.teacher_degree || undefined,
         teacher_profile: certificate.teacher_profile || undefined,
         student_name: certificate.student_name || undefined,
-        file: certificate.file || undefined
+        file: certificate.file || undefined,
+        uuid: certificate.uuid || undefined
       };
 
       // Validamos que tenga los campos requeridos
@@ -71,6 +72,42 @@ export default class DocumentService {
       return formattedCertificate;
     } catch (error) {
       console.error('Error en getCertificateByCourseId service:', error);
+      throw error;
+    }
+  }
+
+  async getCertificateByUUID(uuid: string): Promise<Certificate | null> {
+    try {
+      const certificate = await this.documentModel.getCertificateByUUID(uuid);
+      
+      if (!certificate) {
+        return null;
+      }
+
+      // Aseguramos que todos los campos tengan el formato correcto
+      const formattedCertificate: Certificate = {
+        id: Number(certificate.id),
+        name: String(certificate.name),
+        description: certificate.description || undefined,
+        hours: Number(certificate.hours) || 0,
+        date_emission: this.ensureISODate(certificate.date_emission),
+        teacher_name: certificate.teacher_name || undefined,
+        teacher_degree: certificate.teacher_degree || undefined,
+        teacher_profile: certificate.teacher_profile || undefined,
+        student_name: certificate.student_name || undefined,
+        file: certificate.file || undefined,
+        uuid: certificate.uuid || undefined
+      };
+
+      // Validamos que tenga los campos requeridos
+      if (!this.isValidCertificate(formattedCertificate)) {
+        console.error('Certificado inválido:', formattedCertificate);
+        return null;
+      }
+
+      return formattedCertificate;
+    } catch (error) {
+      console.error('Error en getCertificateByUUID service:', error);
       throw error;
     }
   }

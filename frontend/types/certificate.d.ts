@@ -9,4 +9,5 @@ export interface Certificate {
   teacher_profile?: string;
   student_name?: string;
   file?: string;
+  uuid?: string;  // UUID para acceso público al certificado
 }
