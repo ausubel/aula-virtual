@@ -347,6 +347,7 @@ BEGIN
 END //
 
 -- Procedimiento para obtener los estudiantes de un curso
+-- Procedimiento para obtener los estudiantes de un curso
 DROP PROCEDURE IF EXISTS get_students_by_course_id//
 
 CREATE PROCEDURE get_students_by_course_id(
@@ -357,7 +358,8 @@ BEGIN
         u.id,
         u.name,
         u.email,
-        0 as progress
+        0 as progress,
+        cs.has_certificate
     FROM user u
     INNER JOIN student_course cs ON u.id = cs.student_id
     WHERE cs.course_id = p_course_id;
@@ -1471,3 +1473,59 @@ BEGIN
     SET finished = 1  
     WHERE course_id = p_course_id;
 END //
+
+DROP PROCEDURE IF EXISTS finish_course_by_id;
+
+CREATE PROCEDURE finish_course_by_id(
+    IN p_course_id INT
+)
+BEGIN
+    UPDATE course
+    SET finished = 1, finished_datetime = NOW()
+    WHERE id = p_course_id;
+
+    UPDATE student_course
+    SET finished = 1  
+    WHERE course_id = p_course_id;
+END //
+
+
+-- Procedimiento para asignar certificados a los estudiantes de un curso
+DROP PROCEDURE IF EXISTS assign_student_list_to_certificate//
+
+CREATE PROCEDURE assign_student_list_to_certificate(
+    IN p_course_id INT,
+    IN p_student_list_ids JSON
+)
+BEGIN
+    -- Declarar variables
+    DECLARE v_course_exists INT;
+    
+    -- Verificar que el curso existe
+    SELECT COUNT(1) INTO v_course_exists FROM course WHERE id = p_course_id;
+    
+    -- Convertir la lista JSON en una tabla temporal
+    DROP TEMPORARY TABLE IF EXISTS student_ids;
+    CREATE TEMPORARY TABLE student_ids (
+        student_id INT
+    );
+    
+    -- Insertar los IDs de estudiantes desde el JSON a la tabla temporal
+    INSERT INTO student_ids (student_id)
+    SELECT t.id 
+    FROM JSON_TABLE(
+        p_student_list_ids, 
+        '$[*]' COLUMNS(id INT PATH '$')
+    ) t;
+    
+    IF v_course_exists = 0 THEN
+        SELECT 'COURSE_NOT_FOUND' as message;
+    ELSE
+        
+        UPDATE student_course A
+        INNER JOIN student_ids B ON A.student_id = B.student_id
+        SET A.has_certificate = 1;
+        
+        SELECT 'SUCCESS' as message, COUNT(*) as count;
+    END IF;
+END//

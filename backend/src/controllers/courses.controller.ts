@@ -37,6 +37,8 @@ export default class CoursesController implements ControllerBase {
         this.router.put('/lessons/:lessonId/progress', this.updateLessonProgress.bind(this));
         // Nueva ruta para finalizar un curso
         this.router.put('/:courseId/finish', this.finishCourseById.bind(this));
+        // Nueva ruta para asignar certificados a los estudiantes de un curso
+        this.router.post('/:courseId/students/certificates', this.assignCertificates.bind(this));
     }
 
     private async createCourse(req: Request, res: Response) {
@@ -176,7 +178,6 @@ export default class CoursesController implements ControllerBase {
             
             // Manejar diferentes formatos de respuesta
             let students = [];
-            
             if (Array.isArray(rows)) {
                 if (rows.length > 0) {
                     // Caso 1: El procedimiento devuelve un array de arrays
@@ -185,7 +186,8 @@ export default class CoursesController implements ControllerBase {
                             id: student.id,
                             name: student.name || '',
                             email: student.email || '',
-                            progress: student.progress || 0
+                            progress: student.progress || 0,
+                            hasCertificate: student.has_certificate || false
                         }));
                     } 
                     // Caso 2: El procedimiento devuelve directamente un array de objetos
@@ -194,7 +196,8 @@ export default class CoursesController implements ControllerBase {
                             id: student.id,
                             name: student.name || '',
                             email: student.email || '',
-                            progress: student.progress || 0
+                            progress: student.progress || 0,
+                            hasCertificate: student.has_certificate.data[0] === 1 || false
                         }));
                     }
                 }
@@ -717,6 +720,50 @@ export default class CoursesController implements ControllerBase {
         } catch (error) {
             console.error('Error en finishCourseById:', error);
             res.status(500).json({ message: 'Error al finalizar el curso' });
+        }
+    }
+    private async assignCertificates(req: Request, res: Response) {
+        try {
+            const { courseId } = req.params;
+            const { studentIds } = req.body;
+            
+            console.log('Asignando estudiantes al curso:', courseId);
+            console.log('Lista de estudiantes:', studentIds);
+            
+            // Verificar que studentIds es un array
+            if (!Array.isArray(studentIds) || studentIds.length === 0) {
+                return res.status(400).json({ message: 'El formato de studentIds es incorrecto o está vacío, debe ser un array no vacío' });
+            }
+            
+            // Verificar que todos los elementos son números
+            const allNumbers = studentIds.every(id => typeof id === 'number');
+            if (!allNumbers) {
+                return res.status(400).json({ message: 'Todos los IDs de estudiantes deben ser números' });
+            }
+            
+            const [result] = await this.db.query(StoredProcedures.AssignStudentsToCertificate, [courseId, JSON.stringify(studentIds)]);
+            console.log('Resultado de la asignación:', result);
+            
+            // Verificar el resultado
+            if (Array.isArray(result) && result.length > 0) {
+                const response = result[0];
+                
+                if (response.message === 'SUCCESS') {
+                    return res.json({ 
+                        message: 'Estudiantes certificados exitosamente',
+                        count: response.count
+                    });
+                } else if (response.message === 'COURSE_NOT_FOUND') {
+                    return res.status(404).json({ message: 'Curso no encontrado' });
+                } else if (response.message === 'NO_VALID_STUDENTS') {
+                    return res.status(400).json({ message: 'No hay estudiantes válidos para asignar' });
+                }
+            }
+            
+            res.json({ message: 'Operación completada' });
+        } catch (error) {
+            console.error('Error en assignStudents:', error);
+            res.status(500).json({ message: 'Error al asignar estudiantes' });
         }
     }
 }

@@ -51,6 +51,7 @@ interface Student {
   name: string;
   email: string;
   progress?: number;
+  hasCertificate?: boolean | { data: number[] };
 }
 
 export class CoursesService {
@@ -434,12 +435,33 @@ export class CoursesService {
       }
       
       // Asegurarse de que todos los estudiantes tienen la estructura correcta
-      return students.map(student => ({
-        id: typeof student.id === 'number' ? student.id : parseInt(student.id) || 0,
-        name: student.name || 'Sin nombre',
-        email: student.email || 'Sin email',
-        progress: typeof student.progress === 'number' ? student.progress : 0
-      }));
+      return students.map(student => {
+        // Verificar y normalizar los datos del estudiante
+        const mappedStudent: Student = {
+          id: typeof student.id === 'number' ? student.id : parseInt(student.id) || 0,
+          name: student.name || 'Sin nombre',
+          email: student.email || 'Sin email',
+          progress: typeof student.progress === 'number' ? student.progress : 0,
+          hasCertificate: false
+        };
+        
+        // Manejar diferentes formatos de hasCertificate/has_certificate
+        if ('has_certificate' in student) {
+          if (typeof student.has_certificate === 'boolean') {
+            mappedStudent.hasCertificate = student.has_certificate;
+          } else if (student.has_certificate && typeof student.has_certificate === 'object') {
+            // Si es un objeto Buffer o similar con propiedad data
+            if ('data' in student.has_certificate) {
+              mappedStudent.hasCertificate = student.has_certificate as { data: number[] };
+            }
+          }
+        } else if ('hasCertificate' in student && student.hasCertificate !== undefined) {
+          mappedStudent.hasCertificate = student.hasCertificate;
+        }
+        
+        console.log('Estudiante mapeado:', mappedStudent);
+        return mappedStudent;
+      });
     } catch (error) {
       console.error('Error en getStudentsByCourse:', error);
       throw error;
@@ -510,12 +532,33 @@ export class CoursesService {
       }
       
       // Asegurarse de que todos los estudiantes tienen la estructura correcta
-      return students.map(student => ({
-        id: typeof student.id === 'number' ? student.id : parseInt(student.id) || 0,
-        name: student.name || 'Sin nombre',
-        email: student.email || 'Sin email',
-        progress: typeof student.progress === 'number' ? student.progress : 0
-      }));
+      return students.map(student => {
+        // Verificar y normalizar los datos del estudiante
+        const mappedStudent: Student = {
+          id: typeof student.id === 'number' ? student.id : parseInt(student.id) || 0,
+          name: student.name || 'Sin nombre',
+          email: student.email || 'Sin email',
+          progress: typeof student.progress === 'number' ? student.progress : 0,
+          hasCertificate: false
+        };
+        
+        // Manejar diferentes formatos de hasCertificate/has_certificate
+        if ('has_certificate' in student) {
+          if (typeof student.has_certificate === 'boolean') {
+            mappedStudent.hasCertificate = student.has_certificate;
+          } else if (student.has_certificate && typeof student.has_certificate === 'object') {
+            // Si es un objeto Buffer o similar con propiedad data
+            if ('data' in student.has_certificate) {
+              mappedStudent.hasCertificate = student.has_certificate as { data: number[] };
+            }
+          }
+        } else if ('hasCertificate' in student && student.hasCertificate !== undefined) {
+          mappedStudent.hasCertificate = student.hasCertificate;
+        }
+        
+        console.log('Estudiante mapeado:', mappedStudent);
+        return mappedStudent;
+      });
     } catch (error) {
       console.error('Error en getAllStudents:', error);
       throw error;
@@ -759,6 +802,32 @@ export class CoursesService {
       return data;
     } catch (error) {
       console.error('Error en finishCourseById:', error);
+      throw error;
+    }
+  }
+
+  static async assignCertificates(courseId: number, studentIds: number[]): Promise<void> {
+    try {
+      const response = await fetch(`${this.BASE_URL}/courses/${courseId}/students/certificates`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${AuthService.getToken()}`
+        },
+        body: JSON.stringify({ studentIds })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error('Error al asignar certificados a los estudiantes');
+      }
+
+      const data = await response.json();
+      console.log('Respuesta del servidor (asignación de certificados):', data);
+      return data;
+    } catch (error) {
+      console.error('Error en assignCertificates:', error);
       throw error;
     }
   }

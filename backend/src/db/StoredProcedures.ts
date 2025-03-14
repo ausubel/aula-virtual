@@ -20,6 +20,7 @@ export const StoredProcedures = {
     update_course: 'CALL update_course(?, ?, ?, ?, ?)',
     RemoveStudentFromCourse: 'CALL remove_student_from_course(?, ?)',
     FinishCourseById: 'CALL finish_course_by_id(?)',
+    AssignStudentsToCertificate: 'CALL assign_student_list_to_certificate(?, ?)',
     
     // Lesson procedures
     GetLessonsByCourseId: 'CALL get_lessons_by_course_id(?, ?)',  // Actualizado para incluir el ID del estudiante
