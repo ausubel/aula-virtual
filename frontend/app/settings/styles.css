@@ -1,0 +1,196 @@
+/* Estilos para la página de configuración */
+.settings-page {
+  color: var(--color-5);
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+/* Encabezado */
+.settings-page h1 {
+  color: var(--color-5);
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.settings-page h1::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -8px;
+  height: 3px;
+  width: 3rem;
+  background-color: var(--color-1);
+  border-radius: 3px;
+  opacity: 0.8;
+}
+
+/* Tarjetas */
+.settings-page .card {
+  background-color: white;
+  border: none;
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03), 0 1px 4px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.settings-page .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06), 0 1px 8px rgba(0, 0, 0, 0.03);
+  border-color: transparent;
+}
+
+/* Encabezados de tarjetas */
+.settings-page .card-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding-bottom: 1.25rem;
+}
+
+.settings-page .card-title {
+  color: var(--color-5);
+  font-weight: 600;
+  position: relative;
+}
+
+.settings-page .card-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -8px;
+  height: 3px;
+  width: 2rem;
+  background-color: var(--color-1);
+  border-radius: 3px;
+  opacity: 0.8;
+}
+
+.settings-page .card-description {
+  color: var(--color-5);
+  opacity: 0.7;
+}
+
+/* Pestañas */
+.settings-page .tabs-list {
+  background-color: var(--color-2);
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+  border: none;
+}
+
+.settings-page .tabs-trigger {
+  color: white;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.5);
+  margin: 0 0.25rem;
+}
+
+.settings-page .tabs-trigger[data-state="active"] {
+  background-color: white;
+  color: var(--color-1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.settings-page .tabs-trigger:hover {
+  color: var(--color-1);
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+/* Formularios */
+.settings-page label {
+  color: var(--color-5);
+  font-weight: 500;
+}
+
+.settings-page input,
+.settings-page textarea {
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.625rem 1rem;
+  transition: all 0.2s ease;
+  background-color: white;
+}
+
+.settings-page input:focus,
+.settings-page textarea:focus {
+  border-color: var(--color-3);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(167, 218, 220, 0.3);
+}
+
+.settings-page input:hover,
+.settings-page textarea:hover {
+  border-color: var(--color-3);
+}
+
+.settings-page input:disabled {
+  background-color: rgba(242, 250, 239, 0.5);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Botones */
+.settings-page button {
+  background: linear-gradient(45deg, var(--color-1), #f04e5c);
+  border: none;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 2px 10px rgba(230, 55, 70, 0.2);
+  transition: all 0.2s ease;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1.25rem;
+}
+
+.settings-page button:hover {
+  background: linear-gradient(45deg, #d7303f, var(--color-1));
+  box-shadow: 0 4px 15px rgba(230, 55, 70, 0.3);
+  transform: translateY(-1px);
+}
+
+.settings-page button svg {
+  color: white;
+}
+
+/* Botón de guardar */
+.settings-page .save-button-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.settings-page .save-button {
+  min-width: 150px;
+  font-weight: 600;
+}
+
+/* Contador de caracteres */
+.settings-page .text-muted-foreground {
+  color: var(--color-5);
+  opacity: 0.6;
+}
+
+/* Animaciones de carga */
+.settings-page .animate-spin {
+  color: var(--color-1);
+}
+
+/* Diseño responsivo */
+@media (max-width: 768px) {
+  .settings-page {
+    padding: 1rem;
+  }
+  
+  .settings-page .card {
+    border-radius: 0.75rem;
+  }
+  
+  .settings-page .card-title {
+    font-size: 1.25rem;
+  }
+}

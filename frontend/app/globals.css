@@ -14,6 +14,7 @@ body {
 
 @layer base {
   :root {
+    /* Base variables */
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;
@@ -47,6 +48,13 @@ body {
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Student variables - using admin color scheme */
+    --student-primary: #e63746;
+    --student-background: #f2faef;
+    --student-accent: #a7dadc;
+    --student-secondary: #447a9c;
+    --student-dark: #1d3658;
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -81,6 +89,13 @@ body {
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Student variables - using admin color scheme for dark mode */
+    --student-primary: #e63746;
+    --student-background: #f2faef;
+    --student-accent: #a7dadc;
+    --student-secondary: #447a9c;
+    --student-dark: #1d3658;
   }
 }
 

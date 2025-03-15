@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { BellIcon, LockIcon, UserIcon, MailIcon, GlobeIcon, LoaderIcon } from "lucide-react"
+import { BellIcon, LockIcon, UserIcon, MailIcon, GlobeIcon, LoaderIcon, FileTextIcon, DownloadIcon } from "lucide-react"
 import withCVRequired from "@/components/auth/with-cv-required"
 import axios from "axios"
 import { useToast } from "@/components/ui/use-toast"
@@ -15,6 +15,7 @@ import Cookies from "js-cookie"
 import Swal from "sweetalert2"
 import userService from "@/services/user.service"
 import { Separator } from "@/components/ui/separator"
+import "./styles.css"
 
 // Tipo para los datos del usuario
 interface UserData {
@@ -266,33 +267,19 @@ function SettingsPage() {
     }));
   };
 
-  // Manejar cambios en los campos de contraseña
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setPasswordData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="settings-page space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Configuración</h1>
       </div>
 
       <Tabs defaultValue="account" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="account">Cuenta</TabsTrigger>
-          {/* <TabsTrigger value="security">Seguridad</TabsTrigger> */}
-        </TabsList>
-
-        {/* Pestaña de Cuenta */}
+        
         <TabsContent value="account" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Información de Perfil</CardTitle>
-              <CardDescription>
+          <Card className="card">
+            <CardHeader className="card-header">
+              <CardTitle className="card-title gap-4">Información de Perfil</CardTitle>
+              <CardDescription className="card-description gap-4">
                 Actualiza tu información personal y de contacto
               </CardDescription>
             </CardHeader>
@@ -368,10 +355,11 @@ function SettingsPage() {
                       {userData.bio ? userData.bio.length : 0}/500 caracteres
                     </p>
                   </div>
-                  <div className="flex justify-end">
+                  <div className="save-button-container">
                     <Button
                       onClick={updateProfileInfo}
                       disabled={saving}
+                      className="save-button"
                     >
                       {saving ? (
                         <>
@@ -389,67 +377,6 @@ function SettingsPage() {
           </Card>
         </TabsContent>
 
-        {/* Pestaña de Seguridad */}
-        <TabsContent value="security" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Cambiar Contraseña</CardTitle>
-              <CardDescription>
-                Actualiza tu contraseña para mantener tu cuenta segura
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="currentPassword">Contraseña Actual</Label>
-                  <Input
-                    id="currentPassword"
-                    name="currentPassword"
-                    type="password"
-                    value={passwordData.currentPassword}
-                    onChange={handlePasswordChange}
-                  />
-                </div>
-                <Separator />
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">Nueva Contraseña</Label>
-                  <Input
-                    id="newPassword"
-                    name="newPassword"
-                    type="password"
-                    value={passwordData.newPassword}
-                    onChange={handlePasswordChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirmar Nueva Contraseña</Label>
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    value={passwordData.confirmPassword}
-                    onChange={handlePasswordChange}
-                  />
-                </div>
-                <div className="flex justify-end">
-                  <Button
-                    onClick={changePassword}
-                    disabled={changingPassword}
-                  >
-                    {changingPassword ? (
-                      <>
-                        <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
-                        Cambiando...
-                      </>
-                    ) : (
-                      "Cambiar Contraseña"
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   )
