@@ -151,7 +151,6 @@ function CoursesPage() {
       
       <div className="flex items-center space-x-2">
         <div className="relative flex-1">
-          <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
             placeholder="Buscar cursos por nombre..."

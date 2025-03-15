@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
+import Cookies from 'js-cookie'
 
 interface LogoutButtonProps {
   className?: string
@@ -14,8 +15,18 @@ export function LogoutButton({
   variant = "outline"
 }: LogoutButtonProps) {
   const handleLogout = async () => {
-    // Eliminar la cookie directamente
-    document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
+    // Lista de todas las cookies relevantes para eliminar
+    const cookies = ['token', 'user_id', 'user_role', 'user_name', 'has_uploaded_cv', 'auth_token'];
+    
+    // Eliminar cookies usando document.cookie (método alternativo)
+    cookies.forEach(cookieName => {
+      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/;`;
+    });
+    
+    // Eliminar cookies usando js-cookie
+    cookies.forEach(cookieName => {
+      Cookies.remove(cookieName, { path: '/' });
+    });
     
     // Redirigir a la página de login
     window.location.href = "/login";

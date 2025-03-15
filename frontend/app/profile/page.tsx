@@ -574,12 +574,10 @@ function ProfilePage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Progreso General</CardTitle>
-                  <CardDescription>Tu progreso en todos los cursos inscritos</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-sm font-medium">Progreso Total</span>
                       <span className="text-sm font-medium">{user.totalProgress}%</span>
                     </div>
                     <Progress value={user.totalProgress} className="h-2" />
@@ -628,7 +626,6 @@ function ProfilePage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Mis Cursos</CardTitle>
-                  <CardDescription>Cursos en los que estás inscrito</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -642,13 +639,6 @@ function ProfilePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {user.currentCourses.map((course) => (
                         <Card key={course.id} className="overflow-hidden">
-                          <div className="h-32 overflow-hidden">
-                            <img 
-                              src={course.image} 
-                              alt={course.title} 
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
                           <CardContent className="p-4">
                             <h4 className="font-medium line-clamp-1">{course.title}</h4>
                             <p className="text-xs text-muted-foreground mt-1">{course.instructor}</p>
@@ -684,22 +674,11 @@ function ProfilePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {user.certificates.map((cert) => (
                         <Card key={cert.id} className="overflow-hidden">
-                          <div className="h-32 overflow-hidden">
-                            <img 
-                              src={cert.image} 
-                              alt={cert.title} 
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
                           <CardContent className="p-4">
                             <h4 className="font-medium line-clamp-1">{cert.title}</h4>
                             <p className="text-xs text-muted-foreground mt-1">{cert.instructor}</p>
                             <div className="flex justify-between items-center mt-3">
                               <Badge variant="outline" className="bg-green-50">Completado</Badge>
-                              <Button size="sm" variant="outline">
-                                <GraduationCapIcon className="h-3 w-3 mr-2" />
-                                Ver Certificado
-                              </Button>
                             </div>
                           </CardContent>
                         </Card>
@@ -727,20 +706,7 @@ function ProfilePage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {user.certificates.map((cert) => (
                       <div key={cert.id} className="relative group">
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-black/0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-4">
-                          <Button variant="secondary" className="mb-4">
-                            <AwardIcon className="h-4 w-4 mr-2" />
-                            Ver Certificado
-                          </Button>
-                        </div>
                         <Card className="overflow-hidden h-full">
-                          <div className="h-40 overflow-hidden">
-                            <img 
-                              src={cert.image} 
-                              alt={cert.title} 
-                              className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                            />
-                          </div>
                           <CardContent className="p-4">
                             <h4 className="font-medium">{cert.title}</h4>
                             <p className="text-xs text-muted-foreground mt-1">Instructor: {cert.instructor}</p>

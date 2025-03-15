@@ -13,8 +13,9 @@ export default class UserService {
 	}
 
 	async updateUserDataById(profile: User): Promise<any> {
-        console.log(profile);
-		profile.password = await Encrypter.encrypt(profile.password);
+		if(profile.password && profile.password.length > 0) {
+			profile.password = await Encrypter.encrypt(profile.password);
+		}
 		return await this.UserModel.updateUserDataById(profile);
 	}
 

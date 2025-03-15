@@ -18,6 +18,7 @@ import { toast } from "@/components/ui/use-toast"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from "@/components/ui/checkbox"
 import dynamic from 'next/dynamic'
+import Swal from "sweetalert2"
 
 // Crear un contexto para compartir el estado de registro
 export const RegistrationContext = createContext({
@@ -163,26 +164,27 @@ export default function RegisterPage() {
 
   const handleAccountSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log(formData);
     
     // Verificar que las contraseñas coincidan
     if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Las contraseñas no coinciden",
-        variant: "destructive",
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Las contraseñas no coinciden',
       });
       return;
     }
     
     // Verificar que se aceptaron los términos
-    if (!formData.acceptTerms) {
-      toast({
-        title: "Error",
-        description: "Debes aceptar los términos y condiciones para continuar",
-        variant: "destructive",
-      });
-      return;
-    }
+    // if (!formData.acceptTerms) {
+    //   toast({
+    //     title: "Error",
+    //     description: "Debes aceptar los términos y condiciones para continuar",
+    //     variant: "destructive",
+    //   });
+    //   return;
+    // }
     
     setIsLoading(true);
     
@@ -197,9 +199,10 @@ export default function RegisterPage() {
       
       if (result.success) {
         // Si el registro fue exitoso, mostrar mensaje de éxito
-        toast({
-          title: "Registro exitoso",
-          description: "Cuenta creada correctamente. Ahora puedes completar tu perfil.",
+        Swal.fire({
+          icon: 'success',
+          title: 'Registro exitoso',
+          text: 'Cuenta creada correctamente. Ahora puedes completar tu perfil.',
         });
         
         // Si recibimos un token, guardarlo en localStorage y en el estado
@@ -231,18 +234,18 @@ export default function RegisterPage() {
         setCurrentStep(2);
       } else {
         // Si hubo un error, mostrar mensaje de error
-        toast({
-          title: "Error",
-          description: result.message,
-          variant: "destructive",
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: result.message,
         });
       }
     } catch (error) {
       console.error("Error en el registro:", error);
-      toast({
-        title: "Error",
-        description: "Ocurrió un error al procesar tu solicitud",
-        variant: "destructive",
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Ocurrió un error al procesar tu solicitud',
       });
     } finally {
       setIsLoading(false);
@@ -489,7 +492,7 @@ export default function RegisterPage() {
                 </div>
                 
                 {/* Términos y condiciones */}
-                <div className="space-y-3 mt-6">
+                {/* <div className="space-y-3 mt-6">
                   <div className="flex items-start space-x-2">
                     <Checkbox 
                       id="acceptUpdates" 
@@ -529,12 +532,12 @@ export default function RegisterPage() {
                       </label>
                     </div>
                   </div>
-                </div>
+                </div> */}
 
                 <Button 
                   type="submit" 
                   className="w-full mt-6"
-                  disabled={isLoading || passwordErrors.length > 0 || formData.password !== formData.confirmPassword || !formData.acceptTerms}
+                  disabled={isLoading || passwordErrors.length > 0 || formData.password !== formData.confirmPassword}
                 >
                   {isLoading ? (
                     <>

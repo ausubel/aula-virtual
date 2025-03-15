@@ -1033,7 +1033,6 @@ BEGIN
         AND sc.finished = 1;
 END//
 
-
 DROP PROCEDURE IF EXISTS update_user_data_by_id//
 
 /* Prueba
@@ -1050,12 +1049,17 @@ CREATE PROCEDURE update_user_data_by_id(
     IN p_degree VARCHAR(50)
 )
 BEGIN
+	IF p_password IS NOT NULL AND p_password <> '' THEN
+		UPDATE user
+        SET
+			password = p_password
+		WHERE id = p_id;
+    END IF;
     UPDATE user 
     SET 
         name = p_name,
         surname = p_surname,
         email = p_email,
-        password = p_password,
         phone = p_phone,
         degree = p_degree
     WHERE id = p_id;

@@ -14,6 +14,7 @@ import { FileIcon, UploadIcon, ArrowLeft, EyeIcon, EyeOffIcon } from 'lucide-rea
 import Cookies from 'js-cookie'
 // Importar el contexto de registro
 import { RegistrationContext } from '@/app/register/page'
+import { SweetAlert } from '@/utils/SweetAlert'
 
 interface UserProfileData {
   firstName: string
@@ -39,6 +40,14 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
   const [cvPreviewUrl, setCvPreviewUrl] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  // Estados para validación de contraseña
+  const [passwordValidations, setPasswordValidations] = useState({
+    minLength: false,
+    hasUppercase: false,
+    hasLowercase: false,
+    hasNumber: false,
+    hasSpecialChar: false
+  })
   const [formData, setFormData] = useState<UserProfileData>({
     firstName: "",
     lastName: "",
@@ -115,9 +124,7 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
         }
 
         // Intentar obtener los datos del usuario desde el backend
-        console.log(`Intentando obtener datos del usuario con ID: ${userId}`);
         const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/user/${userId}`;
-        console.log('URL de la API:', apiUrl);
         
         const response = await fetch(apiUrl, {
           method: 'GET',
@@ -180,31 +187,57 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
     }
   }
 
+  // Función para validar la contraseña
+  const validatePassword = (password: string) => {
+    const validations = {
+      minLength: password.length >= 8,
+      hasUppercase: /[A-Z]/.test(password),
+      hasLowercase: /[a-z]/.test(password),
+      hasNumber: /[0-9]/.test(password),
+      hasSpecialChar: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+    }
+    setPasswordValidations(validations)
+    return validations
+  }
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value
+    setFormData({ ...formData, password: newPassword })
+    validatePassword(newPassword)
+  }
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
-    // Validar que todos los campos estén completos
-    if (!formData.firstName || !formData.lastName || !formData.phone || !formData.degree || !formData.email || !formData.password || !formData.confirmPassword || (formData.degree === "other" && !formData.otherDegree)) {
-      setFeedback({
-        status: "error",
-        message: "Por favor, completa todos los campos del formulario."
-      })
-      return
-    }
-    
-    if (formData.password !== formData.confirmPassword) {
-      setFeedback({
-        status: "error",
-        message: "Las contraseñas no coinciden."
-      })
-      return
+    // Validar que todos los campos estén completos (excluyendo contraseña si está en flujo de registro)
+    if (isRegistrationFlow) {
+      // En flujo de registro, solo validar campos personales y CV
+      if (!formData.firstName || !formData.lastName || !formData.phone || !formData.email) {
+        SweetAlert.error('Error', 'Por favor, completa todos los campos del formulario.')
+        return
+      }
+    } else {
+      // Fuera del flujo de registro, validar todos los campos incluyendo contraseña
+      if (!formData.firstName || !formData.lastName || !formData.phone || !formData.email || !formData.password || !formData.confirmPassword) {
+        SweetAlert.error('Error', 'Por favor, completa todos los campos del formulario.')
+        return
+      }
+      
+      // Validar requisitos de contraseña solo si no está en flujo de registro
+      const validations = validatePassword(formData.password)
+      if (!Object.values(validations).every(Boolean)) {
+        SweetAlert.error('Error', 'La contraseña no cumple con todos los requisitos de seguridad.')
+        return
+      }
+      
+      if (formData.password !== formData.confirmPassword) {
+        SweetAlert.error('Error', 'Las contraseñas no coinciden.')
+        return
+      }
     }
     
     if (!formData.cv) {
-      setFeedback({
-        status: "error",
-        message: "Por favor, selecciona un archivo PDF para tu CV."
-      })
+      SweetAlert.error('Error', 'Por favor, selecciona un archivo PDF para tu CV.')
       return
     }
     
@@ -217,22 +250,12 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
       
       let userId = 0
       
-      // Verificar qué valores tenemos disponibles
-      console.log('Context registration flow:', isRegistrationFlow);
-      console.log('Context userId:', registrationContext.userId);
-      console.log('Cookies user_id:', Cookies.get('user_id'));
-      
       if (isRegistrationFlow) {
         // Si estamos en el flujo de registro, usar el ID del contexto
         if (registrationContext.userId) {
           userId = registrationContext.userId;
-          console.log('ID de usuario obtenido del contexto de registro:', userId);
         } else {
-          console.error('Error: No se pudo obtener el ID del usuario del contexto de registro');
-          setFeedback({
-            status: "error",
-            message: "No se pudo obtener el ID de usuario. Por favor, intente registrarse nuevamente."
-          });
+          SweetAlert.error('Error', 'No se pudo obtener el ID de usuario. Por favor, intente registrarse nuevamente.');
           setIsLoading(false);
           return;
         }
@@ -250,10 +273,7 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
             console.log('ID de usuario obtenido del token:', userId);
           } else {
             console.error('Error: No se pudo obtener el ID del usuario');
-            setFeedback({
-              status: "error",
-              message: "No se pudo obtener el ID de usuario. Por favor, intente iniciar sesión nuevamente."
-            });
+            SweetAlert.error('Error', 'No se pudo obtener el ID de usuario. Por favor, intente iniciar sesión nuevamente.');
             setIsLoading(false);
             return;
           }
@@ -277,10 +297,8 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
         degree: formData.degree === "other" ? formData.otherDegree : formData.degree,
         hasCV: true,
       };
-      console.log("Datos del usuario a actualizar (objeto):", user);
       
       const userJson = JSON.stringify(user);
-      console.log("Datos del usuario a actualizar (JSON):", userJson);
       
       // Enviar los datos personales al servidor
       const updateResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/user/update`, {
@@ -470,7 +488,7 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
                       </div>
                       <p className="text-xs text-muted-foreground">Ingrese solo los 9 dígitos de su número celular</p>
                     </div>
-                    <div className="space-y-2">
+                    {/* <div className="space-y-2">
                       <Label htmlFor="degree">
                         Carrera <span className="text-red-500">*</span>
                       </Label>
@@ -490,8 +508,8 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
                           <SelectItem value="other">Otra</SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-                    {formData.degree === "other" && (
+                    </div> */}
+                    {/* {formData.degree === "other" && (
                       <div className="space-y-2">
                         <Label htmlFor="otherDegree">
                           Otra carrera <span className="text-red-500">*</span>
@@ -507,71 +525,100 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
                           placeholder="Especifica tu carrera"
                         />
                       </div>
-                    )}
+                    )} */}
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Contraseña</h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="password">
-                        Contraseña <span className="text-red-500">*</span>
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          id="password"
-                          name="password"
-                          type={showPassword ? 'text' : 'password'}
-                          placeholder="******"
-                          required
-                          value={formData.password}
-                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                          disabled={isLoading}
-                          className="w-full pr-10"
-                        />
-                        <button 
-                          type="button" 
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setShowPassword(!showPassword);
-                          }}
-                        >
-                          {showPassword ? <EyeOffIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
-                        </button>
+                {/* Sección de contraseña - solo mostrar si NO está en flujo de registro */}
+                {!isRegistrationFlow && (
+                  <>
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Contraseña</h3>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="password">
+                            Contraseña <span className="text-red-500">*</span>
+                          </Label>
+                          <div className="relative">
+                            <Input
+                              id="password"
+                              name="password"
+                              type={showPassword ? 'text' : 'password'}
+                              placeholder="******"
+                              required={!isRegistrationFlow}
+                              value={formData.password}
+                              onChange={handlePasswordChange}
+                              disabled={isLoading}
+                              className="w-full pr-10"
+                            />
+                            <button 
+                              type="button" 
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setShowPassword(!showPassword);
+                              }}
+                            >
+                              {showPassword ? <EyeOffIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="confirmPassword">
+                            Confirmar contraseña <span className="text-red-500">*</span>
+                          </Label>
+                          <div className="relative">
+                            <Input
+                              id="confirmPassword"
+                              name="confirmPassword"
+                              type={showConfirmPassword ? 'text' : 'password'}
+                              required={!isRegistrationFlow}
+                              placeholder="******"
+                              value={formData.confirmPassword}
+                              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                              disabled={isLoading}
+                              className="w-full pr-10"
+                            />
+                            <button 
+                              type="button" 
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setShowConfirmPassword(!showConfirmPassword);
+                              }}
+                            >
+                              {showConfirmPassword ? <EyeOffIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    
+                      {/* Requisitos de contraseña */}
+                      <div className="mt-2 space-y-1 text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-4 h-4 rounded-full ${passwordValidations.minLength ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                          <span className={passwordValidations.minLength ? 'text-green-600' : 'text-gray-500'}>Mínimo 8 caracteres</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-4 h-4 rounded-full ${passwordValidations.hasUppercase ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                          <span className={passwordValidations.hasUppercase ? 'text-green-600' : 'text-gray-500'}>Una mayúscula</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-4 h-4 rounded-full ${passwordValidations.hasLowercase ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                          <span className={passwordValidations.hasLowercase ? 'text-green-600' : 'text-gray-500'}>Una minúscula</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-4 h-4 rounded-full ${passwordValidations.hasNumber ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                          <span className={passwordValidations.hasNumber ? 'text-green-600' : 'text-gray-500'}>Un número</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-4 h-4 rounded-full ${passwordValidations.hasSpecialChar ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                          <span className={passwordValidations.hasSpecialChar ? 'text-green-600' : 'text-gray-500'}>Un carácter especial</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">
-                        Confirmar contraseña <span className="text-red-500">*</span>
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          id="confirmPassword"
-                          name="confirmPassword"
-                          type={showConfirmPassword ? 'text' : 'password'}
-                          required
-                          placeholder="******"
-                          value={formData.confirmPassword}
-                          onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                          disabled={isLoading}
-                          className="w-full pr-10"
-                        />
-                        <button 
-                          type="button" 
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setShowConfirmPassword(!showConfirmPassword);
-                          }}
-                        >
-                          {showConfirmPassword ? <EyeOffIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  </>
+                )}
 
                 {/* Subida de CV */}
                 <div>
