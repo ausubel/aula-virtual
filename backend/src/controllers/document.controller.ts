@@ -13,16 +13,13 @@ export default class DocumentController implements ControllerBase {
     this.root = "/document";
     this.router = Router();
     this.certificateService = new DocumentService();
-    this.initializeRoutes();
-  }
-
-  private initializeRoutes() {
     this.onUploadCV();
     this.onUploadPhoto();
-    this.onGetAllCertificatesByStudentId();
-    this.onGetCertificateByCourseId();
     this.onGetCVByStudentId();
     this.onGetPhotoByStudentId();
+    this.onGetAllCertificatesByStudentId();
+    this.onGetCertificateByCourseId();
+    this.onGetCertificateByUUID();
   }
 
   private onGetAllCertificatesByStudentId() {
@@ -38,13 +35,43 @@ export default class DocumentController implements ControllerBase {
   }
 
   private onGetCertificateByCourseId() {
-    this.router.get("/course/:courseId", async (req, res) => {
+    this.router.get("/course/:courseId/certificate", async (req, res) => {
       try {
         const { courseId } = req.params;
-        const certificate: Certificate = await this.certificateService.getCertificateByCourseId(Number(courseId));
+        const studentId = req.query.studentId ? Number(req.query.studentId) : undefined;
+        const certificate: Certificate = await this.certificateService.getCertificateByCourseId(Number(courseId), studentId);
         return sendResponses(res, 200, "Success", { certificate });
       } catch (error) {
+        console.error("Error al obtener certificado por curso:", error);
         return sendResponses(res, 500, "Internal Server Error");
+      }
+    });
+  }
+
+  private onGetCertificateByUUID() {
+    this.router.get("/certificate/public/:uuid", async (req, res) => {
+      try {
+        const { uuid } = req.params;
+        
+        console.log('Solicitud de certificado por UUID:', uuid);
+        
+        if (!uuid) {
+          console.error('UUID no proporcionado');
+          return sendResponses(res, 400, "UUID no proporcionado", null);
+        }
+        
+        const certificate: Certificate = await this.certificateService.getCertificateByUUID(uuid);
+        
+        if (!certificate) {
+          console.error('Certificado no encontrado para UUID:', uuid);
+          return sendResponses(res, 404, "Certificado no encontrado", null);
+        }
+        
+        console.log('Certificado encontrado:', certificate);
+        return sendResponses(res, 200, "Success", { certificate });
+      } catch (error) {
+        console.error("Error al obtener certificado por UUID:", error);
+        return sendResponses(res, 500, "Error interno del servidor", null);
       }
     });
   }

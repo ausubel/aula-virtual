@@ -1,6 +1,6 @@
 import type React from "react"
 import { Inter } from "next/font/google"
-import { NotificationToaster } from "@/components/ui/notifications"
+import { Toaster } from "sonner"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 
@@ -15,7 +15,7 @@ export default function RootLayout({
     <html lang="es" className="h-full">
       <body className={`${inter.className} h-full antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light">
-          <NotificationToaster />
+          <Toaster richColors position="top-right" />
           {children}
         </ThemeProvider>
       </body>

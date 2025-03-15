@@ -31,6 +31,10 @@ const nextConfig = {
         source: '/api/user/:path*',
         destination: 'http://localhost:3000/user/:path*',
       },
+      {
+        source: '/api/certificate/public/:uuid',
+        destination: 'http://localhost:3000/document/certificate/public/:uuid',
+      },
     ];
   },
   async headers() {

@@ -147,10 +147,6 @@ function CoursesPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Mis Cursos</h1>
-        <Button>
-          <PlusIcon className="h-4 w-4 mr-2" />
-          Explorar Cursos
-        </Button>
       </div>
       
       <div className="flex items-center space-x-2">

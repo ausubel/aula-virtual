@@ -948,11 +948,9 @@ BEGIN
 END//
 
 -- Procedimiento para obtener todos los certificados de un estudiante
-DROP PROCEDURE IF EXISTS get_all_certificates_by_student_id //
+DROP PROCEDURE IF EXISTS get_all_certificates_by_student_id//
 
-CREATE PROCEDURE get_all_certificates_by_student_id(
-	IN p_student_id INT
-)
+CREATE PROCEDURE get_all_certificates_by_student_id(IN p_student_id INT)
 BEGIN
     -- Selecciona los datos del curso para estudiantes que tienen certificado
     SELECT DISTINCT
@@ -960,7 +958,8 @@ BEGIN
         c.name,
         c.hours,
         CONVERT_TZ(IFNULL(c.finished_datetime, sc.creation_datetime), 'UTC', 'UTC') as date_emission,
-        NULL as file
+        NULL as file,
+        sc.uuid
     FROM student_course sc
     INNER JOIN course c ON sc.course_id = c.id
     WHERE sc.student_id = p_student_id
@@ -976,22 +975,50 @@ CREATE PROCEDURE get_certificate_by_course_id(
     IN p_student_id INT
 )
 BEGIN
-    SELECT 
-        c.id,
-        c.name,
-        c.description,
-        c.hours,
-        CONVERT_TZ(c.creation_datetime, 'UTC', 'UTC') as date_emission,
-        CONCAT(u.name, ' ', u.surname) as teacher_name,
-        t.degree as teacher_degree,
-        t.profile as teacher_profile,
-        CONCAT(us.name, ' ', us.surname) as student_name,
-        NULL as file
-    FROM course c
-    INNER JOIN user u ON c.teacher_id = u.id
-    INNER JOIN teacher t ON u.id = t.id
-    LEFT JOIN user us ON p_student_id = us.id
-    WHERE c.id = p_course_id;
+    -- Si se proporciona un ID de estudiante, obtener el certificado específico
+    IF p_student_id IS NOT NULL THEN
+        SELECT 
+            c.id,
+            c.name,
+            c.description,
+            c.hours,
+            CONVERT_TZ(IFNULL(c.finished_datetime, sc.creation_datetime), 'UTC', 'UTC') as date_emission,
+            CONCAT(tu.name, ' ', tu.surname) as teacher_name,
+            t.degree as teacher_degree,
+            t.profile as teacher_profile,
+            CONCAT(su.name, ' ', su.surname) as student_name,
+            NULL as file,
+            sc.uuid
+        FROM course c
+        JOIN teacher t ON c.teacher_id = t.id
+        JOIN user tu ON t.id = tu.id
+        JOIN student_course sc ON c.id = sc.course_id
+        JOIN student s ON sc.student_id = s.id
+        JOIN user su ON s.id = su.id
+        WHERE c.id = p_course_id
+        AND sc.student_id = p_student_id
+        AND sc.has_certificate = 1
+        LIMIT 1;
+    ELSE
+        -- Si no se proporciona un ID de estudiante, obtener información general del certificado
+        SELECT 
+            c.id,
+            c.name,
+            c.description,
+            c.hours,
+            CONVERT_TZ(c.finished_datetime, 'UTC', 'UTC') as date_emission,
+            CONCAT(u.name, ' ', u.surname) as teacher_name,
+            t.degree as teacher_degree,
+            t.profile as teacher_profile,
+            NULL as student_name,
+            NULL as file,
+            NULL as uuid
+        FROM course c
+        JOIN teacher t ON c.teacher_id = t.id
+        JOIN user u ON t.id = u.id
+        WHERE c.id = p_course_id
+        LIMIT 1;
+    END IF;
 END//
 
 -- Procedimiento para contar certificados de un estudiante
@@ -1262,7 +1289,8 @@ BEGIN
         c.name,
         c.hours,
         CONVERT_TZ(IFNULL(c.finished_datetime, sc.creation_datetime), 'UTC', 'UTC') as date_emission,
-        NULL as file
+        NULL as file,
+        sc.uuid
     FROM student_course sc
     INNER JOIN course c ON sc.course_id = c.id
     WHERE sc.student_id = p_student_id
@@ -1278,22 +1306,50 @@ CREATE PROCEDURE get_certificate_by_course_id(
     IN p_student_id INT
 )
 BEGIN
-    SELECT 
-        c.id,
-        c.name,
-        c.description,
-        c.hours,
-        CONVERT_TZ(c.creation_datetime, 'UTC', 'UTC') as date_emission,
-        CONCAT(u.name, ' ', u.surname) as teacher_name,
-        t.degree as teacher_degree,
-        t.profile as teacher_profile,
-        CONCAT(us.name, ' ', us.surname) as student_name,
-        NULL as file
-    FROM course c
-    INNER JOIN user u ON c.teacher_id = u.id
-    INNER JOIN teacher t ON u.id = t.id
-    LEFT JOIN user us ON p_student_id = us.id
-    WHERE c.id = p_course_id;
+    -- Si se proporciona un ID de estudiante, obtener el certificado específico
+    IF p_student_id IS NOT NULL THEN
+        SELECT 
+            c.id,
+            c.name,
+            c.description,
+            c.hours,
+            CONVERT_TZ(IFNULL(c.finished_datetime, sc.creation_datetime), 'UTC', 'UTC') as date_emission,
+            CONCAT(tu.name, ' ', tu.surname) as teacher_name,
+            t.degree as teacher_degree,
+            t.profile as teacher_profile,
+            CONCAT(su.name, ' ', su.surname) as student_name,
+            NULL as file,
+            sc.uuid
+        FROM course c
+        JOIN teacher t ON c.teacher_id = t.id
+        JOIN user tu ON t.id = tu.id
+        JOIN student_course sc ON c.id = sc.course_id
+        JOIN student s ON sc.student_id = s.id
+        JOIN user su ON s.id = su.id
+        WHERE c.id = p_course_id
+        AND sc.student_id = p_student_id
+        AND sc.has_certificate = 1
+        LIMIT 1;
+    ELSE
+        -- Si no se proporciona un ID de estudiante, obtener información general del certificado
+        SELECT 
+            c.id,
+            c.name,
+            c.description,
+            c.hours,
+            CONVERT_TZ(c.finished_datetime, 'UTC', 'UTC') as date_emission,
+            CONCAT(u.name, ' ', u.surname) as teacher_name,
+            t.degree as teacher_degree,
+            t.profile as teacher_profile,
+            NULL as student_name,
+            NULL as file,
+            NULL as uuid
+        FROM course c
+        JOIN teacher t ON c.teacher_id = t.id
+        JOIN user u ON t.id = u.id
+        WHERE c.id = p_course_id
+        LIMIT 1;
+    END IF;
 END//
 
 -- Procedimiento para contar certificados de un estudiante
@@ -1529,3 +1585,32 @@ BEGIN
         SELECT 'SUCCESS' as message, COUNT(*) as count;
     END IF;
 END//
+
+-- Procedimiento para obtener un certificado por su UUID
+DROP PROCEDURE IF EXISTS get_certificate_by_uuid//
+
+CREATE PROCEDURE get_certificate_by_uuid(IN p_uuid VARCHAR(36))
+BEGIN
+    SELECT 
+        c.id,
+        c.name,
+        c.description,
+        c.hours,
+        CONVERT_TZ(IFNULL(c.finished_datetime, sc.creation_datetime), 'UTC', 'UTC') as date_emission,
+        CONCAT(tu.name, ' ', tu.surname) as teacher_name,
+        t.degree as teacher_degree,
+        t.profile as teacher_profile,
+        CONCAT(su.name, ' ', su.surname) as student_name,
+        NULL as file,
+        sc.uuid
+    FROM student_course sc
+    JOIN course c ON sc.course_id = c.id
+    JOIN student s ON sc.student_id = s.id
+    JOIN user su ON s.id = su.id
+    JOIN teacher t ON c.teacher_id = t.id
+    JOIN user tu ON t.id = tu.id
+    WHERE sc.uuid = p_uuid
+    AND sc.has_certificate = 1;
+END//
+
+DELIMITER ;
