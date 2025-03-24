@@ -44,7 +44,7 @@ export interface Certificate {
 }
 
 export class AdminService {
-  private static BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+  private static BASE_URL = 'http://localhost:3002';
 
   private static async fetchWithAuth(endpoint: string, options: RequestInit = {}) {
     const token = document.cookie
@@ -55,7 +55,7 @@ export class AdminService {
     if (!token) {
       throw new Error('No se encontró el token de autenticación');
     }
-
+    console.log(this.BASE_URL);
     const response = await fetch(`${this.BASE_URL}${endpoint}`, {
       ...options,
       headers: {

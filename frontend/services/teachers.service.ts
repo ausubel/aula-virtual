@@ -7,7 +7,7 @@ interface Teacher {
 }
 
 export class TeachersService {
-  private static BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+  private static BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
   static async getAllTeachers(): Promise<Teacher[]> {
     try {

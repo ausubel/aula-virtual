@@ -1,0 +1,1 @@
+GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON virtual_class.* TO 'virtual_class_backend_access'@'%';

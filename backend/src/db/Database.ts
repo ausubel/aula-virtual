@@ -1,33 +1,36 @@
-import { Pool, createPool } from "mysql2/promise";
+import { Pool, PoolOptions, createPool } from "mysql2/promise";
 
-class DatabaseParameters {
-	readonly host: string;
-	readonly port: number;
-	readonly user: string;
-	readonly connectionLimit: number;
-	readonly database: string;
-	readonly password: string;
-	constructor() {
-		this.host = process.env.DB_HOST;
-		this.port = Number(process.env.DB_PORT);
-		this.user = process.env.DB_USER;
-		this.connectionLimit = Number(process.env.DB_CONNECTION_LIMIT);
-		this.database = process.env.DB_NAME;
-		this.password = process.env.DB_PASSWORD;
-	}
-}
+// DB_BACKEND_ACCESS_PASSWORD
 export default class Database {
 	private pool: Pool;
 	private static instance: Database;
 	private constructor() {
-		const params = new DatabaseParameters();
-		this.pool = createPool({ ...params, multipleStatements: true });
+		this.pool = createPool(this.getConfig());
+	}
+	private getConfig(): PoolOptions {
+		const { 
+			MYSQL_HOST,
+			MYSQL_PORT, 
+			DB_BACKEND_ACCESS_USERNAME, 
+			DB_BACKEND_ACCESS_PASSWORD, 
+			DB_BACKEND_CONN_LIMIT, 
+			DB_BASE_NAME
+		} = process.env;
+		return {
+			host: MYSQL_HOST,
+			port: parseInt(MYSQL_PORT),
+			user: DB_BACKEND_ACCESS_USERNAME,
+			password: DB_BACKEND_ACCESS_PASSWORD,
+			connectionLimit: parseInt(DB_BACKEND_CONN_LIMIT) || 10,
+			database: DB_BASE_NAME,
+			multipleStatements: true
+		};
 	}
 	async query(sql: string, params?: any[]): Promise<any> {
-		return await this.pool.query(sql, params);
+		return await this.pool.query(sql, params || []);
 	}
 	static getInstance(): Database {
-		if (!this.instance) return new Database();
-		return this.instance;
+		if (!Database.instance) Database.instance = new Database();
+		return Database.instance;
 	}
 }

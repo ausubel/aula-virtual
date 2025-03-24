@@ -2,7 +2,7 @@ import { ApiResponse, CertificateResponse } from '@/types/api';
 import type { Certificate } from '@/types/certificate';
 
 export class DocumentService {
-  private static BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+  private static BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
   static async getAllCertificatesByStudentId(studentId: number): Promise<Certificate[]> {
     try {

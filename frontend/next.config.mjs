@@ -17,23 +17,25 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Comentamos output: "export" para permitir renderizado en servidor
+  // output: "export",
   async rewrites() {
     return [
       {
         source: '/auth/:path*',
-        destination: 'http://localhost:3000/auth/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/auth/:path*`,
       },
       {
         source: '/api/document/:path*',
-        destination: 'http://localhost:3000/document/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/document/:path*`,
       },
       {
         source: '/api/user/:path*',
-        destination: 'http://localhost:3000/user/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/user/:path*`,
       },
       {
         source: '/api/certificate/public/:uuid',
-        destination: 'http://localhost:3000/document/certificate/public/:uuid',
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/document/certificate/public/:uuid`,
       },
     ];
   },
@@ -44,7 +46,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' http://localhost:3000 https://fonts.gstatic.com data: blob:; img-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self' blob: data:; media-src 'self' blob: data:; object-src 'self' blob: data:;"
+            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' http://localhost:3000 http://localhost:3002 https://fonts.gstatic.com data: blob:; img-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self' blob: data:; media-src 'self' blob: data:; object-src 'self' blob: data:;"
           }
         ]
       }

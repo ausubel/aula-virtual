@@ -54,5 +54,19 @@ curl -X POST http://localhost:3000/email/notification \
 }"
 ```
 
+
+### Commands
+
+Create mysql container (docker).
+
+```sh
+bash ./scripts/deploy_prod.sh -e prod -a create
+```
+Remove mysql container (docker).
+
+```sh
+bash ./scripts/deploy_prod.sh -e prod -a down
+```
+
 ## API Endpoints
 See [endpoints documentation](backend/docs/endpoints.md) for detailed API routes.

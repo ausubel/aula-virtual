@@ -238,4 +238,4 @@ export default function LessonVideosPage({ params }: Props) {
       </Card>
     </div>
   )
-} 
+}

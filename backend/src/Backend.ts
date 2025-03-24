@@ -67,11 +67,18 @@ export default class Backend {
     }
 
     private setupDotenv() {
-        dotenv.config();
+        dotenv.config({
+            path: process.env.APP_ENV === 'prod' ? '.env.prod' : '.env'
+        });
+        console.log(process.env)
+        console.log('Loaded environment variables from:', process.env.APP_ENV === 'prod' ? '.env.prod' : '.env');
+        console.log('JWT_SECRET_WORD is set:', !!process.env.JWT_SECRET_WORD);
+        console.log('JWT_EXPIRES_IN is set:', !!process.env.JWT_EXPIRES_IN);
+        console.log('ENCRYPT_PEPPER is set:', !!process.env.ENCRYPT_PEPPER);
     }
 
     start() {
-        const PORT = process.env.PORT || 3000;
+        const PORT = process.env.BACKEND_PORT || 3000;
         this.app.listen(PORT, () => {
             console.log(`Server listen on port ${PORT}`);
         });

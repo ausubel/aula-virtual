@@ -55,7 +55,7 @@ interface Student {
 }
 
 export class CoursesService {
-  private static BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+  private static BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
   static async createCourse(data: CreateCourseData) {
     try {

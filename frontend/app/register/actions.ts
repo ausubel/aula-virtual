@@ -65,16 +65,16 @@ export async function registerBasicInfo(formData: FormData) {
       password: "********" // No mostrar la contraseña real en logs
     });
 
-    // URL correcta para el backend - usando el endpoint de autenticación
-    const API_URL = 'http://localhost:3000';
-    logStep(7, `Realizando petición a: ${API_URL}/auth/register`);
+    // Usar la variable de entorno para la URL de la API
+    const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+    logStep(7, `Realizando petición a: ${NEXT_PUBLIC_API_URL}/auth/register`);
     
     // Imprimir el cuerpo de la petición exactamente como se enviará
     const requestBody = JSON.stringify(userData);
     logStep('7.1', "Cuerpo de la petición (JSON)", requestBody);
     
     // Enviar los datos al endpoint de autenticación
-    const response = await fetch(`${API_URL}/auth/register`, {
+    const response = await fetch(`${NEXT_PUBLIC_API_URL}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -239,16 +239,16 @@ export async function register(formData: FormData) {
       cv_file: cvBase64 ? "Archivo PDF presente (base64)" : undefined
     });
 
-    // URL correcta para el backend - usando el endpoint de autenticación
-    const API_URL = 'http://localhost:3000';
-    logStep(7, `Realizando petición a: ${API_URL}/auth/register`);
+    // Usar la variable de entorno para la URL de la API
+    const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL;
+    logStep(7, `Realizando petición a: ${NEXT_PUBLIC_API_URL}/auth/register`);
     
     // Imprimir el cuerpo de la petición exactamente como se enviará
     const requestBody = JSON.stringify(userData);
     logStep('7.1', "Cuerpo de la petición (JSON)", requestBody.substring(0, 500) + (requestBody.length > 500 ? '...' : ''));
     
     // Llamar al endpoint de registro
-    const response = await fetch(`${API_URL}/auth/register`, {
+    const response = await fetch(`${NEXT_PUBLIC_API_URL}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

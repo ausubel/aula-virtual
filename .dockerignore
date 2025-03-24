@@ -1,0 +1,27 @@
+.git
+.gitignore
+docker-compose.*
+node_modules
+package.json
+package-lock.json
+.dockerignore
+Dockerfile
+docker-compose.yml
+*.log
+media
+# INITIALIZER
+initializer/Dockerfile
+# DATABASE
+database/mysql_data_*
+database/output
+# REDIS
+redis/data_*
+# BACKEND
+backend
+# FRONTEND
+frontend/node_modules
+frontend/dist
+frontend/.dockerignore
+frontend/Dockerfile
+# NGINX
+nginx/output

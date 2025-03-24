@@ -24,7 +24,7 @@ export const setupGoogleStrategy = (app: Router, passport: PassportStatic) => {
         done(null, user);
     });
 
-    const verifyCallback = async (accessToken: string, refreshToken: string, profile: any, done: any) => {
+    const verifyCallback = async (profile: any, done: any) => {
         try {
             console.log("Profile from Google:", profile);  // Para debugging
             const user = await authService.getOrCreateGoogleUser({

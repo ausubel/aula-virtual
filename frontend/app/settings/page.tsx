@@ -69,7 +69,7 @@ function SettingsPage() {
       const id = Number(Cookies.get('user_id'));
 
       // Obtener datos básicos del perfil
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/user/student/${id}/profile`);
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/user/student/${id}/profile`);
 
       if (response.data && response.data.data) {
         const profileData = response.data.data;
@@ -196,7 +196,7 @@ function SettingsPage() {
 
       // Llamar al endpoint para cambiar la contraseña
       const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/user/student/${userData.id}/password`,
+        `${process.env.NEXT_PUBLIC_API_URL}/user/student/${userData.id}/password`,
         {
           currentPassword: passwordData.currentPassword,
           newPassword: passwordData.newPassword

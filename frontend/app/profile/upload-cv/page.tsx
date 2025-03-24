@@ -124,7 +124,7 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
         }
 
         // Intentar obtener los datos del usuario desde el backend
-        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/user/${userId}`;
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`;
         
         const response = await fetch(apiUrl, {
           method: 'GET',
@@ -301,7 +301,7 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
       const userJson = JSON.stringify(user);
       
       // Enviar los datos personales al servidor
-      const updateResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/user/update`, {
+      const updateResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/update`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -323,9 +323,7 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
       }
       
       // Enviar el archivo al servidor - usando el ID de usuario correcto
-      console.log(`Enviando CV para el usuario con ID: ${userId}`);
-      const cvEndpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/document/student/${userId}/cv`;
-      console.log('URL para subir CV:', cvEndpoint);
+      const cvEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/document/student/${userId}/cv`;
       
       const response = await fetch(cvEndpoint, {
         method: 'POST',

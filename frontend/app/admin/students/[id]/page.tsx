@@ -92,7 +92,7 @@ export default function StudentProfilePage() {
       const id = Number(params.id)
       console.log('ID del usuario:', id)
       // Hacer la petición al endpoint
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/user/student/${id}/profile`)
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/user/student/${id}/profile`)
       console.log(response)
       // Actualizar el estado con los datos recibidos
       if (response.data && response.data.data) {
@@ -142,7 +142,7 @@ export default function StudentProfilePage() {
     try {
       setLoadingCV(true)
       const id = Number(params.id)
-      const documentResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/document/student/${id}/cv`)
+      const documentResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/document/student/${id}/cv`)
       console.log("Respuesta completa del CV:", documentResponse)
       
       // Extract CV data

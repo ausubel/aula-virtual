@@ -2,7 +2,7 @@ import axios from 'axios';
 
 export class UserService {
   private static instance: UserService;
-  private static BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+  private static BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
   private constructor() {}
 

@@ -5,8 +5,10 @@ import { useSearchParams } from 'next/navigation'
 import { AuthService } from '@/services/auth.service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Suspense } from 'react'
 
-export default function DebugPage() {
+// Componente que usa useSearchParams envuelto en Suspense
+function DebugContent() {
   const searchParams = useSearchParams()
   const [authStatus, setAuthStatus] = useState({
     tokenInCookie: false,
@@ -85,5 +87,14 @@ export default function DebugPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+// Componente principal que envuelve el contenido en Suspense
+export default function DebugPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Cargando...</div>}>
+      <DebugContent />
+    </Suspense>
   )
 }

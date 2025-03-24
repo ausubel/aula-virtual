@@ -5,7 +5,7 @@ export async function login(formData: FormData) {
   const password = formData.get("password");
 
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/sign-in`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/sign-in`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

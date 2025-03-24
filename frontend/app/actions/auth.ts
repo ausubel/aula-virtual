@@ -2,7 +2,7 @@
 
 export async function signOut() {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/sign-out`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/sign-out`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -271,7 +271,7 @@ function ProfilePage() {
       SweetAlert.info("Descargando CV", "Por favor espera mientras preparamos tu CV para descargar...")
       
       // Hacer la petición al endpoint para obtener el CV
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/document/student/${userId}/cv`)
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/document/student/${userId}/cv`)
       console.log(response)
       if (response.data && response.data.data && response.data.data.cv) {
         // Obtener el contenido base64 del CV
@@ -343,7 +343,7 @@ function ProfilePage() {
       const id = Number(Cookies.get('user_id'))
       console.log('ID del usuario:', id)
       // Hacer la petición al endpoint
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/user/student/${id}/profile`)
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/user/student/${id}/profile`)
       console.log(response)
       // Actualizar el estado con los datos recibidos
       if (response.data && response.data.data) {
@@ -587,13 +587,6 @@ function ProfilePage() {
                     <h3 className="text-sm font-medium">Cursos en Progreso</h3>
                     {user.currentCourses.map((course) => (
                       <div key={course.id} className="flex items-start space-x-4 py-3 border-t">
-                        <div className="h-12 w-12 rounded overflow-hidden flex-shrink-0">
-                          <img 
-                            src={course.image} 
-                            alt={course.title} 
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="text-sm font-medium truncate">{course.title}</h4>
                           <p className="text-xs text-muted-foreground">{course.instructor}</p>

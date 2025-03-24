@@ -56,7 +56,7 @@ export default class AuthController implements ControllerBase {
 
         // Encriptar la contraseña
         const encryptedPassword = await Encrypter.encrypt(validatedData.password);
-
+        
         // Usar el mismo flujo que Google Auth para crear un usuario
         const user = await this.authService.getOrCreateGoogleUser({
           email: validatedData.email,
