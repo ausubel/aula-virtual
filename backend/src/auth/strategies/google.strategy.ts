@@ -24,9 +24,14 @@ export const setupGoogleStrategy = (app: Router, passport: PassportStatic) => {
         done(null, user);
     });
 
-    const verifyCallback = async (profile: any, done: any) => {
+    const verifyCallback = async (accessToken: string, refreshToken: string, profile: any, done: any) => {
         try {
-            console.log("Profile from Google:", profile);  // Para debugging
+            console.log("Profile from Google:", accessToken);  // Para debugging
+            if (!profile || !profile.emails || !profile.emails[0]) {
+                console.error("Invalid profile data:", profile);
+                return done(new Error("Invalid profile data"), null);
+            }
+            
             const user = await authService.getOrCreateGoogleUser({
                 emails: [{ value: profile.emails[0].value }],
                 name: {
@@ -34,10 +39,10 @@ export const setupGoogleStrategy = (app: Router, passport: PassportStatic) => {
                     familyName: profile.name.familyName
                 }
             });
-            done(null, user);
+            return done(null, user);
         } catch (error) {
             console.error("Error in verify callback:", error);  // Para debugging
-            done(error, null);
+            return done(error, null);
         }
     };
 

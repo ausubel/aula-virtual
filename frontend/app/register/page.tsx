@@ -137,17 +137,6 @@ export default function RegisterPage() {
     window.location.href = '/auth/google/login'
   }
 
-  // Manejar cambio de archivo CV
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      setFormData({ ...formData, cv: file });
-      
-      // Crear URL para previsualización del PDF
-      const fileUrl = URL.createObjectURL(file);
-      setCvPreviewUrl(fileUrl);
-    }
-  }
 
   // Función para manejar la finalización del registro
   const handleRegistrationComplete = () => {
