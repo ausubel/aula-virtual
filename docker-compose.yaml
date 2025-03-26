@@ -37,19 +37,16 @@ services:
       - prod
     depends_on:
       - mysql
-
-  # nginx:
-  #   image: nginx:1.27.3-alpine-slim
-  #   container_name: post_a_one_nginx_${APP_ENV}
-  #   ports:
-  #     - "80:80"
-  #   volumes:
-  #     - ./nginx/output/conf.d:/etc/nginx/conf.d
-  #     - ./frontend/dist:/app/frontend
-  #     - ./initializer/entrypoint.sh:/entrypoint.sh
-  #   depends_on:
-  #     - initializer
-  #     - backend
-  #   profiles:
-  #     - prod
-  #   entrypoint: ["/entrypoint.sh"]
+  frontend:
+    container_name: ${APP_NAME}_frontend_${APP_ENV}
+    build:
+      context: ./frontend
+    ports:
+      - ${FRONTEND_PORT}:${FRONTEND_PORT}
+    environment:
+      FRONTEND_PORT: ${FRONTEND_PORT}
+    volumes:
+      - ./frontend:/app
+    profiles:
+      - prod
+    

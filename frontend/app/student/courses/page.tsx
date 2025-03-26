@@ -62,7 +62,6 @@ function CoursesPage() {
         })
       }
     } else {
-      console.log('No se encontró el token')
       toast({
         title: "Error",
         description: "No hay sesión activa",
@@ -75,7 +74,6 @@ function CoursesPage() {
     try {
       setIsLoading(true)
       const data = await CoursesService.getCoursesByStudentId(userId)
-      console.log('Cursos recibidos con datos mejorados:', data);
       setCourses(data)
       
       // Guardar cursos en localStorage para usar como respaldo
@@ -88,7 +86,6 @@ function CoursesPage() {
           hours: course.hours,
         }));
         localStorage.setItem('studentCourses', JSON.stringify(simplifiedCourses));
-        console.log('Datos de cursos guardados en localStorage:', simplifiedCourses);
       } catch (storageError) {
         console.error('Error al guardar cursos en localStorage:', storageError);
       }

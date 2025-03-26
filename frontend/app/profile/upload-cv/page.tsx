@@ -67,8 +67,6 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
   useEffect(() => {
     // Si estamos en el flujo de registro, establecer el correo electrónico desde el contexto
     if (isRegistrationFlow && registrationContext.email) {
-      console.log('En flujo de registro, email del contexto:', registrationContext.email);
-      console.log('UserId del contexto:', registrationContext.userId);
       setFormData(prevData => ({
         ...prevData,
         email: registrationContext.email
@@ -93,7 +91,6 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
       setHasCheckedCV(true)
       
       if (hasUploadedCV()) {
-        console.log('El usuario ya ha subido su CV, redirigiendo a la página de estudiante')
         router.push('/student/courses')
       }
     }
@@ -103,19 +100,14 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
       try {
         // Intentar obtener el ID del usuario de la cookie
         let userId = Number(Cookies.get('user_id'));
-        console.log('userId from cookie:', userId);
         
         // Si no hay ID en la cookie, intentar obtenerlo del token
         if (!userId) {
-          console.log('No se encontró el ID del usuario en las cookies, intentando obtenerlo del token');
           
           const tokenUserId = getUserIdFromToken();
           
           if (tokenUserId) {
             userId = Number(tokenUserId);
-            console.log('ID de usuario obtenido del token:', userId);
-            
-            // Actualizar la cookie con el ID correcto
             Cookies.set('user_id', userId.toString(), { expires: 7 });
           } else {
             console.error('No se pudo obtener el ID del usuario del token');
@@ -139,7 +131,6 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
         }
 
         const userData = await response.json();
-        console.log('Datos recibidos del servidor:', userData);
         
         // Verificar que los datos tengan el formato esperado
         if (!userData.data || !Array.isArray(userData.data) || userData.data.length === 0) {
@@ -149,7 +140,6 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
         
         // Extraer los datos del usuario de la respuesta
         const user = userData.data[0];
-        console.log('Datos del usuario extraídos:', user);
         
         if (user) {
           setFormData(prevData => ({
@@ -160,7 +150,6 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
             // Extraer el número de teléfono sin el prefijo +51 si existe
             phone: user.phone ? user.phone.replace(/^\+51/, '') : prevData.phone,
           }));
-          console.log('Formulario actualizado con datos del usuario');
         }
       } catch (error) {
         console.error('Error al cargar datos del usuario:', error);
@@ -174,6 +163,15 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
+      
+      // Verificar el tamaño del archivo (1 MB = 1048576 bytes)
+      if (file.size > 1048576) {
+        SweetAlert.error('Error', 'El archivo es demasiado grande. El tamaño máximo permitido es 1 MB.');
+        // Limpiar el input de archivo
+        e.target.value = '';
+        return;
+      }
+      
       setFormData({ ...formData, cv: file });
       
       // Crear URL para previsualización del PDF
@@ -264,13 +262,11 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
         const cookieUserId = Cookies.get('user_id');
         if (cookieUserId) {
           userId = Number(cookieUserId);
-          console.log('ID de usuario obtenido de las cookies:', userId);
         } else {
           // Intentar obtener el ID del token como último recurso
           const tokenUserId = getUserIdFromToken();
           if (tokenUserId) {
             userId = Number(tokenUserId);
-            console.log('ID de usuario obtenido del token:', userId);
           } else {
             console.error('Error: No se pudo obtener el ID del usuario');
             SweetAlert.error('Error', 'No se pudo obtener el ID de usuario. Por favor, intente iniciar sesión nuevamente.');
@@ -309,7 +305,6 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
         body: userJson
       });
       
-      console.log('Respuesta de actualización de usuario:', updateResponse.status);
       
       if (!updateResponse.ok) {
         let errorMessage = 'Error al actualizar los datos de usuario';
@@ -333,7 +328,6 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
         body: JSON.stringify({ file: base64File })
       });
       
-      console.log('Respuesta del servidor:', response.status)
       
       if (!response.ok) {
         let errorMessage = 'Error al subir el CV'

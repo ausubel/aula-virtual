@@ -31,7 +31,6 @@ export default function StudentsPage() {
     try {
       setLoading(true)
       const data = await AdminService.getAllStudents()
-      console.log("data", data)
       // Aseguramos que data sea un array
       setStudents(Array.isArray(data[0]) ? data[0] : [])
         } catch (error) {

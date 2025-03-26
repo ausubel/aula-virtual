@@ -66,9 +66,7 @@ export default function EditCoursePage({ params }: Props) {
   const loadCourse = async () => {
     try {
       setIsLoading(true)
-      console.log('Cargando curso con ID:', params.id)
       const course = await CoursesService.getCourseDetails(parseInt(params.id))
-      console.log('Datos del curso recibidos:', course)
       
       if (!course) {
         throw new Error('No se recibieron datos del curso')
@@ -81,7 +79,6 @@ export default function EditCoursePage({ params }: Props) {
         teacherId: course.teacherId || 1
       }
       
-      console.log('Actualizando formData con:', newFormData)
       setFormData(newFormData)
     } catch (error) {
       console.error('Error al cargar el curso:', error)

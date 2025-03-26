@@ -37,10 +37,6 @@ export default function LoginPage() {
         const userId = result.data.user[0].id
         const cvStatus = result.data.user[0].hasCV
         
-        console.log('User authenticated:', result.data.user);
-        console.log('Token created:', result.data.token);
-        console.log('User ID to save:', userId);
-        
         // Guardar el estado del CV en una cookie
         saveUserCVStatus(cvStatus)
 

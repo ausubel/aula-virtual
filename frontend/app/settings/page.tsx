@@ -131,7 +131,6 @@ function SettingsPage() {
         userData.location,
         userData.bio
       );
-      console.log(response);
       // Verificar si la respuesta contiene un mensaje de éxito
       if (response && response.message === "Perfil actualizado correctamente") {
         // Mostrar mensaje de éxito con SweetAlert

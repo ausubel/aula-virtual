@@ -97,7 +97,6 @@ export default function CoursePage({ params }: { params: { id: string } }) {
         })
       }
     } else {
-      console.log('No se encontró el token')
       setError('No hay sesión activa')
       toast({
         title: "Error",
@@ -113,19 +112,16 @@ export default function CoursePage({ params }: { params: { id: string } }) {
       
       // 1. Obtenemos todos los cursos del estudiante como en la página principal
       const allCourses = await CoursesService.getCoursesByStudentId(userId)
-      console.log('Todos los cursos obtenidos:', allCourses)
       
       // 2. Filtramos para encontrar el curso actual por ID
       const currentCourseId = Number(params.id)
       const currentCourse = allCourses.find((course: Course) => course.id === currentCourseId)
       
       if (currentCourse) {
-        console.log('Curso actual encontrado:', currentCourse)
         setCourseData(currentCourse)
         
         // 3. Ahora obtenemos las lecciones específicas de este curso con el ID del estudiante
         const courseLessons = await CoursesService.getLessonsByCourse(currentCourseId, userId)
-        console.log('Lecciones del curso cargadas:', courseLessons.length)
         
         // Inicializamos el estado de completedLessons basado en los datos del backend
         const initialLessonsState: Record<number, boolean> = {};

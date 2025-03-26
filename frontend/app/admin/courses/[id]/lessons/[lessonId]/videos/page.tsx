@@ -55,12 +55,9 @@ export default function LessonVideosPage({ params }: Props) {
     try {
       setIsLoading(true)
       const lessons = await CoursesService.getLessonsByCourse(parseInt(params.id))
-      console.log('Lecciones cargadas:', lessons)
       const currentLesson = lessons.find(l => l.id === parseInt(params.lessonId))
-      console.log('Lección actual:', currentLesson)
       
       if (currentLesson) {
-        console.log('Videos de la lección:', currentLesson.videos)
         setLesson(currentLesson)
       } else {
         throw new Error('Lección no encontrada')
@@ -89,17 +86,12 @@ export default function LessonVideosPage({ params }: Props) {
 
     try {
       setIsLoading(true)
-      console.log('Intentando agregar video:', {
-        lessonId: parseInt(params.lessonId),
-        videoPath
-      })
       
       const result = await CoursesService.addVideoToLesson(
         parseInt(params.lessonId),
         { videoPath }
       )
       
-      console.log('Respuesta al agregar video:', result)
       
       toast({
         title: "Éxito",
@@ -125,10 +117,8 @@ export default function LessonVideosPage({ params }: Props) {
 
     try {
       setIsLoading(true)
-      console.log('Intentando eliminar video:', videoId)
       
       const result = await CoursesService.deleteVideo(videoId)
-      console.log('Resultado de eliminar video:', result)
       
       toast({
         title: "Éxito",

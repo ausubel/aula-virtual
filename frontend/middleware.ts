@@ -27,13 +27,11 @@ export function middleware(request: NextRequest) {
   
   // Si la ruta comienza con /certificates o /api, permitir acceso público
   if (path.startsWith('/certificates') || path.startsWith('/api')) {
-    console.log('Acceso público permitido a ruta:', path);
     return NextResponse.next();
   }
 
   // Si la ruta es pública, permitir acceso
   if (publicRoutes.includes(path)) {
-    console.log('Acceso público permitido a ruta:', path);
     return NextResponse.next();
   }
   
@@ -42,7 +40,6 @@ export function middleware(request: NextRequest) {
 
   // Si no hay token, redirigir al login
   if (!token) {
-    console.log('No hay token, redirigiendo al login desde:', path);
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

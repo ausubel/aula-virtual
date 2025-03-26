@@ -123,7 +123,6 @@ export default function CoursesPage() {
       // Cargar estudiantes del curso
       const courseStudents = await CoursesService.getStudentsByCourse(courseId)
       
-      console.log("Estudiantes cargados:", courseStudents)
       
       // Pre-seleccionar estudiantes que ya tienen certificado
       const certifiedStudentIds = courseStudents
@@ -138,7 +137,6 @@ export default function CoursesPage() {
         })
         .map(student => student.id)
       
-      console.log("Estudiantes certificados:", certifiedStudentIds)
       
       setStudents(courseStudents)
       setSelectedStudents(certifiedStudentIds)

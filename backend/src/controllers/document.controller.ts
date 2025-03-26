@@ -86,6 +86,16 @@ export default class DocumentController implements ControllerBase {
           return sendResponses(res, 400, "No file provided");
         }
         
+        // Calcular el tamaño aproximado del archivo en bytes
+        // El tamaño en base64 es aproximadamente 4/3 del tamaño binario
+        const fileSizeInBytes = Math.ceil((file.length * 3) / 4);
+        const maxSizeInBytes = 1048576; // 1 MB
+        
+        if (fileSizeInBytes > maxSizeInBytes) {
+          console.error(`Error: El archivo excede el tamaño máximo permitido (${fileSizeInBytes} bytes)`);
+          return sendResponses(res, 400, "El archivo excede el tamaño máximo permitido de 1 MB");
+        }
+        
         await this.certificateService.uploadCV(file, Number(studentId));
         
         return sendResponses(res, 200, "CV uploaded successfully");

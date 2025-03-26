@@ -153,7 +153,6 @@ export default function RegisterPage() {
 
   const handleAccountSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(formData);
     
     // Verificar que las contraseñas coincidan
     if (formData.password !== formData.confirmPassword) {
@@ -198,7 +197,6 @@ export default function RegisterPage() {
         if (result.token) {
           localStorage.setItem('token', result.token);
           setToken(result.token);
-          console.log("Token guardado en localStorage");
         }
         
         // Si recibimos datos del usuario, guardarlos en localStorage
@@ -208,12 +206,10 @@ export default function RegisterPage() {
           // Extraer el ID del usuario
           if (result.userData.id) {
             setUserId(result.userData.id);
-            console.log("ID de usuario establecido:", result.userData.id);
           } else {
             console.error("Error: No se encontró ID de usuario en la respuesta", result.userData);
           }
           
-          console.log("Datos del usuario guardados en localStorage:", result.userData);
         } else {
           console.error("Error: No se recibieron datos del usuario en la respuesta");
         }
@@ -287,13 +283,11 @@ export default function RegisterPage() {
         // Si recibimos un token, guardarlo en localStorage
         if (result.token) {
           localStorage.setItem('token', result.token);
-          console.log("Token guardado en localStorage");
         }
         
         // Si recibimos datos del usuario, guardarlos en localStorage
         if (result.userData) {
           localStorage.setItem('userData', JSON.stringify(result.userData));
-          console.log("Datos del usuario guardados en localStorage");
         }
         
         // Redirigir al login después de 2 segundos

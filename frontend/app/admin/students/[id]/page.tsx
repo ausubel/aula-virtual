@@ -90,15 +90,12 @@ export default function StudentProfilePage() {
   const getUserData = async () => {
     try {
       const id = Number(params.id)
-      console.log('ID del usuario:', id)
       // Hacer la petición al endpoint
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/user/student/${id}/profile`)
-      console.log(response)
       // Actualizar el estado con los datos recibidos
       if (response.data && response.data.data) {
         // Añadir imágenes temporales para los certificados y cursos
         const profileData = response.data.data
-        console.log('Datos del perfil:', profileData)
         
         // Obtener datos adicionales del perfil (ubicación y biografía)
         try {
@@ -111,7 +108,6 @@ export default function StudentProfilePage() {
         } catch (error) {
           console.error("Error fetching profile data:", error);
         }
-        console.log('Datos del perfil con ubicación y biografía:', profileData)
         setUser(profileData)
         
       }
@@ -143,7 +139,6 @@ export default function StudentProfilePage() {
       setLoadingCV(true)
       const id = Number(params.id)
       const documentResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/document/student/${id}/cv`)
-      console.log("Respuesta completa del CV:", documentResponse)
       
       // Extract CV data
       let cvData = null;
@@ -153,10 +148,7 @@ export default function StudentProfilePage() {
       } else if (documentResponse.data?.data?.cv) {
         cvData = documentResponse.data.data.cv
       }
-      console.log("cvData", cvData)
       if (cvData.cv_file) {
-        console.log("CV data type:", typeof cvData)
-        console.log("CV data starts with:", cvData.substring ? cvData.substring(0, 50) : "Cannot get substring")
         
         // Store original CV data
         setCV(cvData.cv_file)
@@ -189,13 +181,11 @@ export default function StudentProfilePage() {
           const blob = new Blob(byteArrays, { type: 'application/pdf' })
           const url = URL.createObjectURL(blob)
           
-          console.log("Successfully created object URL:", url)
           setCvObjectUrl(url)
         } catch (error) {
           console.error("Error processing PDF:", error)
         }
       } else {
-        console.log("No CV data found in response")
         setCV(null)
         setCvObjectUrl(null)
       }

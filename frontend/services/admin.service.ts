@@ -44,7 +44,7 @@ export interface Certificate {
 }
 
 export class AdminService {
-  private static BASE_URL = 'http://localhost:3002';
+  private static BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
   private static async fetchWithAuth(endpoint: string, options: RequestInit = {}) {
     const token = document.cookie

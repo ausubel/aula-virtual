@@ -38,7 +38,6 @@ function CertificatesPage() {
     try {
       setIsLoading(true)
       const data = await DocumentService.getAllCertificatesByStudentId(userId)
-      console.log('Certificados cargados:', data)
       // Transform date_emission from string to Date
       const transformedData = data?.map(cert => ({
         ...cert,
@@ -60,7 +59,6 @@ function CertificatesPage() {
       try {
         const decoded = jwtDecode<DecodedToken>(token)
         if (decoded && decoded.userId) {
-          console.log('ID del estudiante:', decoded.userId)
           loadStudentCertificates(decoded.userId)
         } else {
           console.error('El token no contiene userId')
@@ -73,7 +71,6 @@ function CertificatesPage() {
         setIsLoading(false)
       }
     } else {
-      console.log('No se encontró el token')
       toast.error("No hay sesión activa")
       setIsLoading(false)
     }
@@ -129,7 +126,9 @@ function CertificatesPage() {
                 <Button 
                   className="w-full"
                   disabled={isLoading}
-                  onClick={() => console.log('Descargar certificado:', certificate.id)}
+                  onClick={() => {
+                    // TODO: Implementar la descarga del certificado
+                  }}
                 >
                   <DownloadIcon className="h-4 w-4 mr-2" />
                   Descargar Certificado

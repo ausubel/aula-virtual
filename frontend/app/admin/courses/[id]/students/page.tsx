@@ -59,9 +59,7 @@ export default function CourseStudentsPage({ params }: Props) {
   const loadStudents = async () => {
     try {
       setIsLoading(true)
-      console.log('Cargando estudiantes para el curso:', params.id)
       const data = await CoursesService.getStudentsByCourse(parseInt(params.id))
-      console.log('Datos recibidos:', data)
       
       // Asegurarse de que los datos tienen el formato correcto
       const formattedData = data.map((student: any) => ({
@@ -89,7 +87,6 @@ export default function CourseStudentsPage({ params }: Props) {
       setLoadingAvailableStudents(true)
       // Obtener todos los estudiantes
       const allStudents = await CoursesService.getAllStudents()
-      console.log('Todos los estudiantes:', allStudents)
       
       // Asegurarse de que los datos tienen el formato correcto
       const formattedAllStudents = allStudents.map((student: any) => ({
@@ -101,15 +98,12 @@ export default function CourseStudentsPage({ params }: Props) {
       
       // Filtrar los estudiantes que ya están en el curso
       const currentStudentIds = students.map(s => s.id)
-      console.log('IDs de estudiantes actuales:', currentStudentIds)
       
       const available = formattedAllStudents.filter(s => !currentStudentIds.includes(s.id))
-      console.log('Estudiantes disponibles:', available)
       
       setAvailableStudents(available)
       setSelectedStudents([])
     } catch (error) {
-      console.error('Error al cargar estudiantes disponibles:', error)
       toast({
         title: "Error",
         description: "No se pudieron cargar los estudiantes disponibles",
@@ -132,7 +126,6 @@ export default function CourseStudentsPage({ params }: Props) {
       }
       
       setIsLoading(true)
-      console.log('Agregando estudiantes:', selectedStudents, 'al curso:', params.id)
       
       await CoursesService.assignStudents({
         courseId: parseInt(params.id),
@@ -161,7 +154,6 @@ export default function CourseStudentsPage({ params }: Props) {
   const handleRemoveStudent = async (studentId: number) => {
     try {
       setRemovingStudentId(studentId)
-      console.log('Eliminando estudiante:', studentId, 'del curso:', params.id)
       
       await CoursesService.removeStudentFromCourse(parseInt(params.id), studentId)
       

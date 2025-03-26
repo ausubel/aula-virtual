@@ -54,7 +54,6 @@ export default function CertificateDetailsPage({ params }: { params: { id: strin
           Number(params.id), 
           userId || undefined
         )
-        console.log('Certificado cargado:', certificateData);
         
         if (!certificateData.id || !certificateData.name || !certificateData.hours) {
           throw new Error('Datos del certificado incompletos');

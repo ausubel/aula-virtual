@@ -102,7 +102,6 @@ export const getUserRole = () => {
   if (!token) return null;
   
   const decoded = decodeToken(token);
-  console.log('Decoded token:', decoded);
   return decoded?.userRoleId || null;
 };
 

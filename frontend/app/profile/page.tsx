@@ -272,11 +272,9 @@ function ProfilePage() {
       
       // Hacer la petición al endpoint para obtener el CV
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/document/student/${userId}/cv`)
-      console.log(response)
       if (response.data && response.data.data && response.data.data.cv) {
         // Obtener el contenido base64 del CV
         const base64Content = response.data.data.cv.cv_file
-        console.log(base64Content)
         // Crear un objeto Blob con el contenido del PDF
         const byteCharacters = atob(base64Content)
         const byteNumbers = new Array(byteCharacters.length)
@@ -341,10 +339,8 @@ function ProfilePage() {
   const getUserData = async () => {
     try {
       const id = Number(Cookies.get('user_id'))
-      console.log('ID del usuario:', id)
       // Hacer la petición al endpoint
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/user/student/${id}/profile`)
-      console.log(response)
       // Actualizar el estado con los datos recibidos
       if (response.data && response.data.data) {
         // Añadir imágenes temporales para los certificados y cursos

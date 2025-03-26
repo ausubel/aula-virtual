@@ -23,9 +23,7 @@ const profileSchema = z.object({
 
 // Función para imprimir logs numerados
 function logStep(step: number | string, message: string, data?: any) {
-  console.log(`[PASO ${step}] ${message}`);
   if (data) {
-    console.log(`[PASO ${step} DATOS]`, data);
   }
 }
 
@@ -66,7 +64,7 @@ export async function registerBasicInfo(formData: FormData) {
     });
 
     // Usar la variable de entorno para la URL de la API
-    const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+    const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL;
     logStep(7, `Realizando petición a: ${NEXT_PUBLIC_API_URL}/auth/register`);
     
     // Imprimir el cuerpo de la petición exactamente como se enviará

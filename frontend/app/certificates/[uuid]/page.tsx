@@ -23,13 +23,11 @@ export default function PublicCertificateDetailsPage({ params }: { params: { uui
   useEffect(() => {
     const loadCertificate = async () => {
       try {
-        console.log('Intentando cargar certificado con UUID:', params.uuid);
         setIsLoading(true)
         setError(null)
         
         // Usar la API interna de Next.js
         const url = `/api/certificate/public/${params.uuid}`;
-        console.log('URL completa de la solicitud:', url);
         
         const response = await fetch(url, {
           method: 'GET',
@@ -39,7 +37,6 @@ export default function PublicCertificateDetailsPage({ params }: { params: { uui
           }
         });
         
-        console.log('Respuesta del servidor:', response.status, response.statusText);
         
         if (!response.ok) {
           if (response.status === 404) {
@@ -51,10 +48,8 @@ export default function PublicCertificateDetailsPage({ params }: { params: { uui
         }
         
         const data = await response.json();
-        console.log('Datos recibidos:', data);
         
         if (data && data.data && data.data.certificate) {
-          console.log('Certificado encontrado:', data.data.certificate);
           setCertificate(data.data.certificate);
         } else {
           console.error('Formato de respuesta inválido:', data);
@@ -74,7 +69,6 @@ export default function PublicCertificateDetailsPage({ params }: { params: { uui
     }
 
     if (params.uuid) {
-      console.log('UUID recibido en la página:', params.uuid);
       loadCertificate()
     }
   }, [params.uuid, toast])
