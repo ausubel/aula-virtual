@@ -34,8 +34,28 @@ const nextConfig = {
         destination: `${process.env.NEXT_PUBLIC_API_URL}/user/:path*`,
       },
       {
+        source: '/user/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/user/:path*`,
+      },
+      {
+        source: '/document/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/document/:path*`,
+      },
+      {
+        source: '/courses/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/courses/:path*`,
+      },
+      {
         source: '/api/certificate/public/:uuid',
         destination: `${process.env.NEXT_PUBLIC_API_URL}/document/certificate/public/:uuid`,
+      },
+      {
+        source: '/admin/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/admin/:path*`,
+      },
+      {
+        source: '/api/admin/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/admin/:path*`,
       },
     ];
   },
@@ -64,8 +84,6 @@ const nextConfig = {
   } : {}),
 }
 
-mergeConfig(nextConfig, userConfig)
-
 function mergeConfig(nextConfig, userConfig) {
   if (!userConfig) {
     return
@@ -85,5 +103,7 @@ function mergeConfig(nextConfig, userConfig) {
     }
   }
 }
+
+mergeConfig(nextConfig, userConfig)
 
 export default nextConfig

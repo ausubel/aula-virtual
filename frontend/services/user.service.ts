@@ -1,8 +1,7 @@
-import axios from 'axios';
+import apiClient from '../lib/api-client';
 
 export class UserService {
   private static instance: UserService;
-  private static BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
   private constructor() {}
 
@@ -15,7 +14,7 @@ export class UserService {
 
   async getStudentProfileData(studentId: number) {
     try {
-      const response = await axios.get(`${UserService.BASE_URL}/user/student/${studentId}/profile`);
+      const response = await apiClient.get(`/user/student/${studentId}/profile`);
       return response.data;
     } catch (error) {
       console.error('Error fetching student profile data:', error);
@@ -32,7 +31,7 @@ export class UserService {
     bio: string
   ) {
     try {
-      const response = await axios.put(`${UserService.BASE_URL}/user/student/${studentId}/profile`, {
+      const response = await apiClient.put(`/user/student/${studentId}/profile`, {
         name,
         surname,
         phone,

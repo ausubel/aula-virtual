@@ -9,12 +9,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { EditIcon, MailIcon, PhoneIcon, MapPinIcon, AwardIcon, BookOpenIcon, GraduationCapIcon, FileIcon, DownloadIcon, CameraIcon, UploadIcon, MoveIcon, ZoomInIcon, ZoomOutIcon } from "lucide-react"
 import withCVRequired from "@/components/auth/with-cv-required"
-import axios from "axios"
 import { useToast } from "@/components/ui/use-toast"
 import Cookies from "js-cookie"
 import { SweetAlert } from "@/utils/SweetAlert"
 import { DocumentService } from "@/services/document.service"
 import userService from "@/services/user.service"
+import apiClient from "@/lib/api-client"
 
 
 // Tipo para los datos del perfil
@@ -271,7 +271,7 @@ function ProfilePage() {
       SweetAlert.info("Descargando CV", "Por favor espera mientras preparamos tu CV para descargar...")
       
       // Hacer la petición al endpoint para obtener el CV
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/document/student/${userId}/cv`)
+      const response = await apiClient.get(`document/student/${userId}/cv`)
       if (response.data && response.data.data && response.data.data.cv) {
         // Obtener el contenido base64 del CV
         const base64Content = response.data.data.cv.cv_file
@@ -340,7 +340,7 @@ function ProfilePage() {
     try {
       const id = Number(Cookies.get('user_id'))
       // Hacer la petición al endpoint
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/user/student/${id}/profile`)
+      const response = await apiClient.get(`user/student/${id}/profile`)
       // Actualizar el estado con los datos recibidos
       if (response.data && response.data.data) {
         // Añadir imágenes temporales para los certificados y cursos
@@ -594,9 +594,6 @@ function ProfilePage() {
                             <Progress value={course.progress} className="h-1.5" />
                           </div>
                         </div>
-                        <Button size="sm" variant="outline" className="flex-shrink-0">
-                          Continuar
-                        </Button>
                       </div>
                     ))}
                     
@@ -638,10 +635,6 @@ function ProfilePage() {
                               </div>
                               <Progress value={course.progress} className="h-1.5" />
                             </div>
-                            <Button size="sm" className="w-full mt-3">
-                              <BookOpenIcon className="h-3 w-3 mr-2" />
-                              Continuar
-                            </Button>
                           </CardContent>
                         </Card>
                       ))}
@@ -716,9 +709,6 @@ function ProfilePage() {
                       <p className="mt-2 text-sm text-muted-foreground">
                         Completa cursos para obtener certificados
                       </p>
-                      <Button className="mt-4">
-                        Explorar Cursos
-                      </Button>
                     </div>
                   )}
                 </CardContent>
@@ -727,8 +717,6 @@ function ProfilePage() {
           </Tabs>
         </div>
       </div>
-      
-      {/* Se eliminó la sección de Información Personal ya que ahora está en la página de configuración */}
     </div>
   )
 }

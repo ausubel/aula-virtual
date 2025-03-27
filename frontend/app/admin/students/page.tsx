@@ -30,10 +30,29 @@ export default function StudentsPage() {
   const loadStudents = async () => {
     try {
       setLoading(true)
-      const data = await AdminService.getAllStudents()
-      // Aseguramos que data sea un array
-      setStudents(Array.isArray(data[0]) ? data[0] : [])
-        } catch (error) {
+      console.log('Llamando a AdminService.getAllStudents()')
+      
+      // Intentar hacer la solicitud directamente con fetch para comparar
+      try {
+        const directResponse = await fetch('/admin/students')
+        const directData = await directResponse.json()
+        console.log('Respuesta directa con fetch:', directData)
+      } catch (fetchError) {
+        console.error('Error con fetch directo:', fetchError)
+      }
+      
+      const data: Student[] = await AdminService.getAllStudents()
+      console.log('Datos de estudiantes recibidos (sin procesar):', data)
+      
+      if (Array.isArray(data) && data.length > 0) {
+        console.log('La respuesta es un array válido con', data.length, 'estudiantes')
+        setStudents(data)
+      } else {
+        console.log('La respuesta no es un array válido o está vacía')
+        setStudents([])
+      }
+    } catch (error) {
+      console.error('Error al cargar estudiantes:', error)
       toast({
         title: "Error",
         description: "No se pudieron cargar los estudiantes",

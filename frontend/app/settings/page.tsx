@@ -9,13 +9,13 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { BellIcon, LockIcon, UserIcon, MailIcon, GlobeIcon, LoaderIcon, FileTextIcon, DownloadIcon } from "lucide-react"
 import withCVRequired from "@/components/auth/with-cv-required"
-import axios from "axios"
 import { useToast } from "@/components/ui/use-toast"
 import Cookies from "js-cookie"
 import Swal from "sweetalert2"
 import userService from "@/services/user.service"
 import { Separator } from "@/components/ui/separator"
 import "./styles.css"
+import apiClient from "@/lib/api-client"
 
 // Tipo para los datos del usuario
 interface UserData {
@@ -69,7 +69,7 @@ function SettingsPage() {
       const id = Number(Cookies.get('user_id'));
 
       // Obtener datos básicos del perfil
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/user/student/${id}/profile`);
+      const response = await apiClient.get(`/user/student/${id}/profile`);
 
       if (response.data && response.data.data) {
         const profileData = response.data.data;
@@ -194,13 +194,10 @@ function SettingsPage() {
       // Mostrar indicador de carga
 
       // Llamar al endpoint para cambiar la contraseña
-      const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_URL}/user/student/${userData.id}/password`,
-        {
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword
-        }
-      );
+      const response = await apiClient.put(`/user/student/${userData.id}/password`, {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      });
 
       if (response.status === 200) {
         // Limpiar los campos de contraseña

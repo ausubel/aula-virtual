@@ -1,6 +1,5 @@
 'use client'
 
-import axios from "axios"
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,54 +9,55 @@ import { useToast } from "@/hooks/use-toast"
 import { AdminService, StudentProfile, Certificate } from "@/services/admin.service"
 import userService from "@/services/user.service"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import apiClient from "@/lib/api-client"
 
 // Tipo para los datos del perfil
 interface ProfileData {
+  id: number;
+  name: string;
+  surname: string;
+  email: string;
+  phone: string;
+  avatar: string;
+  coursesEnrolled: number;
+  coursesCompleted: number;
+  totalProgress: number;
+  certificates: {
     id: number;
-    name: string;
-    surname: string;
-    email: string;
-    phone: string;
-    avatar: string;
-    coursesEnrolled: number;
-    coursesCompleted: number;
-    totalProgress: number;
-    certificates: {
-      id: number;
-      title: string;
-      issueDate: string;
-      instructor: string;
-      image?: string;
-    }[];
-    currentCourses: {
-      id: number;
-      title: string;
-      progress: number;
-      instructor: string;
-      image?: string;
-    }[];
-    location: string;
-    bio: string;
-    degree: string;
-  }
-  
-  // Datos por defecto para mostrar mientras se cargan los datos reales
-  const defaultProfileData: ProfileData = {
-    id: 0,
-    name: "Cargando...",
-    surname: "",
-    email: "cargando@ejemplo.com",
-    phone: "...",
-    avatar: "",
-    coursesEnrolled: 0,
-    coursesCompleted: 0,
-    totalProgress: 0,
-    certificates: [],
-    currentCourses: [],
-    location: "",
-    bio: "",
-    degree: ""
-  }
+    title: string;
+    issueDate: string;
+    instructor: string;
+    image?: string;
+  }[];
+  currentCourses: {
+    id: number;
+    title: string;
+    progress: number;
+    instructor: string;
+    image?: string;
+  }[];
+  location: string;
+  bio: string;
+  degree: string;
+}
+
+// Datos por defecto para mostrar mientras se cargan los datos reales
+const defaultProfileData: ProfileData = {
+  id: 0,
+  name: "Cargando...",
+  surname: "",
+  email: "cargando@ejemplo.com",
+  phone: "...",
+  avatar: "",
+  coursesEnrolled: 0,
+  coursesCompleted: 0,
+  totalProgress: 0,
+  certificates: [],
+  currentCourses: [],
+  location: "",
+  bio: "",
+  degree: ""
+}
 
 export default function StudentProfilePage() {
   const router = useRouter()
@@ -72,9 +72,9 @@ export default function StudentProfilePage() {
 
   useEffect(() => {
     if (params.id) {
-        getUserData()
-        fetchStudentCV()
-        fetchStudentCertificates()
+      getUserData()
+      fetchStudentCV()
+      fetchStudentCertificates()
     }
   }, [params.id])
 
@@ -90,12 +90,21 @@ export default function StudentProfilePage() {
   const getUserData = async () => {
     try {
       const id = Number(params.id)
-      // Hacer la petición al endpoint
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/user/student/${id}/profile`)
+      // Hacer la petición al endpoint usando el cliente centralizado
+      const response = await apiClient.get(`/user/student/${id}/profile`)
+      console.log('Respuesta de perfil de estudiante:', response)
+      
       // Actualizar el estado con los datos recibidos
-      if (response.data && response.data.data) {
-        // Añadir imágenes temporales para los certificados y cursos
-        const profileData = response.data.data
+      if (response.data) {
+        // Verificar si la respuesta tiene la estructura esperada
+        let profileData;
+        if (response.data.data) {
+          // Si la respuesta tiene un objeto data anidado (formato antiguo)
+          profileData = response.data.data;
+        } else {
+          // Si la respuesta ya tiene el formato esperado
+          profileData = response.data;
+        }
         
         // Obtener datos adicionales del perfil (ubicación y biografía)
         try {
@@ -108,8 +117,8 @@ export default function StudentProfilePage() {
         } catch (error) {
           console.error("Error fetching profile data:", error);
         }
-        setUser(profileData)
         
+        setUser(profileData)
       }
     } catch (error) {
       console.error("Error al obtener datos del perfil:", error)
@@ -138,61 +147,67 @@ export default function StudentProfilePage() {
     try {
       setLoadingCV(true)
       const id = Number(params.id)
-      const documentResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/document/student/${id}/cv`)
+      const documentResponse = await apiClient.get(`/document/student/${id}/cv`)
+      console.log('Respuesta de CV de estudiante:', documentResponse)
       
       // Extract CV data
       let cvData = null;
       
       if (documentResponse.data?.data?.cv_file) {
-        cvData = documentResponse.data.data.cv_file
+        cvData = documentResponse.data.data;
       } else if (documentResponse.data?.data?.cv) {
-        cvData = documentResponse.data.data.cv
+        cvData = documentResponse.data.data;
+      } else if (documentResponse.data?.cv_file) {
+        cvData = documentResponse.data;
+      } else if (documentResponse.data?.cv) {
+        cvData = documentResponse.data;
       }
-      if (cvData.cv_file) {
-        
+      
+      if (cvData && (cvData.cv_file || cvData.cv)) {
         // Store original CV data
-        setCV(cvData.cv_file)
+        const cvFile = cvData.cv_file || cvData.cv;
+        setCV(cvFile);
         
         // Try to create a blob from the base64 data
         try {
           // Remove prefix if exists
-          let base64Content = cvData.cv_file
+          let base64Content = cvFile;
           if (typeof base64Content === 'string' && base64Content.includes('base64,')) {
-            base64Content = base64Content.split('base64,')[1]
+            base64Content = base64Content.split('base64,')[1];
           }
           
           // Decode base64 and create a typed array
-          const byteCharacters = atob(base64Content)
-          const byteArrays = []
+          const byteCharacters = atob(base64Content);
+          const byteArrays = [];
           
           for (let offset = 0; offset < byteCharacters.length; offset += 512) {
-            const slice = byteCharacters.slice(offset, offset + 512)
+            const slice = byteCharacters.slice(offset, offset + 512);
             
-            const byteNumbers = new Array(slice.length)
+            const byteNumbers = new Array(slice.length);
             for (let i = 0; i < slice.length; i++) {
-              byteNumbers[i] = slice.charCodeAt(i)
+              byteNumbers[i] = slice.charCodeAt(i);
             }
             
-            const byteArray = new Uint8Array(byteNumbers)
-            byteArrays.push(byteArray)
+            const byteArray = new Uint8Array(byteNumbers);
+            byteArrays.push(byteArray);
           }
           
           // Create blob and object URL
-          const blob = new Blob(byteArrays, { type: 'application/pdf' })
-          const url = URL.createObjectURL(blob)
+          const blob = new Blob(byteArrays, { type: 'application/pdf' });
+          const url = URL.createObjectURL(blob);
           
-          setCvObjectUrl(url)
+          setCvObjectUrl(url);
         } catch (error) {
-          console.error("Error processing PDF:", error)
+          console.error("Error processing PDF:", error);
         }
       } else {
-        setCV(null)
-        setCvObjectUrl(null)
+        setCV(null);
+        setCvObjectUrl(null);
       }
     } catch (error) {
-      console.error("Error al obtener CV del estudiante:", error)
+      console.error("Error al obtener CV del estudiante:", error);
     } finally {
-      setLoadingCV(false)
+      setLoadingCV(false);
     }
   }
 

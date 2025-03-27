@@ -134,8 +134,15 @@ export default class AdminController implements ControllerBase {
      */
     private async getAllStudents(_req: Request, res: Response) {
         try {
+            console.log('Ejecutando getAllStudents');
             const [rows] = await this.db.query(StoredProcedures.GetAllStudents, []);
-            return sendResponses(res, 200, "Estudiantes obtenidos correctamente", rows);
+            console.log('Resultado de GetAllStudents:', rows);
+            
+            // Asegurarse de que siempre devolvemos un array
+            const students = Array.isArray(rows) ? rows : [];
+            console.log('Estudiantes a enviar:', students);
+            
+            return sendResponses(res, 200, "Estudiantes obtenidos correctamente", students);
         } catch (error) {
             console.error('Error obteniendo estudiantes:', error);
             return sendResponses(res, 500, "Error al obtener los estudiantes");
