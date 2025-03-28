@@ -34,28 +34,64 @@ const nextConfig = {
         destination: `${process.env.NEXT_PUBLIC_API_URL}/user/:path*`,
       },
       {
+        source: '/api/admin/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/admin/:path*`,
+      },
+      // Estas rutas son para peticiones directas al API desde el cliente
+      // No deben interferir con las rutas de navegación de Next.js
+      {
+        source: '/api/courses/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/courses/:path*`,
+      },
+      // Mantener estas rutas para compatibilidad con código existente
+      // pero solo para peticiones AJAX, no para navegación
+      {
         source: '/user/:path*',
+        has: [
+          {
+            type: 'header',
+            key: 'accept',
+            value: '(.*application/json.*)',
+          },
+        ],
         destination: `${process.env.NEXT_PUBLIC_API_URL}/user/:path*`,
       },
       {
         source: '/document/:path*',
+        has: [
+          {
+            type: 'header',
+            key: 'accept',
+            value: '(.*application/json.*)',
+          },
+        ],
         destination: `${process.env.NEXT_PUBLIC_API_URL}/document/:path*`,
       },
       {
         source: '/courses/:path*',
+        has: [
+          {
+            type: 'header',
+            key: 'accept',
+            value: '(.*application/json.*)',
+          },
+        ],
         destination: `${process.env.NEXT_PUBLIC_API_URL}/courses/:path*`,
+      },
+      {
+        source: '/admin/:path*',
+        has: [
+          {
+            type: 'header',
+            key: 'accept',
+            value: '(.*application/json.*)',
+          },
+        ],
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/admin/:path*`,
       },
       {
         source: '/api/certificate/public/:uuid',
         destination: `${process.env.NEXT_PUBLIC_API_URL}/document/certificate/public/:uuid`,
-      },
-      {
-        source: '/admin/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL}/admin/:path*`,
-      },
-      {
-        source: '/api/admin/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL}/admin/:path*`,
       },
     ];
   },

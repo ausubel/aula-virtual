@@ -32,24 +32,28 @@ export default function StudentsPage() {
       setLoading(true)
       console.log('Llamando a AdminService.getAllStudents()')
       
-      // Intentar hacer la solicitud directamente con fetch para comparar
-      try {
-        const directResponse = await fetch('/admin/students')
-        const directData = await directResponse.json()
-        console.log('Respuesta directa con fetch:', directData)
-      } catch (fetchError) {
-        console.error('Error con fetch directo:', fetchError)
-      }
+      const data = await AdminService.getAllStudents()
+      console.log('Datos de estudiantes recibidos:', data)
       
-      const data: Student[] = await AdminService.getAllStudents()
-      console.log('Datos de estudiantes recibidos (sin procesar):', data)
-      
-      if (Array.isArray(data) && data.length > 0) {
-        console.log('La respuesta es un array válido con', data.length, 'estudiantes')
-        setStudents(data)
+      if (Array.isArray(data)) {
+        console.log('Los datos son un array con', data.length, 'estudiantes')
+        
+        // Verificar si data es un array que contiene otro array de estudiantes
+        if (data.length > 0 && Array.isArray(data[0])) {
+          console.log('El primer elemento de data es un array con', data[0].length, 'estudiantes')
+          setStudents(data[0] as Student[])
+        } else {
+          // Si data es directamente el array de estudiantes
+          setStudents(data as Student[])
+        }
       } else {
-        console.log('La respuesta no es un array válido o está vacía')
+        console.error('Los datos recibidos no son un array:', data)
         setStudents([])
+        toast({
+          title: "Error de formato",
+          description: "Los datos de estudiantes no tienen el formato esperado",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error('Error al cargar estudiantes:', error)
@@ -80,6 +84,9 @@ export default function StudentsPage() {
   };
 
   const handleViewProfile = (studentId: number) => {
+    // Usar la ruta de Next.js para navegar a la página del perfil
+    // Esta es una ruta de navegación interna, no una petición al API
+    console.log(`Navegando al perfil del estudiante ${studentId}`)
     router.push(`/admin/students/${studentId}`)
   }
 

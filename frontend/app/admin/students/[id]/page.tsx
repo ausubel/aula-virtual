@@ -22,13 +22,7 @@ interface ProfileData {
   coursesEnrolled: number;
   coursesCompleted: number;
   totalProgress: number;
-  certificates: {
-    id: number;
-    title: string;
-    issueDate: string;
-    instructor: string;
-    image?: string;
-  }[];
+  certificates: Certificate[];
   currentCourses: {
     id: number;
     title: string;
@@ -64,7 +58,6 @@ export default function StudentProfilePage() {
   const params = useParams()
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
-  const [certificates, setCertificates] = useState<Certificate[]>([])
   const [user, setUser] = useState<ProfileData>(defaultProfileData)
   const [cv, setCV] = useState<string | null>(null)
   const [cvObjectUrl, setCvObjectUrl] = useState<string | null>(null)
@@ -74,7 +67,6 @@ export default function StudentProfilePage() {
     if (params.id) {
       getUserData()
       fetchStudentCV()
-      fetchStudentCertificates()
     }
   }, [params.id])
 
@@ -89,37 +81,66 @@ export default function StudentProfilePage() {
 
   const getUserData = async () => {
     try {
+      setLoading(true)
       const id = Number(params.id)
-      // Hacer la petición al endpoint usando el cliente centralizado
-      const response = await apiClient.get(`/user/student/${id}/profile`)
+      console.log(`Obteniendo datos del estudiante ${id}`)
+      
+      // Hacer la petición directamente al endpoint correcto
+      const response = await apiClient.get(`/api/user/student/${id}/profile`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      })
       console.log('Respuesta de perfil de estudiante:', response)
       
-      // Actualizar el estado con los datos recibidos
-      if (response.data) {
-        // Verificar si la respuesta tiene la estructura esperada
-        let profileData;
-        if (response.data.data) {
-          // Si la respuesta tiene un objeto data anidado (formato antiguo)
-          profileData = response.data.data;
-        } else {
-          // Si la respuesta ya tiene el formato esperado
-          profileData = response.data;
-        }
-        
-        // Obtener datos adicionales del perfil (ubicación y biografía)
-        try {
-          const profileDataAdditional = await userService.getStudentProfileData(id);
-          if (profileDataAdditional && profileDataAdditional.data) {
-            profileData.location = profileDataAdditional.data.location || "";
-            profileData.bio = profileDataAdditional.data.bio || "";
-            profileData.degree = profileDataAdditional.data.degree || "";
-          }
-        } catch (error) {
-          console.error("Error fetching profile data:", error);
-        }
-        
-        setUser(profileData)
+      // Extraer los datos del perfil
+      let studentData;
+      if (response.data?.data) {
+        studentData = response.data.data;
+      } else {
+        studentData = response.data;
       }
+      
+      console.log('Datos del estudiante extraídos:', studentData)
+      
+      // Convertir los datos a ProfileData
+      const profileData: ProfileData = {
+        id: studentData.id || id,
+        name: studentData.name || 'Sin nombre',
+        surname: studentData.surname || '',
+        email: studentData.email || '',
+        phone: studentData.phone || '',
+        avatar: studentData.avatar || '',
+        coursesEnrolled: studentData.coursesEnrolled || 0,
+        coursesCompleted: studentData.coursesCompleted || 0,
+        totalProgress: studentData.totalProgress || 0,
+        certificates: [],  // Se llena con fetchStudentCertificates
+        currentCourses: studentData.currentCourses?.map((course: any) => ({
+          id: course.id,
+          title: course.title,
+          progress: course.progress,
+          instructor: course.instructor,
+          image: ''
+        })) || [],
+        location: studentData.location || '',
+        bio: studentData.bio || '',
+        degree: ''
+      }
+      
+      // Obtener datos adicionales del perfil (ubicación y biografía)
+      try {
+        const profileDataAdditional = await userService.getStudentProfileData(id);
+        if (profileDataAdditional && profileDataAdditional.data) {
+          profileData.location = profileDataAdditional.data.location || "";
+          profileData.bio = profileDataAdditional.data.bio || "";
+          profileData.degree = profileDataAdditional.data.degree || "";
+        }
+      } catch (error) {
+        console.error("Error al obtener datos adicionales del perfil:", error);
+      }
+      
+      setUser(profileData)
     } catch (error) {
       console.error("Error al obtener datos del perfil:", error)
       toast({
@@ -132,110 +153,175 @@ export default function StudentProfilePage() {
     }
   }
 
-  const fetchStudentCertificates = async () => {
-    try {
-      const id = Number(params.id)
-      const certs = await AdminService.getStudentCertificates(id)
-      setCertificates(certs)
-    } catch (error) {
-      console.error("Error al obtener certificados del estudiante:", error)
-      // No mostramos toast de error para no interrumpir la experiencia del usuario
-    }
-  }
 
   const fetchStudentCV = async () => {
     try {
       setLoadingCV(true)
       const id = Number(params.id)
-      const documentResponse = await apiClient.get(`/document/student/${id}/cv`)
-      console.log('Respuesta de CV de estudiante:', documentResponse)
+      console.log(`Solicitando CV del estudiante ${id}`)
       
-      // Extract CV data
-      let cvData = null;
+      // Usar la ruta correcta para obtener el CV
+      const response = await apiClient.get(`/api/document/student/${id}/cv`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      })
       
-      if (documentResponse.data?.data?.cv_file) {
-        cvData = documentResponse.data.data;
-      } else if (documentResponse.data?.data?.cv) {
-        cvData = documentResponse.data.data;
-      } else if (documentResponse.data?.cv_file) {
-        cvData = documentResponse.data;
-      } else if (documentResponse.data?.cv) {
-        cvData = documentResponse.data;
+      console.log('Respuesta de CV recibida:', response.status)
+      
+      // Extraer el contenido del CV de la respuesta
+      let cvContent = null;
+      
+      // Buscar el contenido del CV en diferentes estructuras posibles
+      // Primero verificar la estructura que vemos en la captura: data.data.cv.cv_file
+      if (response.data?.data?.cv?.cv_file) {
+        cvContent = response.data.data.cv.cv_file;
+        console.log('CV encontrado en data.data.cv.cv_file');
+      } else if (response.data?.data?.cv_file) {
+        cvContent = response.data.data.cv_file;
+        console.log('CV encontrado en data.data.cv_file');
+      } else if (response.data?.data?.cv) {
+        cvContent = response.data.data.cv;
+        console.log('CV encontrado en data.data.cv');
+      } else if (response.data?.cv_file) {
+        cvContent = response.data.cv_file;
+        console.log('CV encontrado en data.cv_file');
+      } else if (response.data?.cv) {
+        cvContent = response.data.cv;
+        console.log('CV encontrado en data.cv');
+      } else if (typeof response.data === 'string') {
+        cvContent = response.data;
+        console.log('CV encontrado como string directo');
       }
       
-      if (cvData && (cvData.cv_file || cvData.cv)) {
-        // Store original CV data
-        const cvFile = cvData.cv_file || cvData.cv;
-        setCV(cvFile);
+      // Imprimir la estructura de la respuesta para depuración
+      console.log('Estructura de respuesta:', JSON.stringify(response.data, null, 2));
+      
+      if (!cvContent) {
+        console.log('No se encontró contenido de CV')
+        setCV(null)
+        setCvObjectUrl(null)
+        setLoadingCV(false)
+        return
+      }
+      
+      // Guardar el contenido original
+      setCV(cvContent)
+      
+      // Procesar el contenido para mostrarlo
+      try {
+        // Asegurarse de que tenemos un string
+        if (typeof cvContent !== 'string') {
+          throw new Error('El contenido del CV no es un string')
+        }
         
-        // Try to create a blob from the base64 data
-        try {
-          // Remove prefix if exists
-          let base64Content = cvFile;
-          if (typeof base64Content === 'string' && base64Content.includes('base64,')) {
-            base64Content = base64Content.split('base64,')[1];
-          }
+        // Verificar si ya tiene el prefijo MIME
+        if (cvContent.startsWith('data:application/pdf;base64,')) {
+          // Ya tiene el prefijo, usarlo directamente
+          setCvObjectUrl(cvContent)
+        } else {
+          // Añadir el prefijo MIME necesario para visualizar el PDF
+          const fullContent = `data:application/pdf;base64,${cvContent}`
+          console.log('Prefijo MIME añadido al CV')
           
-          // Decode base64 and create a typed array
-          const byteCharacters = atob(base64Content);
-          const byteArrays = [];
-          
-          for (let offset = 0; offset < byteCharacters.length; offset += 512) {
-            const slice = byteCharacters.slice(offset, offset + 512);
+          // Intentar crear un blob para mejor compatibilidad
+          try {
+            // Extraer solo la parte base64
+            let base64Content = cvContent;
             
-            const byteNumbers = new Array(slice.length);
-            for (let i = 0; i < slice.length; i++) {
-              byteNumbers[i] = slice.charCodeAt(i);
+            // Añadir padding si es necesario
+            while (base64Content.length % 4 !== 0) {
+              base64Content += '=';
             }
             
-            const byteArray = new Uint8Array(byteNumbers);
-            byteArrays.push(byteArray);
+            // Decodificar y crear el blob
+            const byteCharacters = atob(base64Content);
+            const byteArrays = [];
+            
+            for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+              const slice = byteCharacters.slice(offset, offset + 512);
+              const byteNumbers = new Array(slice.length);
+              
+              for (let i = 0; i < slice.length; i++) {
+                byteNumbers[i] = slice.charCodeAt(i);
+              }
+              
+              const byteArray = new Uint8Array(byteNumbers);
+              byteArrays.push(byteArray);
+            }
+            
+            const blob = new Blob(byteArrays, { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            
+            setCvObjectUrl(url);
+            console.log('URL de objeto creada mediante blob');
+          } catch (blobError) {
+            console.error('Error al crear blob:', blobError);
+            // Si falla, usar el string con prefijo MIME directamente
+            setCvObjectUrl(fullContent);
           }
-          
-          // Create blob and object URL
-          const blob = new Blob(byteArrays, { type: 'application/pdf' });
-          const url = URL.createObjectURL(blob);
-          
-          setCvObjectUrl(url);
-        } catch (error) {
-          console.error("Error processing PDF:", error);
         }
-      } else {
-        setCV(null);
-        setCvObjectUrl(null);
+        
+        console.log('CV procesado correctamente')
+      } catch (error) {
+        console.error('Error al procesar el CV:', error)
+        // Mantener el CV original para poder descargarlo
+        setCvObjectUrl(null)
       }
     } catch (error) {
-      console.error("Error al obtener CV del estudiante:", error);
+      console.error('Error al obtener el CV:', error)
+      setCV(null)
+      setCvObjectUrl(null)
     } finally {
-      setLoadingCV(false);
+      setLoadingCV(false)
     }
   }
 
-  const downloadCV = () => {
-    if (!cv) return
-    
-    // Handle different CV formats
+  const downloadCV = async () => {
     try {
+      if (!cv) {
+        toast({
+          title: "Error",
+          description: "No hay CV disponible para descargar",
+          variant: "destructive"
+        })
+        return
+      }
+      
+      // Crear un enlace para descargar el PDF
       const link = document.createElement('a')
       
-      // If it's a base64 PDF
-      if (typeof cv === 'string' && cv.startsWith('data:application/pdf;base64,')) {
-        link.href = cv
-      } 
-      // If we have an object URL
-      else if (cvObjectUrl) {
+      // Determinar la URL a usar para la descarga
+      if (typeof cv === 'string') {
+        // Verificar si ya tiene el prefijo MIME
+        let downloadUrl = cv
+        if (!cv.startsWith('data:')) {
+          // Añadir el prefijo MIME si no lo tiene
+          downloadUrl = `data:application/pdf;base64,${cv}`
+        }
+        link.href = downloadUrl
+      } else if (cvObjectUrl) {
+        // Usar la URL del objeto si estu00e1 disponible
         link.href = cvObjectUrl
-      }
-      // If it's HTML content
-      else {
-        const blob = new Blob([String(cv)], { type: 'text/html' })
-        link.href = URL.createObjectURL(blob)
+      } else {
+        throw new Error('No se pudo generar la URL de descarga')
       }
       
-      link.download = `CV-${user.name}-${user.surname}.pdf`
+      // Establecer el nombre del archivo
+      link.download = `CV-${user.name || 'Estudiante'}-${user.surname || ''}.pdf`
+      
+      // Simular clic para descargar
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+      
+      // Notificar u00e9xito
+      toast({
+        title: "u00c9xito",
+        description: "CV descargado correctamente",
+        variant: "default"
+      })
     } catch (error) {
       console.error("Error descargando CV:", error)
       toast({
@@ -388,32 +474,6 @@ export default function StudentProfilePage() {
               )}
             </CardContent>
           </Card>
-
-          {/* Certificados */}
-          {certificates.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Certificados Obtenidos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {certificates.map(cert => (
-                    <Card key={cert.id} className="border">
-                      <CardContent className="p-4">
-                        <h4 className="font-medium">{cert.name}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Duración: {cert.hours} horas
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Emitido: {new Date(cert.date_emission).toLocaleDateString()}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
 
         {/* Columna derecha: CV del Estudiante */}
@@ -443,48 +503,62 @@ export default function StudentProfilePage() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : cvObjectUrl ? (
-              <div className="h-[calc(100vh-250px)] border rounded-md overflow-hidden">
-                <object
-                  data={cvObjectUrl}
-                  type="application/pdf"
-                  className="w-full h-full"
-                >
-                  <embed 
-                    src={cvObjectUrl} 
+              <div className="flex flex-col h-[calc(100vh-250px)]">
+                <div className="flex-1 border rounded-md overflow-hidden">
+                  {/* Usar object con fallback para mejor compatibilidad */}
+                  <object
+                    data={cvObjectUrl}
                     type="application/pdf"
                     className="w-full h-full"
-                  />
-                  <p className="text-center p-4">
-                    Si no puedes ver el PDF, puedes 
-                    <Button 
-                      variant="link" 
-                      onClick={downloadCV}
-                      className="px-1"
-                    >
-                      descargarlo aquí
-                    </Button>
-                  </p>
-                </object>
-              </div>
-            ) : cv ? (
-              <ScrollArea className="h-[calc(100vh-250px)] border rounded-md p-4">
-                <div className="prose max-w-none text-center">
-                  <p>El CV está en un formato que no se puede previsualizar.</p>
+                  >
+                    <div className="flex flex-col items-center justify-center h-full p-4">
+                      <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground text-center mb-4">
+                        No se puede mostrar el PDF en este navegador.
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={downloadCV} 
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Descargar CV
+                      </Button>
+                    </div>
+                  </object>
+                </div>
+                <div className="text-center mt-4">
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={downloadCV} 
-                    className="mt-4"
                   >
-                    <Download className="h-4 w-4 mr-1" />
+                    <Download className="h-4 w-4 mr-2" />
+                    Descargar CV
+                  </Button>
+                </div>
+              </div>
+            ) : cv ? (
+              <ScrollArea className="h-[calc(100vh-250px)] border rounded-md p-4">
+                <div className="prose max-w-none text-center">
+                  <p>El CV estu00e1 en un formato que no se puede previsualizar.</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={downloadCV} 
+                    className="mt-2"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
                     Descargar CV
                   </Button>
                 </div>
               </ScrollArea>
             ) : (
-              <div className="flex flex-col items-center justify-center h-[400px] text-center text-muted-foreground">
-                <FileText className="h-12 w-12 mb-4 opacity-30" />
-                <p>El estudiante no ha subido su CV</p>
+              <div className="flex flex-col items-center justify-center h-[calc(100vh-250px)] border rounded-md p-4">
+                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground text-center mb-2">
+                  Este estudiante au00fan no ha subido su CV.
+                </p>
               </div>
             )}
           </CardContent>
