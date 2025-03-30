@@ -83,7 +83,6 @@ export default function StudentProfilePage() {
     try {
       setLoading(true)
       const id = Number(params.id)
-      console.log(`Obteniendo datos del estudiante ${id}`)
       
       // Hacer la petición directamente al endpoint correcto
       const response = await apiClient.get(`/api/user/student/${id}/profile`, {
@@ -92,8 +91,6 @@ export default function StudentProfilePage() {
           'Content-Type': 'application/json'
         }
       })
-      console.log('Respuesta de perfil de estudiante:', response)
-      
       // Extraer los datos del perfil
       let studentData;
       if (response.data?.data) {
@@ -102,7 +99,6 @@ export default function StudentProfilePage() {
         studentData = response.data;
       }
       
-      console.log('Datos del estudiante extraídos:', studentData)
       
       // Convertir los datos a ProfileData
       const profileData: ProfileData = {
@@ -158,7 +154,6 @@ export default function StudentProfilePage() {
     try {
       setLoadingCV(true)
       const id = Number(params.id)
-      console.log(`Solicitando CV del estudiante ${id}`)
       
       // Usar la ruta correcta para obtener el CV
       const response = await apiClient.get(`/api/document/student/${id}/cv`, {
@@ -168,7 +163,6 @@ export default function StudentProfilePage() {
         }
       })
       
-      console.log('Respuesta de CV recibida:', response.status)
       
       // Extraer el contenido del CV de la respuesta
       let cvContent = null;
@@ -177,29 +171,20 @@ export default function StudentProfilePage() {
       // Primero verificar la estructura que vemos en la captura: data.data.cv.cv_file
       if (response.data?.data?.cv?.cv_file) {
         cvContent = response.data.data.cv.cv_file;
-        console.log('CV encontrado en data.data.cv.cv_file');
       } else if (response.data?.data?.cv_file) {
         cvContent = response.data.data.cv_file;
-        console.log('CV encontrado en data.data.cv_file');
       } else if (response.data?.data?.cv) {
         cvContent = response.data.data.cv;
-        console.log('CV encontrado en data.data.cv');
       } else if (response.data?.cv_file) {
         cvContent = response.data.cv_file;
-        console.log('CV encontrado en data.cv_file');
       } else if (response.data?.cv) {
         cvContent = response.data.cv;
-        console.log('CV encontrado en data.cv');
       } else if (typeof response.data === 'string') {
         cvContent = response.data;
-        console.log('CV encontrado como string directo');
       }
       
-      // Imprimir la estructura de la respuesta para depuración
-      console.log('Estructura de respuesta:', JSON.stringify(response.data, null, 2));
       
       if (!cvContent) {
-        console.log('No se encontró contenido de CV')
         setCV(null)
         setCvObjectUrl(null)
         setLoadingCV(false)
@@ -223,7 +208,6 @@ export default function StudentProfilePage() {
         } else {
           // Añadir el prefijo MIME necesario para visualizar el PDF
           const fullContent = `data:application/pdf;base64,${cvContent}`
-          console.log('Prefijo MIME añadido al CV')
           
           // Intentar crear un blob para mejor compatibilidad
           try {
@@ -255,7 +239,6 @@ export default function StudentProfilePage() {
             const url = URL.createObjectURL(blob);
             
             setCvObjectUrl(url);
-            console.log('URL de objeto creada mediante blob');
           } catch (blobError) {
             console.error('Error al crear blob:', blobError);
             // Si falla, usar el string con prefijo MIME directamente
@@ -263,7 +246,6 @@ export default function StudentProfilePage() {
           }
         }
         
-        console.log('CV procesado correctamente')
       } catch (error) {
         console.error('Error al procesar el CV:', error)
         // Mantener el CV original para poder descargarlo

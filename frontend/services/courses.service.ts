@@ -706,7 +706,7 @@ export class CoursesService {
 
   static async assignCertificates(courseId: number, studentIds: number[]): Promise<void> {
     try {
-      const response = await apiClient.post(`/courses/${courseId}/certificates`, { studentIds });
+      const response = await apiClient.post(`/courses/${courseId}/students/certificates`, { studentIds });
 
       if (!response.data) {
         throw new Error('Error al asignar certificados');

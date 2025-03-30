@@ -30,17 +30,13 @@ export default function StudentsPage() {
   const loadStudents = async () => {
     try {
       setLoading(true)
-      console.log('Llamando a AdminService.getAllStudents()')
       
       const data = await AdminService.getAllStudents()
-      console.log('Datos de estudiantes recibidos:', data)
       
       if (Array.isArray(data)) {
-        console.log('Los datos son un array con', data.length, 'estudiantes')
         
         // Verificar si data es un array que contiene otro array de estudiantes
         if (data.length > 0 && Array.isArray(data[0])) {
-          console.log('El primer elemento de data es un array con', data[0].length, 'estudiantes')
           setStudents(data[0] as Student[])
         } else {
           // Si data es directamente el array de estudiantes
@@ -86,7 +82,6 @@ export default function StudentsPage() {
   const handleViewProfile = (studentId: number) => {
     // Usar la ruta de Next.js para navegar a la página del perfil
     // Esta es una ruta de navegación interna, no una petición al API
-    console.log(`Navegando al perfil del estudiante ${studentId}`)
     router.push(`/admin/students/${studentId}`)
   }
 
