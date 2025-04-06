@@ -111,7 +111,7 @@ export default function StudentProfilePage() {
         coursesEnrolled: studentData.coursesEnrolled || 0,
         coursesCompleted: studentData.coursesCompleted || 0,
         totalProgress: studentData.totalProgress || 0,
-        certificates: [],  // Se llena con fetchStudentCertificates
+        certificates: [], 
         currentCourses: studentData.currentCourses?.map((course: any) => ({
           id: course.id,
           title: course.title,

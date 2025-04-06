@@ -15,6 +15,7 @@ import Cookies from 'js-cookie'
 // Importar el contexto de registro
 import { RegistrationContext } from '@/app/register/page'
 import { SweetAlert } from '@/utils/SweetAlert'
+import apiClient from '@/lib/api-client'
 
 interface UserProfileData {
   firstName: string
@@ -116,21 +117,14 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
         }
 
         // Intentar obtener los datos del usuario desde el backend
-        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`;
+        const response = await apiClient.get(`/user/${userId}`);
         
-        const response = await fetch(apiUrl, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          console.error(`Error al obtener datos del usuario: ${response.status} ${response.statusText}`);
+        if (response.status !== 200) {
+          console.error(`Error al obtener datos del usuario: ${response.status}`);
           return;
         }
 
-        const userData = await response.json();
+        const userData = response.data;
         
         // Verificar que los datos tengan el formato esperado
         if (!userData.data || !Array.isArray(userData.data) || userData.data.length === 0) {
@@ -294,50 +288,22 @@ export default function UploadCVPage({ onBackClick }: UploadCVPageProps) {
         hasCV: true,
       };
       
-      const userJson = JSON.stringify(user);
-      
       // Enviar los datos personales al servidor
-      const updateResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/update`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: userJson
-      });
-      
-      
-      if (!updateResponse.ok) {
-        let errorMessage = 'Error al actualizar los datos de usuario';
-        try {
-          const errorData = await updateResponse.json();
-          errorMessage = errorData.message || errorMessage;
-        } catch (e) {
-          console.error('Error al parsear la respuesta:', e);
-        }
+      const updateResponse = await apiClient.put('/user/update', user);
+
+      if (updateResponse.status !== 200) {
+        const errorMessage = updateResponse.data?.message || 'Error al actualizar los datos personales';
         throw new Error(errorMessage);
       }
       
       // Enviar el archivo al servidor - usando el ID de usuario correcto
-      const cvEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/document/student/${userId}/cv`;
-      
-      const response = await fetch(cvEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ file: base64File })
+      const response = await apiClient.post(`/document/student/${userId}/cv`, { 
+        file: base64File 
       });
       
-      
-      if (!response.ok) {
-        let errorMessage = 'Error al subir el CV'
-        try {
-          const errorData = await response.json()
-          errorMessage = errorData.message || errorMessage
-        } catch (e) {
-          console.error('Error al parsear la respuesta:', e)
-        }
-        throw new Error(errorMessage)
+      if (response.status !== 200) {
+        const errorMessage = response.data?.message || 'Error al subir el CV';
+        throw new Error(errorMessage);
       }
       
       // Marcar que el usuario ha subido su CV

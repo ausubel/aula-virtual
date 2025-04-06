@@ -1,6 +1,7 @@
 'use server'
 
 import { z } from 'zod'
+import { serverApi } from '@/lib/server-api'
 
 // Schema para validación de credenciales básicas - debe coincidir con registerSchema del backend
 const basicInfoSchema = z.object({
@@ -63,54 +64,40 @@ export async function registerBasicInfo(formData: FormData) {
       password: "********" // No mostrar la contraseña real en logs
     });
 
-    // Usar la variable de entorno para la URL de la API
-    const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL;
-    logStep(7, `Realizando petición a: ${NEXT_PUBLIC_API_URL}/auth/register`);
+    logStep(7, "Realizando petición a: /auth/register");
     
     // Imprimir el cuerpo de la petición exactamente como se enviará
-    const requestBody = JSON.stringify(userData);
-    logStep('7.1', "Cuerpo de la petición (JSON)", requestBody);
+    logStep('7.1', "Cuerpo de la petición (JSON)", userData);
     
-    // Enviar los datos al endpoint de autenticación
-    const response = await fetch(`${NEXT_PUBLIC_API_URL}/auth/register`, {
+    // Enviar los datos al endpoint de autenticación usando serverApi
+    const response = await serverApi('/auth/register', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: requestBody,
+      body: JSON.stringify(userData)
     });
 
-    logStep(8, `Respuesta recibida - Status: ${response.status}`);
-    logStep('8.1', "Headers de la respuesta", {
-      contentType: response.headers.get('content-type'),
-      contentLength: response.headers.get('content-length')
-    });
+    logStep(8, `Respuesta recibida - Status: ${response.success ? 'success' : 'error'}`);
+    logStep('8.1', "Datos de la respuesta", response.data);
     
     // Intentar obtener el cuerpo de la respuesta
     let data;
-    let responseText = '';
     try {
-      // Primero intentamos obtener el texto de la respuesta para depuración
-      responseText = await response.clone().text();
-      logStep('8.2', "Texto de la respuesta", responseText);
-      
       // Luego intentamos parsear como JSON
-      data = await response.json();
+      data = response.data;
       logStep(9, "Datos de la respuesta (JSON)", data);
       
       // Verificar específicamente si tenemos un ID de usuario
-      if (data?.data?.user?.[0]?.id) {
-        logStep('9.1', "ID de usuario encontrado:", data.data.user[0].id);
+      if (data?.user?.[0]?.id) {
+        logStep('9.1', "ID de usuario encontrado:", data.user[0].id);
       } else {
-        logStep('9.2', "No se encontró ID de usuario en la respuesta. Estructura de data:", JSON.stringify(data?.data));
+        logStep('9.2', "No se encontró ID de usuario en la respuesta. Estructura de data:", JSON.stringify(data?.user));
       }
     } catch (error) {
-      logStep(9, "Error al parsear la respuesta JSON", { error, responseText });
+      logStep(9, "Error al parsear la respuesta JSON", { error });
       data = { message: "Error al procesar la respuesta del servidor" };
     }
 
-    if (!response.ok) {
-      logStep(10, "Error en la respuesta", { status: response.status, message: data?.message });
+    if (!response.success) {
+      logStep(10, "Error en la respuesta", { message: data?.message });
       return {
         success: false,
         message: data?.message || 'Error al registrar usuario',
@@ -118,15 +105,15 @@ export async function registerBasicInfo(formData: FormData) {
     }
 
     // Guardar el token en localStorage o cookies si es necesario
-    if (data?.data?.token) {
-      logStep(11, "Guardando token", { token: data.data.token.substring(0, 10) + '...' });
+    if (data?.token) {
+      logStep(11, "Guardando token", { token: data.token.substring(0, 10) + '...' });
       // Aquí podrías guardar el token en localStorage o cookies
     }
 
     // Verificar y asegurar que userData tenga una estructura válida
     // El usuario viene dentro de un array en data.user
-    const userResult = Array.isArray(data?.data?.user) && data?.data?.user.length > 0 
-      ? data.data.user[0] 
+    const userResult = Array.isArray(data?.user) && data?.user.length > 0 
+      ? data.user[0] 
       : {};
     
     // Extraer explícitamente los datos importantes del usuario
@@ -145,7 +132,7 @@ export async function registerBasicInfo(formData: FormData) {
       success: true,
       message: 'Registro inicial exitoso. Ahora complete su perfil.',
       email: validatedData.email,
-      token: data?.data?.token,
+      token: data?.token,
       userData: processedUserData
     }
 
@@ -155,18 +142,6 @@ export async function registerBasicInfo(formData: FormData) {
       return {
         success: false,
         message: error.errors[0].message,
-      }
-    }
-
-    // Verificar si es un error de red
-    if (error instanceof Error) {
-      logStep('E2', "Error específico", { message: error.message, stack: error.stack });
-      
-      if (error.message.includes('fetch') || error.message.includes('network')) {
-        return {
-          success: false,
-          message: 'No se pudo conectar al servidor. Verifique su conexión a internet.',
-        }
       }
     }
 
@@ -237,46 +212,33 @@ export async function register(formData: FormData) {
       cv_file: cvBase64 ? "Archivo PDF presente (base64)" : undefined
     });
 
-    // Usar la variable de entorno para la URL de la API
-    const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL;
-    logStep(7, `Realizando petición a: ${NEXT_PUBLIC_API_URL}/auth/register`);
+    logStep(7, "Realizando petición a: /auth/register");
     
     // Imprimir el cuerpo de la petición exactamente como se enviará
-    const requestBody = JSON.stringify(userData);
-    logStep('7.1', "Cuerpo de la petición (JSON)", requestBody.substring(0, 500) + (requestBody.length > 500 ? '...' : ''));
+    logStep('7.1', "Cuerpo de la petición (JSON)", userData);
     
-    // Llamar al endpoint de registro
-    const response = await fetch(`${NEXT_PUBLIC_API_URL}/auth/register`, {
+    // Enviar los datos al endpoint de autenticación usando serverApi
+    const response = await serverApi('/auth/register', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: requestBody,
-    })
-    logStep(8, `Respuesta recibida - Status: ${response.status}`);
-    logStep('8.1', "Headers de la respuesta", {
-      contentType: response.headers.get('content-type'),
-      contentLength: response.headers.get('content-length')
+      body: JSON.stringify(userData)
     });
+
+    logStep(8, `Respuesta recibida - Status: ${response.success ? 'success' : 'error'}`);
+    logStep('8.1', "Datos de la respuesta", response.data);
 
     // Intentar obtener el cuerpo de la respuesta
     let data;
-    let responseText = '';
     try {
-      // Primero intentamos obtener el texto de la respuesta para depuración
-      responseText = await response.clone().text();
-      logStep('8.2', "Texto de la respuesta", responseText);
-      
       // Luego intentamos parsear como JSON
-      data = await response.json();
+      data = response.data;
       logStep(9, "Datos de la respuesta (JSON)", data);
     } catch (error) {
-      logStep(9, "Error al parsear la respuesta JSON", { error, responseText });
+      logStep(9, "Error al parsear la respuesta JSON", { error });
       data = { message: "Error al procesar la respuesta del servidor" };
     }
 
-    if (!response.ok) {
-      logStep(10, "Error en la respuesta", { status: response.status, message: data?.message });
+    if (!response.success) {
+      logStep(10, "Error en la respuesta", { message: data?.message });
       return {
         success: false,
         message: data?.message || 'Error al registrar usuario',
@@ -284,8 +246,8 @@ export async function register(formData: FormData) {
     }
 
     // Guardar el token en localStorage o cookies si es necesario
-    if (data?.data?.token) {
-      logStep(11, "Guardando token", { token: data.data.token.substring(0, 10) + '...' });
+    if (data?.token) {
+      logStep(11, "Guardando token", { token: data.token.substring(0, 10) + '...' });
       // Aquí podrías guardar el token en localStorage o cookies
     }
 
@@ -293,8 +255,8 @@ export async function register(formData: FormData) {
     return {
       success: true,
       message: 'Usuario registrado exitosamente',
-      token: data?.data?.token,
-      userData: data?.data?.user
+      token: data?.token,
+      userData: data?.user
     }
 
   } catch (error) {

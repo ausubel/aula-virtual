@@ -1,17 +1,14 @@
 "use server";
 
+import apiClient from "@/lib/api-client";
+
 export async function signOut() {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/sign-out`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await apiClient.post('/auth/sign-out');
 
-    const data = await response.json();
+    const data = response.data;
 
-    if (!response.ok) {
+    if (response.status !== 200) {
       return {
         success: false,
         message: data.message || 'Error al cerrar sesión',

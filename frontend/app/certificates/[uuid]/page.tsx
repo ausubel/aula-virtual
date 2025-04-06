@@ -12,6 +12,7 @@ import { es } from "date-fns/locale"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 import type { Certificate } from "@/types/certificate"
+import apiClient from "@/lib/api-client"
 
 export default function PublicCertificateDetailsPage({ params }: { params: { uuid: string } }) {
   const [certificate, setCertificate] = useState<Certificate | null>(null)
@@ -27,27 +28,19 @@ export default function PublicCertificateDetailsPage({ params }: { params: { uui
         setError(null)
         
         // Usar la API interna de Next.js
-        const url = `/api/certificate/public/${params.uuid}`;
+        const url = `/certificate/public/${params.uuid}`;
         
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          }
-        });
+        const response = await apiClient.get(url);
         
-        
-        if (!response.ok) {
+        if (response.status !== 200) {
           if (response.status === 404) {
             throw new Error('Certificado no encontrado');
           }
-          const errorText = await response.text();
-          console.error('Error en la respuesta:', errorText);
-          throw new Error(`Error al obtener certificado: ${response.status} ${response.statusText}`);
+          console.error('Error en la respuesta:', response.data);
+          throw new Error(`Error al obtener certificado: ${response.status}`);
         }
         
-        const data = await response.json();
+        const data = response.data;
         
         if (data && data.data && data.data.certificate) {
           setCertificate(data.data.certificate);

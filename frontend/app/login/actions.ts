@@ -1,24 +1,20 @@
 "use server";
 
+import apiClient from "@/lib/api-client";
+
 export async function login(formData: FormData) {
   const email = formData.get("email");
   const password = formData.get("password");
 
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/sign-in`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username: email,
-        password: password,
-      }),
+    const response = await apiClient.post('/auth/sign-in', {
+      username: email,
+      password: password,
     });
 
-    const data = await response.json();
+    const data = response.data;
 
-    if (!response.ok) {
+    if (response.status !== 200) {
       return {
         success: false,
         message: data.message || 'Error al iniciar sesión',
