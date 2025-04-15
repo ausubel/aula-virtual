@@ -1,14 +1,15 @@
 import nodemailer from "nodemailer";
+import dotenv from "dotenv";
 
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
+  host: process.env.EMAIL_HOST || "smtp.gmail.com",
+  port: parseInt(process.env.EMAIL_PORT || "587"),
+  secure: process.env.EMAIL_SECURE === "true", // true para 465, false para otros puertos
   auth: {
-    user: "fcv1202@gmail.com",
-    pass: "kzjy ftsn lafd enza"
+    user: process.env.EMAIL_USER || "",
+    pass: process.env.EMAIL_PASS || "",
   },
-  debug: true
+  debug: process.env.EMAIL_DEBUG === "true"
 });
 
 export async function sendEmail(to: string, subject: string, text: string): Promise<{ success: boolean; message: string }> {
